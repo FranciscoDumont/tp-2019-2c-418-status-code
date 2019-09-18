@@ -51,9 +51,20 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+# No estoy seguro si esta carpeta se va
 .idea/
 
 #File Systems
 File System/src/SAC-cli/cmake-build-debug/
+File System/src/SAC-servidor/cmake-build-debug/
 
+#Memoria
+Memoria/src/libMuse/cmake-build-debug/
+Memoria/src/Muse/cmake-build-debug/
 
+#Planificador
+Planificador/src/hilolay/cmake-build-debug/
+Planificador/src/Suse/cmake-build-debug/
+
+#SharedLibrary
+SharedLibrary/cmake-build-debug/
