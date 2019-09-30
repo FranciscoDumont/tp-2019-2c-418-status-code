@@ -3,4 +3,4 @@ project(Muse C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(Muse main.c)
+add_executable(Muse main.c ../libMuse/libmuse.c)
