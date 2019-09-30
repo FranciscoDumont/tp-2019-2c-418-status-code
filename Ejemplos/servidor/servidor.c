@@ -36,12 +36,13 @@ void serverFunction(){
         }
         printf("El mensaje recibido es: %s\n", message);
 
-        printf("Ahora devuelvo el mismo mensaje al cliente\n");
+        printf("Ahora devuelvo el mismo mensaje al cliente..\n");
         if(send_data(fd, header, size, (void *) message) == -1){
             return;
         }
         free(message);
     }
+
     void lost(int fd, char * ip, int port){}
     void incoming(int fd, char * ip, int port, MessageHeader * header){}
     start_server(socket, &new, &lost, &incoming);
