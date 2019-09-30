@@ -12,3 +12,11 @@ uint32_t muse_alloc(uint32_t tam) {
     uint32_t *concat = malloc(sizeof(tam));
     return *concat;
 }
+
+/**
+    * Libera una porción de memoria reservada.
+    * @param dir La dirección de la memoria a reservar.
+    */
+void muse_free(uint32_t dir) {
+    free(dir);
+}
