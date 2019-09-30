@@ -34,7 +34,7 @@ int main(){
 
     //Recibo datos del servidor
     //Primero recibo el encabezado y el tamanio ya que son datos de tamaño fijo
-    MessageHeader* buffer_header;
+    MessageHeader* buffer_header = malloc(sizeof(MessageHeader));
     if(-1 == receive_header(socket_servidor,buffer_header)){
         printf("Error al recibir header ::NOT FOUND\n");
     }else {
@@ -42,11 +42,11 @@ int main(){
     }
 
     //Despues recibo los datos usando la informacion del header
-    char* buffer_data;
+    char* buffer_data = malloc(sizeof(buffer_header->data_size));
     if(-1 == receive_data(socket_servidor,(void*) buffer_data,buffer_header->data_size)){
         printf("Error al recibir datos ::NOT FOUND\n");
     }else{
-        printf("dato recibido:%s",buffer_data);
+        printf("dato recibido:%s\n",buffer_data);
     }
 
     //Libero el socket
