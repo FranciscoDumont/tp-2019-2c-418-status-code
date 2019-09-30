@@ -19,7 +19,7 @@ void serverFunction(){
         printf("Error al crear el socket");
         return;
     }
-    if((bind_socket(socket, 4444)) == -1) {
+    if((bind_socket(socket, 4445)) == -1) {
         printf("Error al bindear el socket");
         return;
     }

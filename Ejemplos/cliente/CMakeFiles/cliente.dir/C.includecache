@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/utnso/Documentos/tp-2019-2c-418-status-code/Ejemplos/cliente/cliente.c
+cliente.h
+/home/utnso/Documentos/tp-2019-2c-418-status-code/Ejemplos/cliente/cliente.h
+altaLibreria/connections.h
+-
+altaLibreria/structures.h
+-
+string.h
+-
+
+/home/utnso/Documentos/tp-2019-2c-418-status-code/Ejemplos/cliente/cliente.h
+altaLibreria/connections.h
+-
+altaLibreria/structures.h
+-
+

@@ -5,11 +5,12 @@
 #include "cliente.h"
 #include <altaLibreria/connections.h>
 #include <altaLibreria/structures.h>
+#include <string.h>
 
 int main(){
     //Creo un socket
     int socket_servidor = create_socket();
-    int port = 4444;
+    int port = 4445;
     char* ip_server = "127.0.0.1";
     char* mensaje = malloc(20);
 
@@ -24,7 +25,7 @@ int main(){
     scanf("%s",mensaje);
 
     //Envio el mensaje con send_data
-    int resultado = send_data(socket_servidor, ABC, sizeof(mensaje), mensaje);
+    int resultado = send_data(socket_servidor, ABC, strlen(mensaje), mensaje);
     if(-1 == resultado){
         printf("Error envio ::NOT FOUND\n");
     }else {

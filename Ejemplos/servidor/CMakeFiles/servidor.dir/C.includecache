@@ -1,0 +1,20 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/utnso/Documentos/tp-2019-2c-418-status-code/Ejemplos/servidor/servidor.c
+servidor.h
+/home/utnso/Documentos/tp-2019-2c-418-status-code/Ejemplos/servidor/servidor.h
+
+/home/utnso/Documentos/tp-2019-2c-418-status-code/Ejemplos/servidor/servidor.h
+altaLibreria/connections.h
+-
+altaLibreria/structures.h
+-
+pthread.h
+-
+
