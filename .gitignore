@@ -72,3 +72,5 @@ SharedLibrary/cmake-build-debug/
 #AltaLibreria
 altaLibreria/cmake-build-debug/
 altaLibreria/build-dir/
+/altaLibreria/build-dir/
+/altaLibreria/cmake-build-debug/
