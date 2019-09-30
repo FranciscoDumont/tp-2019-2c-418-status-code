@@ -74,3 +74,5 @@ altaLibreria/cmake-build-debug/
 altaLibreria/build-dir/
 /altaLibreria/build-dir/
 /altaLibreria/cmake-build-debug/
+/Ejemplos/cliente/cmake-build-debug/
+/Ejemplos/servidor/cmake-build-debug/
