@@ -34,7 +34,7 @@ void serverFunction(){
         if(receive_data(socket, message, size) == -1){
             return;
         }
-        printf("El mensaje recibido es: %s\n", message);
+        printf("El mensaje recibido es.. %s\n", message);
 
         printf("Ahora devuelvo el mismo mensaje al cliente..\n");
         if(send_data(fd, header, size, (void *) message) == -1){
