@@ -3,3 +3,11 @@
 //
 
 #include "cliente.h"
+#include <connections.h>
+#include <structures.h>
+
+int main(){
+    //Creo un socket
+
+    return 0
+}
