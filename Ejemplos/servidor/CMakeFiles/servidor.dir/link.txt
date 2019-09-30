@@ -1,0 +1,1 @@
+/usr/bin/cc -g   CMakeFiles/servidor.dir/servidor.c.o  -o servidor /usr/lib/libaltaLibreria.so 

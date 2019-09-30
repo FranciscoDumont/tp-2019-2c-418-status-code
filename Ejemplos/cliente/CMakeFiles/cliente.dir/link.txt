@@ -1,0 +1,1 @@
+/usr/bin/cc -g   CMakeFiles/cliente.dir/cliente.c.o  -o cliente /usr/lib/libaltaLibreria.so 

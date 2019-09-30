@@ -11,7 +11,7 @@ int main(){
     int socket_servidor = create_socket();
     int port = 4444;
     char* ip_server = "127.0.0.1";
-    char* mensaje;
+    char* mensaje = malloc(20);
 
     //conecto el socket
     if(-1 == connect_socket(socket_servidor, ip_server, port)){
