@@ -13,13 +13,6 @@ int main(){
     char* ip_server = "127.0.0.1";
     char* mensaje;
 
-    //Pongo en escucha al socket en ese puerto
-    if(-1 == bind_socket(socket_servidor, port)){
-        printf("Error bind ::NOT FOUND\n");
-    }else {
-        printf("EL bind anda bien ::E\n");
-    }
-
     //conecto el socket
     if(-1 == connect_socket(socket_servidor, ip_server, port)){
         printf("Error connect ::NOT FOUND\n");
@@ -38,7 +31,8 @@ int main(){
         printf("Byts eviados: %d ::E\n", resultado);
     }
 
-    //Habria que probar resivir algo del servidor
+    //Recibo datos del servidor
+    //Primero recibo el encabezado y el tamanio ya que son datos de tamaño fijo
     MessageHeader* buffer_header;
     if(-1 == receive_header(socket_servidor,buffer_header)){
         printf("Error al recibir header ::NOT FOUND\n");
@@ -46,6 +40,7 @@ int main(){
         printf("Header recibido:\n type: %d\n size : %d ::E\n", buffer_header->type,buffer_header->data_size);
     }
 
+    //Despues recibo los datos usando la informacion del header
     char* buffer_data;
     if(-1 == receive_data(socket_servidor,(void*) buffer_data,buffer_header->data_size)){
         printf("Error al recibir datos ::NOT FOUND\n");
@@ -55,6 +50,9 @@ int main(){
 
     //Libero el socket
     close_socket(socket_servidor);
+
+    free(buffer_data);
+    free(mensaje);
 
     return 0;
 }
