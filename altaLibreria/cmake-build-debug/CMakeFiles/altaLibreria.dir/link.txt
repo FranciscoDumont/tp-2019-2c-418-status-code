@@ -1,0 +1,1 @@
+/usr/bin/cc  -fPIC -g  -shared -Wl,-soname,libaltaLibreria.so -o libaltaLibreria.so CMakeFiles/altaLibreria.dir/connections.c.o 
