@@ -1,0 +1,3 @@
+/usr/lib/libaltaLibreria.so
+/usr/include/altaLibreria/connections.h
+/usr/include/altaLibreria/structures.h

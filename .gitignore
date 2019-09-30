@@ -68,3 +68,7 @@ Planificador/src/Suse/cmake-build-debug/
 
 #SharedLibrary
 SharedLibrary/cmake-build-debug/
+
+#AltaLibreria
+altaLibreria/cmake-build-debug/
+altaLibreria/build-dir/

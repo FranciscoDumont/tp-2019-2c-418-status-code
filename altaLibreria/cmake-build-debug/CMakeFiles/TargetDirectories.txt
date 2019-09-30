@@ -1,3 +1,7 @@
-/home/utnso/CLionProjects/tp-2019-2c-418-status-code/altaLibreria/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/utnso/CLionProjects/tp-2019-2c-418-status-code/altaLibreria/cmake-build-debug/CMakeFiles/install.dir
+/home/utnso/CLionProjects/tp-2019-2c-418-status-code/altaLibreria/cmake-build-debug/CMakeFiles/list_install_components.dir
 /home/utnso/CLionProjects/tp-2019-2c-418-status-code/altaLibreria/cmake-build-debug/CMakeFiles/rebuild_cache.dir
 /home/utnso/CLionProjects/tp-2019-2c-418-status-code/altaLibreria/cmake-build-debug/CMakeFiles/altaLibreria.dir
+/home/utnso/CLionProjects/tp-2019-2c-418-status-code/altaLibreria/cmake-build-debug/CMakeFiles/install/local.dir
+/home/utnso/CLionProjects/tp-2019-2c-418-status-code/altaLibreria/cmake-build-debug/CMakeFiles/install/strip.dir
+/home/utnso/CLionProjects/tp-2019-2c-418-status-code/altaLibreria/cmake-build-debug/CMakeFiles/edit_cache.dir
