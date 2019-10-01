@@ -42,7 +42,7 @@ int main(){
     }
 
     //Despues recibo los datos usando la informacion del header
-    char* buffer_data = malloc(sizeof(buffer_header->data_size));
+    char* buffer_data = malloc(buffer_header->data_size);
     if(-1 == receive_data(socket_servidor,(void*) buffer_data,buffer_header->data_size)){
         printf("Error al recibir datos ::NOT FOUND\n");
     }else{
