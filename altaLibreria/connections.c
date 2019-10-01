@@ -110,14 +110,13 @@ int send_data(int destination, MessageType type, int data_size, void * data_stre
 			custom_print("[NETWORK_INFO][HEADER_SENT_TO_%d_(%d_bytes)]\n", destination, sent);
 		}
 	}
-	header_sent = sent;
 	if(data_size > 0) {
 		data_sent = send(destination, data_stream, data_size, 0);
-		if (sent == -1) {
+		if (data_sent == -1) {
 			if(NETWORK_DEBUG_LEVEL >= NW_NETWORK_ERRORS) {
 				custom_print("[NETWORK_ERROR][ERROR_SENDING_DATA_STREAM_TO_%d]\n", destination);
 			}
-			return sent;
+			return data_sent;
 		} else {
 			if(NETWORK_DEBUG_LEVEL >= NW_ALL_DISPLAY) {
 				custom_print("[NETWORK_INFO][DATA_STREAM_SENT_TO_%d_(%d_bytes)]\n", destination, data_sent);
@@ -248,7 +247,7 @@ int start_server(int socket,
 
 				incoming = malloc(sizeof(MessageHeader));
 
-				if ((bytesread = read(client_socket, incoming, sizeof(MessageHeader))) <= 0) {
+				if ((read(client_socket, incoming, sizeof(MessageHeader))) <= 0) {
 					getpeername(sd , (struct sockaddr*)&address , (socklen_t*)&addrlen);
 
 					if(NETWORK_DEBUG_LEVEL >= NW_ALL_DISPLAY) {
@@ -272,4 +271,69 @@ int start_server(int socket,
 			}
 		}
 	}
+}
+
+// Serializacion
+t_paquete* crear_paquete(MessageType tipo)
+{
+    t_paquete* paquete = malloc(sizeof(t_paquete));
+    paquete->header = malloc(sizeof(MessageHeader))
+    paquete->header->type = tipo;
+    paquete->header->data_size = 0;
+    paquete->stream = NULL;
+    return paquete;
+}
+
+void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio)
+{
+	//valor = "hola"
+	//tamanio = 5(4 del "hola" mas caracter terminador)
+	//paquete->stream == NULL
+	//paquete->stream length = 0
+	//paquete->header->data_size == 0
+	paquete->stream = realloc(paquete->stream, paquete->header->data_size + tamanio + sizeof(int));
+	//paquete->stream length == 0 + 5 + 1
+
+	memcpy(paquete->stream + paquete->header->data_size, &tamanio, sizeof(int));
+	//paquete->stream == 5
+	memcpy(pauete->stream + paquete->header->data_size + sizeof(int), valor, tamanio);
+	//paquete->stream == 5hola
+
+	paquete->header->data_size += tamanio + sizeof(int);
+	//paquete->header->data_size == 6
+}
+
+int send_serialized(t_paquete* paquete, int socket_cliente){
+	int bytes = paquete->header->data_size + 2*sizeof(int);
+	void* a_enviar = serializar_paquete(paquete, bytes);
+
+	int sent;
+
+	if((sent = send(socket_cliente, a_enviar, bytes, 0)) == -1){
+		printf("Error en el envio");
+	}
+
+	free(a_enviar);
+	return sent
+}
+
+void* serializar_paquete(t_paquete* paquete, int bytes)
+{
+	void * serialized = malloc(bytes);
+	int desplazamiento = 0;
+
+	memcpy(serialized + desplazamiento, &(paquete->header->type), sizeof(int));
+	desplazamiento+= sizeof(int);
+	memcpy(serialized + desplazamiento, &(paquete->header->data_size), sizeof(int));
+	desplazamiento+= sizeof(int);
+	memcpy(serialized + desplazamiento, paquete->stream, paquete->header->data_size);
+
+	return serialized;
+}
+
+void eliminar_paquete(t_paquete* paquete){
+	free(paquete->header->type);
+	free(paquete->header);
+	free(paquete->stream);
+	free(paquete);
 }

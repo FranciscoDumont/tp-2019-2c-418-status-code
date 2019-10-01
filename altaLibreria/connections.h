@@ -1,5 +1,5 @@
-#ifndef DALIBRARY_MAIN_H_
-#define DALIBRARY_MAIN_H_
+#ifndef ALTALIBRERIA_CONNECTIONS_H_
+#define ALTALIBRERIA_CONNECTIONS_H_
 
 #define MAX_CONN 40
 #define null NULL
@@ -41,5 +41,11 @@ int start_server(int socket,
 		void (*new_connection)(int fd, char * ip, int port),
 		void (*lost_connection)(int fd, char * ip, int port),
 		void (*incoming_message)(int fd, char * ip, int port, MessageHeader * header));
+
+t_paquete* crear_paquete(MessageType tipo);
+void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio);
+int send_serialized(t_paquete* paquete, int socket_cliente);
+void* serializar_paquete(t_paquete* paquete, int bytes);
+void eliminar_paquete(t_paquete* paquete);
 
 #endif

@@ -6,7 +6,6 @@
 
 int main(){
     printf("Modulo que hace cosas locas\n");
-    printf("Creo un hilo que al que le voy a pasar una funcion que inicia un servidor y se queda esperando por clientes\n");
     //pthread_t hiloLoco;
     //serverStart(&hiloLoco);
     serverFunction();
@@ -30,10 +29,11 @@ void serverFunction(){
     void lost(int fd, char * ip, int port){}
     void incoming(int fd, char * ip, int port, MessageHeader * headerStruct){
         printf("Esperando mensaje...\n");
+        printf("Tamaño de mensaje a recibir: %i\n", headerStruct->data_size);
         int size = headerStruct->data_size;
         MessageType header = headerStruct->type;
-        char *message = malloc(sizeof(char)*size);
-        if(receive_data(fd, message, size) == -1){
+        char *message = malloc(size);
+        if(receive_data(fd, (void *)message, size) == -1){
             return;
         }
         printf("El mensaje recibido es.. %s\n", message);

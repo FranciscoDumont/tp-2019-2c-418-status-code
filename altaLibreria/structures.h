@@ -1,5 +1,5 @@
-#ifndef DALIBRARY_STRUCTURES_H_
-#define DALIBRARY_STRUCTURES_H_
+#ifndef ALTALIBRERIA_STRUCTURES_H_
+#define ALTALIBRERIA_STRUCTURES_H_
 #define IP_LENGTH 20
 
 #include "connections.h"
@@ -13,7 +13,7 @@ NetworkDebugLevel NETWORK_DEBUG_LEVEL = NW_NO_DISPLAY;
 
 typedef enum _MessageType {
 	ABC
-	//TODO: Agregar nuestros headers
+	//TODO: Agregar nuestros headers(tipos de mensajes a enviar)
 
 } MessageType;
 
@@ -23,11 +23,10 @@ typedef struct _MessageHeader {
 } MessageHeader;
 
 
-typedef struct _Paquete
-{
+typedef struct {
 	MessageHeader header;
 	void* stream;
-} Paquete;
+} t_paquete;
 
 
-#endif /* DALIBRARY_STRUCTURES_H_ */
+#endif /* ALTALIBRERIA_STRUCTURES_H_ */

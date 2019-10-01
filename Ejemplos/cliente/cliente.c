@@ -3,9 +3,6 @@
 //
 
 #include "cliente.h"
-#include <altaLibreria/connections.h>
-#include <altaLibreria/structures.h>
-#include <string.h>
 
 int main(){
     //Creo un socket
@@ -21,6 +18,7 @@ int main(){
         printf("EL connect anda bien ::E \n");
     }
 
+    printf("Escriba un mensaje a enviar: ");
     //Ingreso el mensaje a enviar
     scanf("%s",mensaje);
 
@@ -29,13 +27,13 @@ int main(){
     if(-1 == resultado){
         printf("Error envio ::NOT FOUND\n");
     }else {
-        printf("Byts eviados: %d ::E\n", resultado);
+        printf("Bytes enviados: %d ::E\n", resultado);
     }
 
     //Recibo datos del servidor
     //Primero recibo el encabezado y el tamanio ya que son datos de tamaño fijo
     MessageHeader* buffer_header = malloc(sizeof(MessageHeader));
-    if(-1 == receive_header(socket_servidor,buffer_header)){
+    if(-1 == receive_header(socket_servidor, buffer_header)){
         printf("Error al recibir header ::NOT FOUND\n");
     }else {
         printf("Header recibido:\n type: %d\n size : %d ::E\n", buffer_header->type,buffer_header->data_size);
