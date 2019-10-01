@@ -22,4 +22,12 @@ typedef struct _MessageHeader {
 	int data_size;
 } MessageHeader;
 
+
+typedef struct _Paquete
+{
+	MessageHeader header;
+	void* stream;
+} Paquete;
+
+
 #endif /* DALIBRARY_STRUCTURES_H_ */
