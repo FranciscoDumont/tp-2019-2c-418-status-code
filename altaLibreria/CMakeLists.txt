@@ -3,6 +3,8 @@ project(altaLibreria C)
 
 set(CMAKE_C_STANDARD 99)
 
+include_directories("/usr/include/commons" "/usr/include/readline")
+
 add_library(altaLibreria SHARED connections.c connections.h structures.h)
 
 install(TARGETS altaLibreria DESTINATION /usr/lib)

@@ -150,7 +150,7 @@ int receive_header(int source, MessageHeader * buffer) {
 
 int receive_data(int source, void * buffer, int data_size) {
 	int rec;
-	rec = recv(source, buffer, sizeof(data_size), 0);
+	rec = recv(source, buffer, data_size, 0);
 	if (rec > 0) {
 		if(NETWORK_DEBUG_LEVEL >= NW_ALL_DISPLAY) {
 			custom_print("[NETWORK_INFO][DATA_RECIEVED_FROM_%d_(%d_bytes)]\n", source, rec);
