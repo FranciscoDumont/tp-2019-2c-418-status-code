@@ -7,7 +7,8 @@
 
 #include <altaLibreria/connections.h>
 #include <altaLibreria/structures.h>
-#include <pthread.h>
+#include <commons/collections/list.h>
+#include <string.h>
 
 void serverFunction();
 

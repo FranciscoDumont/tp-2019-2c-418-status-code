@@ -22,12 +22,13 @@ int main(){
     //Ingreso el mensaje a enviar
     scanf("%s",mensaje);
 
-    //Envio el mensaje con send_data
-    int resultado = send_data(socket_servidor, ABC, strlen(mensaje), mensaje);
-    if(-1 == resultado){
-        printf("Error envio ::NOT FOUND\n");
-    }else {
-        printf("Bytes enviados: %d ::E\n", resultado);
+    t_paquete *package = crear_paquete(ABC);
+    agregar_a_paquete(package, (void*) mensaje, strlen(mensaje) + 1);
+
+    if(send_package(package, socket_servidor) == -1){
+        printf("Error en el envio...\n");
+    } else {
+        printf("Mensaje enviado\n");
     }
 
     //Recibo datos del servidor
@@ -39,19 +40,28 @@ int main(){
         printf("Header recibido:\n type: %d\n size : %d ::E\n", buffer_header->type,buffer_header->data_size);
     }
 
-    //Despues recibo los datos usando la informacion del header
-    char* buffer_data = malloc(buffer_header->data_size);
-    if(-1 == receive_data(socket_servidor,(void*) buffer_data,buffer_header->data_size)){
-        printf("Error al recibir datos ::NOT FOUND\n");
-    }else{
-        printf("dato recibido:%s\n",buffer_data);
+    t_list *cosas = receive_package(socket_servidor, buffer_header);
+
+    switch (buffer_header->type){
+        case ABC:
+        {
+            ;
+            char *mensaje = (char*)list_get(cosas, 0);
+            printf("Mensaje recibido:%s\n", mensaje);
+            break;
+        }
+        default:
+        {
+            printf("Operacion desconocida. No quieras meter la pata");
+            break;
+        }
     }
 
     //Libero el socket
     close_socket(socket_servidor);
 
-    free(buffer_data);
-    free(mensaje);
+//    free(buffer_data);
+    //free(mensaje);
 
     return 0;
 }

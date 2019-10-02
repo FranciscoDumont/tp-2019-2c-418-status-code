@@ -277,7 +277,7 @@ int start_server(int socket,
 t_paquete* crear_paquete(MessageType tipo)
 {
     t_paquete* paquete = malloc(sizeof(t_paquete));
-    paquete->header = malloc(sizeof(MessageHeader))
+    paquete->header = (MessageHeader *)malloc(sizeof(MessageHeader));
     paquete->header->type = tipo;
     paquete->header->data_size = 0;
     paquete->stream = NULL;
@@ -296,14 +296,14 @@ void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio)
 
 	memcpy(paquete->stream + paquete->header->data_size, &tamanio, sizeof(int));
 	//paquete->stream == 5
-	memcpy(pauete->stream + paquete->header->data_size + sizeof(int), valor, tamanio);
+	memcpy(paquete->stream + paquete->header->data_size + sizeof(int), valor, tamanio);
 	//paquete->stream == 5hola
 
 	paquete->header->data_size += tamanio + sizeof(int);
 	//paquete->header->data_size == 6
 }
 
-int send_serialized(t_paquete* paquete, int socket_cliente){
+int send_package(t_paquete* paquete, int socket_cliente){
 	int bytes = paquete->header->data_size + 2*sizeof(int);
 	void* a_enviar = serializar_paquete(paquete, bytes);
 
@@ -314,7 +314,7 @@ int send_serialized(t_paquete* paquete, int socket_cliente){
 	}
 
 	free(a_enviar);
-	return sent
+	return sent;
 }
 
 void* serializar_paquete(t_paquete* paquete, int bytes)
@@ -332,8 +332,28 @@ void* serializar_paquete(t_paquete* paquete, int bytes)
 }
 
 void eliminar_paquete(t_paquete* paquete){
-	free(paquete->header->type);
+//	free(paquete->header->type);
 	free(paquete->header);
 	free(paquete->stream);
 	free(paquete);
+}
+
+t_list* receive_package(int socket_cliente, MessageHeader *header){
+    int size = header->data_size;
+    int desplazamiento = 0;
+    void * buffer = malloc(size);
+    recv(socket_cliente, buffer, size, MSG_WAITALL);
+    t_list* valores = list_create();
+    int tamanio;
+    while(desplazamiento < size)
+    {
+        memcpy(&tamanio, buffer + desplazamiento, sizeof(int));
+        desplazamiento+=sizeof(int);
+        char* valor = malloc(tamanio);
+        memcpy(valor, buffer+desplazamiento, tamanio);
+        desplazamiento+=tamanio;
+        list_add(valores, valor);
+    }
+    free(buffer);
+    return valores;
 }

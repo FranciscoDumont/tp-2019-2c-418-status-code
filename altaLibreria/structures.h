@@ -24,7 +24,7 @@ typedef struct _MessageHeader {
 
 
 typedef struct {
-	MessageHeader header;
+	MessageHeader *header;
 	void* stream;
 } t_paquete;
 

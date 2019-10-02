@@ -7,6 +7,7 @@
 
 #include <altaLibreria/connections.h>
 #include <altaLibreria/structures.h>
+#include <commons/collections/list.h>
 #include <string.h>
 
 #endif //TP_2019_2C_418_STATUS_CODE_CLIENTE_H
