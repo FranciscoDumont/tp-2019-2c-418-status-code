@@ -1,6 +1,4 @@
-#include "library.h"
-
-#include <stdio.h>
+#include "libSuse.h"
 
 void hello(void) {
     printf("Hello, World!\n");
