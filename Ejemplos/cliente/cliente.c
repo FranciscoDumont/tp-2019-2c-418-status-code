@@ -22,8 +22,8 @@ int main(){
     //Ingreso el mensaje a enviar
     scanf("%s",mensaje);
 
-    t_paquete *package = crear_paquete(ABC);
-    agregar_a_paquete(package, (void*) mensaje, strlen(mensaje) + 1);
+    t_paquete *package = create_package(ABC);
+    add_to_package(package, (void*) mensaje, strlen(mensaje) + 1);
 
     if(send_package(package, socket_servidor) == -1){
         printf("Error en el envio...\n");
@@ -59,9 +59,8 @@ int main(){
 
     //Libero el socket
     close_socket(socket_servidor);
-
-//    free(buffer_data);
-    //free(mensaje);
+    free(package);
+    free(buffer_header);
 
     return 0;
 }
