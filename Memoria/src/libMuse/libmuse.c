@@ -9,8 +9,8 @@
      * @return La dirección de la memoria reservada.
      */
 uint32_t muse_alloc(uint32_t tam) {
-    uint32_t *concat = malloc(sizeof(tam));
-    return *concat;
+    uint32_t *reserved = malloc(sizeof(tam));
+    return *reserved;
 }
 
 /**

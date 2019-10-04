@@ -4,11 +4,14 @@
 #include "libmuse.h"
 
 int main() {
-    uint32_t tam = 2;
-    uint32_t *dir = muse_alloc(tam);
+    uint32_t tam = sizeof(int);
+    uint32_t dir = muse_alloc(tam);
+    //dir = 24;
     printf("Estoy imprimiendo el valor de tam: %d\n", tam);
     printf("Estoy imprimiendo el valor de dir: %d\n", dir);
-    muse_free(&dir);
+    muse_free(dir);
+    //printf("Estoy imprimiendo el valor de dir: %d\n", dir);
+    printf("Hola");
 
     return 0;
 }
