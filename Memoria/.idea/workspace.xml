@@ -13,6 +13,8 @@
   <component name="ChangeListManager">
     <list default="true" id="a8cdba0e-b31b-49dc-ae7d-d005a02e5d12" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Muse/main.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/Muse/main.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/libMuse/libmuse.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/libMuse/libmuse.c" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -38,7 +40,7 @@
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../practica-c/ejercicio-1" />
     <property name="settings.editor.selected.configurable" value="configurable.group.appearance" />
   </component>
   <component name="RecentsManager">
@@ -99,7 +101,7 @@
       <workItem from="1569938898680" duration="760000" />
       <workItem from="1569973850688" duration="3144000" />
       <workItem from="1570222365046" duration="640000" />
-      <workItem from="1570225191680" duration="372000" />
+      <workItem from="1570225191680" duration="2457000" />
     </task>
     <servers />
   </component>

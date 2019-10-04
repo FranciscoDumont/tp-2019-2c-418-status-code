@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <commons/memory.h>
 
 /**
      * Reserva una porción de memoria contígua de tamaño `tam`.
@@ -29,5 +30,9 @@ void muse_free(uint32_t dir) {
     * @return Si pasa un error, retorna -1. Si la operación se realizó correctamente, retorna 0.
     */
 int muse_get(void* dst, uint32_t src, size_t n) {
-
+    if(memcpy(dst, &src, n) == dst) {
+        return 0;
+    } else {
+        return -1;
+    }
 }
