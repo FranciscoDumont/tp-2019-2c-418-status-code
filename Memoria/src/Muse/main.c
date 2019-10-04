@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "libmuse.h"
+#include <commons/memory.h>
 
 int main() {
     uint32_t tam = sizeof(int);
