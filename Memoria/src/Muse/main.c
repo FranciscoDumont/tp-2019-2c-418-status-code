@@ -11,7 +11,9 @@ int main() {
     printf("Estoy imprimiendo el valor de dir: %d\n", dir);
     muse_free(dir);
     //printf("Estoy imprimiendo el valor de dir: %d\n", dir);
-    printf("Hola");
+    int result; // = muse_cpy(tam, &dir, 4);
+    printf("%d\n", result =  muse_cpy(tam, &dir, 4));
+    printf("%d\n", tam);
 
     return 0;
 }

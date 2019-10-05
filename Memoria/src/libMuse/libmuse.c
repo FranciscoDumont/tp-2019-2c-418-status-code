@@ -30,7 +30,7 @@ void muse_free(uint32_t dir) {
     * @return Si pasa un error, retorna -1. Si la operación se realizó correctamente, retorna 0.
     */
 int muse_cpy(uint32_t dst, void* src, int n) {
-    if(memcpy(&dst, &src, n) == dst) {
+    if(memcpy(&dst, &src, n) == &dst) {
         return 0;
     } else {
         return -1;
