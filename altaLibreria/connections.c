@@ -92,6 +92,7 @@ int close_socket(int socket) {
 	return 0;
 }
 
+//--DEPRECATED
 int send_data(int destination, MessageType type, int data_size, void * data_stream) {
 	MessageHeader * header = malloc(sizeof(MessageHeader));
 	int sent, header_sent, data_sent;
@@ -147,6 +148,7 @@ int receive_header(int source, MessageHeader * buffer) {
 	return rec;
 }
 
+//--DEPRECATED
 int receive_data(int source, void * buffer, int data_size) {
 	int rec;
 	rec = recv(source, buffer, data_size, 0);
@@ -274,7 +276,7 @@ int start_server(int socket,
 }
 
 // Serializacion
-t_paquete* crear_paquete(MessageType tipo)
+t_paquete* create_package(MessageType tipo)
 {
     t_paquete* paquete = malloc(sizeof(t_paquete));
     paquete->header = (MessageHeader *)malloc(sizeof(MessageHeader));
@@ -284,7 +286,7 @@ t_paquete* crear_paquete(MessageType tipo)
     return paquete;
 }
 
-void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio)
+void add_to_package(t_paquete* paquete, void* valor, int tamanio)
 {
 	//valor = "hola"
 	//tamanio = 5(4 del "hola" mas caracter terminador)
@@ -305,7 +307,7 @@ void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio)
 
 int send_package(t_paquete* paquete, int socket_cliente){
 	int bytes = paquete->header->data_size + 2*sizeof(int);
-	void* a_enviar = serializar_paquete(paquete, bytes);
+	void* a_enviar = serialize_package(paquete, bytes);
 
 	int sent;
 
@@ -317,7 +319,7 @@ int send_package(t_paquete* paquete, int socket_cliente){
 	return sent;
 }
 
-void* serializar_paquete(t_paquete* paquete, int bytes)
+static void* serialize_package(t_paquete* paquete, int bytes)
 {
 	void * serialized = malloc(bytes);
 	int desplazamiento = 0;
@@ -331,8 +333,7 @@ void* serializar_paquete(t_paquete* paquete, int bytes)
 	return serialized;
 }
 
-void eliminar_paquete(t_paquete* paquete){
-//	free(paquete->header->type);
+void free_package(t_paquete* paquete){
 	free(paquete->header);
 	free(paquete->stream);
 	free(paquete);

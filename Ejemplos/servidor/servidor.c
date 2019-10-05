@@ -38,8 +38,8 @@ void serverFunction(){
                     ;
                     char *mensaje = (char*)list_get(cosas, 0);
                     printf("Mensaje recibido:%s\n", mensaje);
-                    t_paquete *package = crear_paquete(ABC);
-                    agregar_a_paquete(package, (void*) mensaje, strlen(mensaje) + 1);
+                    t_paquete *package = create_package(ABC);
+                    add_to_package(package, (void*) mensaje, strlen(mensaje) + 1);
                     if(send_package(package, fd) == -1){
                         printf("Error en el envio...\n");
                     } else {
