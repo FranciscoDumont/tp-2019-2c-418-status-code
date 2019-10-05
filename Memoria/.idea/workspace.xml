@@ -13,7 +13,6 @@
   <component name="ChangeListManager">
     <list default="true" id="a8cdba0e-b31b-49dc-ae7d-d005a02e5d12" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Muse/main.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/Muse/main.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/libMuse/libmuse.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/libMuse/libmuse.c" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -36,6 +35,7 @@
       </set>
     </option>
   </component>
+  <component name="OCFindUsagesOptions" text="true" ivars="false" properties="true" derivedClasses="false" />
   <component name="ProjectId" id="1RJ65RH2dAGIqOgeUiAVxi0JWc3" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="PropertiesComponent">
@@ -64,21 +64,12 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="CMake Application.Memoria">
+  <component name="RunManager">
     <configuration name="Memoria" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Memoria" TARGET_NAME="Memoria" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Memoria" RUN_TARGET_NAME="Memoria">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Muse" type="CMakeRunConfiguration" factoryName="Application" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Memoria" TARGET_NAME="Muse" CONFIG_NAME="Default" RUN_TARGET_PROJECT_NAME="Memoria" RUN_TARGET_NAME="Muse">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <list>
-      <item itemvalue="CMake Application.Muse" />
-      <item itemvalue="CMake Application.Memoria" />
-    </list>
   </component>
   <component name="SvnConfiguration">
     <configuration />
@@ -101,7 +92,7 @@
       <workItem from="1569938898680" duration="760000" />
       <workItem from="1569973850688" duration="3144000" />
       <workItem from="1570222365046" duration="640000" />
-      <workItem from="1570225191680" duration="2457000" />
+      <workItem from="1570225191680" duration="3019000" />
     </task>
     <servers />
   </component>
