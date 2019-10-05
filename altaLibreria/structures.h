@@ -12,8 +12,17 @@ typedef enum _NetworkDebugLevel {
 NetworkDebugLevel NETWORK_DEBUG_LEVEL = NW_NO_DISPLAY;
 
 typedef enum _MessageType {
-	ABC
-	//TODO: Agregar nuestros headers(tipos de mensajes a enviar)
+
+	//Header de ejemplos
+	ABC,
+
+	//Headers de SUSE
+	SUSE_INIT,
+	SUSE_CREATE,
+	SUSE_SCHEDULE_NEXT,
+	SUSE_WAIT,
+	SUSE_SIGNAL,
+	SUSE_JOIN
 
 } MessageType;
 
