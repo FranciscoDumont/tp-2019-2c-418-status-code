@@ -18,6 +18,7 @@ uint32_t muse_alloc(uint32_t tam) {
     * Libera una porción de memoria reservada.
     * @param dir La dirección de la memoria a reservar.
     */
+//TODO preguntar si esta bien esto, creo que no lo esta
 void muse_free(uint32_t dir) {
     free(dir);
 }
