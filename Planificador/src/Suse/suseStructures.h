@@ -6,7 +6,13 @@
 #define SUSE_SUSESTRUCTURES_H
 
 typedef struct _SUSEConfig {
-    int a;
+    int listen_port;
+    int metrics_timer;
+    int max_multiprog;
+    char** sem_ids;
+    char** sem_init;
+    char** sem_max;
+    double alpha_sjf;
 } SUSEConfig;
 
 #endif //SUSE_SUSESTRUCTURES_H
