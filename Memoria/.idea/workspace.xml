@@ -12,18 +12,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a8cdba0e-b31b-49dc-ae7d-d005a02e5d12" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/src/Muse/config" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/Muse/muse.c" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/Muse/muse.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Ejemplos/cliente/cliente.c" beforeDir="false" afterPath="$PROJECT_DIR$/../Ejemplos/cliente/cliente.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Ejemplos/servidor/servidor.c" beforeDir="false" afterPath="$PROJECT_DIR$/../Ejemplos/servidor/servidor.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/libMuse/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/libMuse/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Planificador/src/hilolay/CMakeLists.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Planificador/src/hilolay/library.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Planificador/src/hilolay/library.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../altaLibreria/connections.c" beforeDir="false" afterPath="$PROJECT_DIR$/../altaLibreria/connections.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../altaLibreria/connections.h" beforeDir="false" afterPath="$PROJECT_DIR$/../altaLibreria/connections.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Muse/main.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/Muse/main.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/libMuse/libmuse.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/libMuse/libmuse.c" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
