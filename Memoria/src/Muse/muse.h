@@ -12,6 +12,9 @@
 #ifndef TP_2019_2C_418_STATUS_CODE_MUSE_H
 #define TP_2019_2C_418_STATUS_CODE_MUSE_H
 
+
+t_log * logger;
+
 // Configuraciones
 typedef struct MEMConfig{
     int listen_port;

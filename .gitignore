@@ -54,6 +54,9 @@ dkms.conf
 # No estoy seguro si esta carpeta se va
 .idea/
 
+# Logs
+*.log
+
 #File Systems
 File System/src/SAC-cli/cmake-build-debug/
 File System/src/SAC-servidor/cmake-build-debug/
