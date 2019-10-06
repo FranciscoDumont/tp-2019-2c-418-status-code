@@ -11,14 +11,15 @@ int main() {
     //dir = 24;
     printf("Estoy imprimiendo el valor de tamCpy: %d\n", tamCpy);
     printf("Estoy imprimiendo el valor de dirCpy: %d\n", dirCpy);
-    //muse_free(dirCpy);
     //printf("Estoy imprimiendo el valor de dir: %d\n", dir);
     int resultMuseCpy = muse_cpy(tamCpy, &dirCpy, 4);
     printf("%d\n", resultMuseCpy);
     printf("%d\n", tamCpy);
     int resultMuseGet = muse_get(&tamGet, dirGet, 4);
+    muse_free(dirCpy);
     printf("%d\n", resultMuseGet);
     printf("%d\n", tamGet);
+    muse_free(dirGet);
 
     return 0;
 }
