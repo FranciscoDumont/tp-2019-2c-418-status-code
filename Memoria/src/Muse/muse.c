@@ -5,6 +5,17 @@ int main() {
     logger = log_create("muse.log", "MUSE", 1, LOG_LEVEL_TRACE);
     read_memory_config();
 
+    process_table = list_create();
+    segment_table = list_create();
+
+    cantidad_paginas_actuales = 0;
+    limite_paginas = config.memsize / obtener_tamanio_pagina();
+    mapa_memoria_size = limite_paginas;
+    mapa_memoria = calloc(limite_paginas,sizeof(int));
+    memoria_principal = malloc(config.memsize);
+    custom_print("Iniciando memoria de %d paginas\n", limite_paginas);
+    log_info(logger, "Se pueden almacenar %d páginas", limite_paginas);
+
     return 0;
 }
 

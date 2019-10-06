@@ -15,6 +15,23 @@
 
 t_log * logger;
 
+t_list* process_list;
+
+typedef struct {
+    int pid;
+    t_list* segments;
+} process_t;
+
+typedef struct {
+    int is_shared;
+    t_list* pages;
+} segment_t;
+
+typedef struct {
+    int presence_bit; // Para saber si esta en memoria principal
+    int modified_bit; // Para el algoritmo de reemplazo
+} page_t;
+
 // Configuraciones
 typedef struct MEMConfig{
     int listen_port;
