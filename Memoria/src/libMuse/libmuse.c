@@ -24,12 +24,27 @@ void muse_free(uint32_t dir) {
 }
 
 /**
-    * Copia una cantidad `n` de bytes desde una posición de memoria de MUSE a una `dst` local.
-    * @param dst Posición de memoria local con tamaño suficiente para almacenar `n` bytes.
-    * @param src Posición de memoria de MUSE de donde leer los `n` bytes.
-    * @param n Cantidad de bytes a copiar.
-    * @return Si pasa un error, retorna -1. Si la operación se realizó correctamente, retorna 0.
-    */
+ * Copia una cantidad `n` de bytes desde una posición de memoria de MUSE a una `dst` local.
+ * @param dst Posición de memoria local con tamaño suficiente para almacenar `n` bytes.
+ * @param src Posición de memoria de MUSE de donde leer los `n` bytes.
+ * @param n Cantidad de bytes a copiar.
+ * @return Si pasa un error, retorna -1. Si la operación se realizó correctamente, retorna 0.
+ */
+int muse_get(void* dst, uint32_t src, size_t n) {
+    if(memcpy(&dst, &src, n) == &dst) {
+        return 0;
+    } else {
+        return -1;
+    }
+}
+
+/**
+     * Copia una cantidad `n` de bytes desde una posición de memoria local a una `dst` en MUSE.
+     * @param dst Posición de memoria de MUSE con tamaño suficiente para almacenar `n` bytes.
+     * @param src Posición de memoria local de donde leer los `n` bytes.
+     * @param n Cantidad de bytes a copiar.
+     * @return Si pasa un error, retorna -1. Si la operación se realizó correctamente, retorna 0.
+     */
 int muse_cpy(uint32_t dst, void* src, int n) {
     if(memcpy(&dst, &src, n) == &dst) {
         return 0;
