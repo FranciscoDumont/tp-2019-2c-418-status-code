@@ -46,8 +46,17 @@ cmake-build-*/
 # IntelliJ
 out/
 
+<<<<<<< HEAD
 # mpeltonen/sbt-idea plugin
 .idea_modules/
+=======
+# Logs
+*.log
+
+#File Systems
+File System/src/SAC-cli/cmake-build-debug/
+File System/src/SAC-servidor/cmake-build-debug/
+>>>>>>> master
 
 # JIRA plugin
 atlassian-ide-plugin.xml
