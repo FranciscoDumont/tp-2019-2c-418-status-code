@@ -2,19 +2,28 @@
 
 SUSEConfig config;
 t_log* logger;
+t_list* NEW;
+t_list* BLOCKED;
+t_list* EXIT;
+t_list* programs;
 
 int main() {
 
-    void* thread_server_error;
+    //Como esta ahora no tiene sentido crear un hilo solo para el servidor
+    void* server_thread_error;
+    void* metrics_thread_error;
     pthread_t server_thread;
+    pthread_t metrics_thread;
 
-    logger = iniciar_log();
+    start_log();
 
-    leerConfig();
+    read_config_options();
 
     pthread_create(&server_thread, NULL, server_function, NULL);
+    pthread_create(&metrics_thread, NULL, metrics_function, NULL);
 
-    pthread_join(server_thread, &thread_server_error);
+    pthread_join(server_thread, &server_thread_error);
+    pthread_join(server_thread, &metrics_thread_error);
 
     //TODO:Loguear el error del servidor
     //int server_error = (int) (intptr_t) thread_server_error;
@@ -22,11 +31,11 @@ int main() {
     return 0;
 }
 
-t_log* iniciar_log(){
-    return log_create("../suse.log", "suse", 1, LOG_LEVEL_INFO);
+void start_log(){
+    logger = log_create("../suse.log", "suse", 1, LOG_LEVEL_INFO);
 }
 
-void leerConfig(){
+void read_config_options(){
     t_config* config_file = config_create("../suse.config");
     config.listen_port = config_get_int_value(config_file, "LISTEN_PORT");
     config.metrics_timer = config_get_int_value(config_file, "METRICS_TIMER");
@@ -129,6 +138,18 @@ void* server_function(void * arg){
     }
     start_server(socket, &new, &lost, &incoming);
 }
+
+void* metrics_function(void* arg){
+    int timer = config.metrics_timer;
+    sleep(timer);
+    while(1){
+        generate_metrics();
+        sleep(timer);
+    }
+}
+
+//TODO:Implement
+void generate_metrics(){}
 
 void suse_init(int fd, char * ip, int port, MessageHeader * headerStruct){}
 

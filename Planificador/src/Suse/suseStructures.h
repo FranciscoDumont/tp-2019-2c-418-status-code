@@ -15,4 +15,15 @@ typedef struct _SUSEConfig {
     double alpha_sjf;
 } SUSEConfig;
 
+typedef struct _t_thread{
+    int identificador;
+    char* pid;
+} t_thread;
+
+typedef struct _t_programa{
+    char* identificador;
+    t_list* ready;
+    t_thread exec;
+} t_programa;
+
 #endif //SUSE_SUSESTRUCTURES_H
