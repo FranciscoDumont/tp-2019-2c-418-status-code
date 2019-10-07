@@ -5,9 +5,6 @@ set(CMAKE_C_STANDARD 99)
 
 include_directories("/usr/include/altaLibreria" "/usr/include/commons")
 
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
-
 add_executable(suse suse.c suse.h suseStructures.h)
 
-target_link_libraries(suse "/usr/lib/libaltaLibreria.so" "/usr/lib/libcommons.so" Threads::Threads)
+target_link_libraries(suse "/usr/lib/libaltaLibreria.so" "/usr/lib/libcommons.so" pthread)

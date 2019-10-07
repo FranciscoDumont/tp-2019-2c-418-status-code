@@ -29,7 +29,7 @@ int main() {
     pthread_join(server_thread, &server_thread_error);
     pthread_join(metrics_thread, &metrics_thread_error);
 
-    //TODO:Loguear el error del servidor
+    //TODO:Loggear el error del servidor
     //int server_error = (int) (intptr_t) thread_server_error;
 
     return 0;
@@ -77,6 +77,7 @@ void* server_function(void * arg){
     }
     void new(int fd, char * ip, int port){
         printf("Cliente conectado, IP:%s, PORT:%d\n", ip, port);
+        //TODO:crear las estructuras correspondientes al proceso?
     }
 
     void lost(int fd, char * ip, int port){
