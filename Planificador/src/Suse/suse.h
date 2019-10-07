@@ -8,6 +8,7 @@
 
 #include <commons/config.h>
 #include <commons/log.h>
+#include <commons/string.h>
 #include <altaLibreria/connections.h>
 #include <altaLibreria/structures.h>
 #include "suseStructures.h"
@@ -24,8 +25,17 @@ void* server_function(void* arg);
 //--Funcion que ejecuta la funcion encargada de generar las metricas cada cierto tiempo
 void* metrics_function(void* arg);
 
-//--Funcion que genera las metricas
+//--Funcion que genera y loggea las metricas
 void generate_metrics();
+
+//--Genero las metricas de cada hilo
+char* generate_thread_metrics();
+
+//--Genero las metricas de cada programa
+char* generate_program_metrics();
+
+//--Genero las metricas del sistema
+char* generate_system_metrics();
 
 //--Inicializa recursos de biblioteca?
 void suse_init(int fd, char * ip, int port, MessageHeader * headerStruct);

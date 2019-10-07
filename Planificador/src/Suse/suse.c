@@ -6,10 +6,10 @@ t_list* NEW;
 t_list* BLOCKED;
 t_list* EXIT;
 t_list* programs;
+pthread_mutex_t* mutex_logger;
 
 int main() {
 
-    //Como esta ahora no tiene sentido crear un hilo solo para el servidor
     void* server_thread_error;
     void* metrics_thread_error;
     pthread_t server_thread;
@@ -19,11 +19,12 @@ int main() {
 
     read_config_options();
 
+    pthread_mutex_init(mutex_logger, NULL);
     pthread_create(&server_thread, NULL, server_function, NULL);
     pthread_create(&metrics_thread, NULL, metrics_function, NULL);
 
     pthread_join(server_thread, &server_thread_error);
-    pthread_join(server_thread, &metrics_thread_error);
+    pthread_join(metrics_thread, &metrics_thread_error);
 
     //TODO:Loguear el error del servidor
     //int server_error = (int) (intptr_t) thread_server_error;
@@ -140,16 +141,33 @@ void* server_function(void * arg){
 }
 
 void* metrics_function(void* arg){
-    int timer = config.metrics_timer;
-    sleep(timer);
     while(1){
+        sleep(config.metrics_timer);
         generate_metrics();
-        sleep(timer);
     }
 }
 
-//TODO:Implement
-void generate_metrics(){}
+void generate_metrics(){
+    char* metric_to_log = string_new();
+    char* thread_metrics = generate_thread_metrics();
+    string_append(&metric_to_log, thread_metrics);
+    char* program_metrics = generate_program_metrics();
+    string_append(&metric_to_log, program_metrics);
+    char* system_metrics = generate_system_metrics();
+    string_append(&metric_to_log, system_metrics);
+
+    pthread_mutex_lock(mutex_logger);
+    log_info(logger, metric_to_log);
+    pthread_mutex_unlock(mutex_logger);
+
+    free(metric_to_log);
+}
+
+char* generate_thread_metrics(){}
+
+char* generate_program_metrics(){}
+
+char* generate_system_metrics(){}
 
 void suse_init(int fd, char * ip, int port, MessageHeader * headerStruct){}
 

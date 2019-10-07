@@ -16,13 +16,13 @@ typedef struct _SUSEConfig {
 } SUSEConfig;
 
 typedef struct _t_thread{
-    int identificador;
-    char* pid;
+    int identificador; //TID?
+    char* pid; //Process Id
 } t_thread;
 
 typedef struct _t_programa{
-    char* identificador;
-    t_list* ready;
+    char* identificador; //IP::PORT::PID?
+    t_list* ready; //Thread list
     t_thread exec;
 } t_programa;
 
