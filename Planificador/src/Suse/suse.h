@@ -19,6 +19,9 @@ void start_log();
 //--Leo las configuraciones del archivo y las cargo en el struct SUSEConfig
 void read_config_options();
 
+//--Inicializo las listas de estados
+void initialize_structures();
+
 //--Funcion encargada de definir las tres funciones para el servidor
 void* server_function(void* arg);
 

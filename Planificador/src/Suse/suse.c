@@ -19,6 +19,9 @@ int main() {
 
     read_config_options();
 
+    initialize_structures();
+
+    mutex_logger = malloc(sizeof(pthread_mutex_t*));
     pthread_mutex_init(mutex_logger, NULL);
     pthread_create(&server_thread, NULL, server_function, NULL);
     pthread_create(&metrics_thread, NULL, metrics_function, NULL);
@@ -52,6 +55,13 @@ void read_config_options(){
         config.max_multiprog,
         config.alpha_sjf);
     config_destroy(config_file);
+}
+
+void initialize_structures(){
+    NEW = list_create();
+    BLOCKED = list_create();
+    EXIT = list_create();
+    programs = list_create();
 }
 
 void* server_function(void * arg){
@@ -149,12 +159,17 @@ void* metrics_function(void* arg){
 
 void generate_metrics(){
     char* metric_to_log = string_new();
+    char* separator = "\n";
+    string_append(&metric_to_log, separator);
     char* thread_metrics = generate_thread_metrics();
     string_append(&metric_to_log, thread_metrics);
+    string_append(&metric_to_log, separator);
     char* program_metrics = generate_program_metrics();
     string_append(&metric_to_log, program_metrics);
+    string_append(&metric_to_log, separator);
     char* system_metrics = generate_system_metrics();
     string_append(&metric_to_log, system_metrics);
+    string_append(&metric_to_log, separator);
 
     pthread_mutex_lock(mutex_logger);
     log_info(logger, metric_to_log);
