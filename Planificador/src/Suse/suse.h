@@ -9,6 +9,7 @@
 #include <commons/config.h>
 #include <commons/log.h>
 #include <commons/string.h>
+#include <commons/collections/dictionary.h>
 #include <altaLibreria/connections.h>
 #include <altaLibreria/structures.h>
 #include "suseStructures.h"
@@ -24,6 +25,9 @@ void initialize_structures();
 
 //--Funcion encargada de definir las tres funciones para el servidor
 void* server_function(void* arg);
+
+//--Creo un nuevo proceso y lo cargo en la lista de procesos
+void create_new_program(char* ip, int port);
 
 //--Funcion que ejecuta la funcion encargada de generar las metricas cada cierto tiempo
 void* metrics_function(void* arg);
@@ -72,5 +76,8 @@ void suse_signal(int fd, char * ip, int port, MessageHeader * headerStruct);
 //--Recibe TID
 //--Devuelve int, mismo TID?
 void suse_join(int fd, char * ip, int port, MessageHeader * headerStruct);
+
+//--Genero un identificador de proceso en base a la ip y al puerto desde los que se conecta el cliente
+char* generate_pid(char* ip, int port);
 
 #endif //SUSE_H

@@ -2,9 +2,11 @@
 
 SUSEConfig config;
 t_log* logger;
+//Aplica a los 3, dictionary(tid-hilo)
 t_list* NEW;
 t_list* BLOCKED;
 t_list* EXIT;
+//Dictionary(identificador-programa)?
 t_list* programs;
 pthread_mutex_t* mutex_logger;
 
@@ -77,7 +79,8 @@ void* server_function(void * arg){
     }
     void new(int fd, char * ip, int port){
         printf("Cliente conectado, IP:%s, PORT:%d\n", ip, port);
-        //TODO:crear las estructuras correspondientes al proceso?
+        //TODO:crear un nuevo hilo para cada proceso?
+        create_new_program(ip, port);
     }
 
     void lost(int fd, char * ip, int port){
@@ -151,6 +154,14 @@ void* server_function(void * arg){
     start_server(socket, &new, &lost, &incoming);
 }
 
+void create_new_program(char* ip, int port){
+    t_programa* nuevo_programa = (t_programa*)malloc(sizeof(t_programa));
+    nuevo_programa->identificador = generate_pid(ip, port);
+    nuevo_programa->ready = list_create();
+    nuevo_programa->exec = NULL;
+    //TODO:agregarlo a la lista/diccionario de procesos
+}
+
 void* metrics_function(void* arg){
     while(1){
         sleep(config.metrics_timer);
@@ -196,3 +207,13 @@ void suse_wait(int fd, char * ip, int port, MessageHeader * headerStruct){}
 void suse_signal(int fd, char * ip, int port, MessageHeader * headerStruct){}
 
 void suse_join(int fd, char * ip, int port, MessageHeader * headerStruct){}
+
+char* generate_pid(char* ip, int port){
+    char* new_pid = string_new();
+    char* separator = "::";
+    char* string_port = string_itoa(port);
+    string_append(&new_pid, ip);
+    string_append(&new_pid, separator);
+    string_append(&new_pid, string_port);
+    return new_pid;
+}
