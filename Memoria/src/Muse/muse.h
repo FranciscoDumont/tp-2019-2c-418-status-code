@@ -8,6 +8,8 @@
 #include<commons/log.h>
 #include<commons/string.h>
 #include<commons/config.h>
+#include <commons/collections/list.h>
+
 
 #ifndef TP_2019_2C_418_STATUS_CODE_MUSE_H
 #define TP_2019_2C_418_STATUS_CODE_MUSE_H
@@ -15,7 +17,9 @@
 
 t_log * logger;
 
-t_list* process_list;
+t_list* process_table;
+
+void* main_memory;
 
 typedef struct {
     int pid;
