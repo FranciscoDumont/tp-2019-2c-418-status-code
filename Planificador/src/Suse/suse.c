@@ -84,6 +84,8 @@ void* server_function(void * arg){
         printf("Error al bindear el socket");
         return (void *) -2;
     }
+
+    //--Funcion que se ejecuta cuando se conecta un nuevo programa
     void new(int fd, char * ip, int port){
         pthread_mutex_lock(&mutex_logger);
         log_trace(logger, "Se conecto un nuevo programa, IP:%s, PORT:%d", ip, port);
@@ -98,12 +100,15 @@ void* server_function(void * arg){
         pthread_detach(new_program_thread);
     }
 
+    //--Funcion que se ejecuta cuando se pierde la conexion con un cliente
     void lost(int fd, char * ip, int port){
         pthread_mutex_lock(&mutex_logger);
         log_trace(logger, "El programa en IP:%s, PORT:%d ha muerto", ip, port);
         pthread_mutex_unlock(&mutex_logger);
         //TODO:remove program from programs list
     }
+
+    //--funcion que se ejecuta cuando se recibe un nuevo mensaje de un cliente ya conectado
     void incoming(int fd, char * ip, int port, MessageHeader * headerStruct){
         printf("Esperando mensaje...\n");
 

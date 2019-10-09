@@ -13,7 +13,6 @@ void suse_init(){
         printf("Error al crear el socket\n");
         return;
     }
-    //printf("IP: %s\n", config->ip);
     if(-1 == connect_socket(server_socket, config->ip, config->talk_port)){
         printf("Error al conectarse al servidor\n");
         return;
@@ -24,11 +23,9 @@ void suse_init(){
 
 void read_config_options(){
     t_config* config_file = config_create("../libsuse.config");
-    //printf("IP: %s\n", config_get_string_value(config_file, "IP"));
-    config->ip = config_get_string_value(config_file, "IP");
+    config->ip = strcpy(config->ip, config_get_string_value(config_file, "IP"));
     config->talk_port = config_get_int_value(config_file, "TALK_PORT");
-    //TODO:averiguar porque si destruyo el archivo de abajo como corresponde, me rompe el string que contiene la ip
-    //config_destroy(config_file);
+    config_destroy(config_file);
 }
 
 int suse_create(int tid){

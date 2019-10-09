@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 
 #include <hilolay/alumnos.h>
 #include <commons/config.h>
