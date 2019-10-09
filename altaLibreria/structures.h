@@ -17,12 +17,12 @@ typedef enum _MessageType {
 	ABC,
 
 	//Headers de SUSE
-	SUSE_INIT,
 	SUSE_CREATE,
 	SUSE_SCHEDULE_NEXT,
 	SUSE_WAIT,
 	SUSE_SIGNAL,
-	SUSE_JOIN
+	SUSE_JOIN,
+	SUSE_RETURN
 
 } MessageType;
 

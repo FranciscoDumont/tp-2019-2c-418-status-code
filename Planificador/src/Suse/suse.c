@@ -1,14 +1,14 @@
 #include "suse.h"
 
-SUSEConfig config;
+SUSEConfig* config;
 t_log* logger;
 //Aplica a los 3, dictionary(tid-hilo)
 t_list* NEW;
 t_list* BLOCKED;
 t_list* EXIT;
-//Dictionary(identificador-programa)?
-t_list* programs;
-pthread_mutex_t* mutex_logger;
+t_dictionary* programs;
+pthread_mutex_t mutex_logger;
+pthread_mutex_t mutex_programs;
 
 int main() {
 
@@ -19,12 +19,10 @@ int main() {
 
     start_log();
 
-    read_config_options();
-
     initialize_structures();
 
-    mutex_logger = malloc(sizeof(pthread_mutex_t*));
-    pthread_mutex_init(mutex_logger, NULL);
+    read_config_options();
+
     pthread_create(&server_thread, NULL, server_function, NULL);
     pthread_create(&metrics_thread, NULL, metrics_function, NULL);
 
@@ -38,36 +36,45 @@ int main() {
 }
 
 void start_log(){
-    logger = log_create("../suse.log", "suse", 1, LOG_LEVEL_INFO);
+    logger = log_create("../suse.log", "suse", 1, LOG_LEVEL_TRACE);
 }
 
 void read_config_options(){
     t_config* config_file = config_create("../suse.config");
-    config.listen_port = config_get_int_value(config_file, "LISTEN_PORT");
-    config.metrics_timer = config_get_int_value(config_file, "METRICS_TIMER");
-    config.max_multiprog = config_get_int_value(config_file, "MAX_MULTIPROG");
-    config.sem_ids = config_get_array_value(config_file, "SEM_IDS");
-    config.sem_init = config_get_array_value(config_file, "SEM_INIT");
-    config.sem_max = config_get_array_value(config_file, "SEM_MAX");
-    config.alpha_sjf = config_get_double_value(config_file, "ALPHA_SJF");
-    log_info(logger,
+    config->listen_port = config_get_int_value(config_file, "LISTEN_PORT");
+    config->metrics_timer = config_get_int_value(config_file, "METRICS_TIMER");
+    config->max_multiprog = config_get_int_value(config_file, "MAX_MULTIPROG");
+    config->sem_ids = config_get_array_value(config_file, "SEM_IDS");
+    config->sem_init = config_get_array_value(config_file, "SEM_INIT");
+    config->sem_max = config_get_array_value(config_file, "SEM_MAX");
+    config->alpha_sjf = config_get_double_value(config_file, "ALPHA_SJF");
+    log_trace(logger,
         "Configuración levantada: LISTEN_PORT: %d, METRICS_TIMER: %d, MAX_MULTIPROG: %d, ALPHA_SJF: %f.",
-        config.listen_port,
-        config.metrics_timer,
-        config.max_multiprog,
-        config.alpha_sjf);
+        config->listen_port,
+        config->metrics_timer,
+        config->max_multiprog,
+        config->alpha_sjf);
     config_destroy(config_file);
 }
 
 void initialize_structures(){
+    pthread_mutex_init(&mutex_logger, NULL);
+    pthread_mutex_init(&mutex_programs, NULL);
+    config = (SUSEConfig*)malloc(sizeof(SUSEConfig*));
+    config->sem_max = malloc(sizeof(char*));
+    config->sem_init = malloc(sizeof(char*));
+    config->sem_max = malloc(sizeof(char*));
     NEW = list_create();
     BLOCKED = list_create();
     EXIT = list_create();
-    programs = list_create();
+    programs = dictionary_create();
+    pthread_mutex_lock(&mutex_logger);
+    log_trace(logger, "Estructuras inicializadas...");
+    pthread_mutex_unlock(&mutex_logger);
 }
 
 void* server_function(void * arg){
-    int PORT = config.listen_port;
+    int PORT = config->listen_port;
     int socket;
     if((socket = create_socket()) == -1) {
         printf("Error al crear el socket");
@@ -78,13 +85,24 @@ void* server_function(void * arg){
         return (void *) -2;
     }
     void new(int fd, char * ip, int port){
-        printf("Cliente conectado, IP:%s, PORT:%d\n", ip, port);
-        //TODO:crear un nuevo hilo para cada proceso?
-        create_new_program(ip, port);
+        pthread_mutex_lock(&mutex_logger);
+        log_trace(logger, "Se conecto un nuevo programa, IP:%s, PORT:%d", ip, port);
+        pthread_mutex_unlock(&mutex_logger);
+        t_newProgramData* newProgram = malloc(sizeof(t_newProgramData*));
+        newProgram->ip = malloc(sizeof(char*));
+        newProgram->ip = ip;
+        newProgram->port = port;
+
+        pthread_t new_program_thread;
+        pthread_create(&new_program_thread, NULL, create_new_program, (void*)newProgram);
+        pthread_detach(new_program_thread);
     }
 
     void lost(int fd, char * ip, int port){
-        printf("El cliente conectado en IP:%s, PORT:%d, ha muerto...\n", ip, port);
+        pthread_mutex_lock(&mutex_logger);
+        log_trace(logger, "El programa en IP:%s, PORT:%d ha muerto", ip, port);
+        pthread_mutex_unlock(&mutex_logger);
+        //TODO:remove program from programs list
     }
     void incoming(int fd, char * ip, int port, MessageHeader * headerStruct){
         printf("Esperando mensaje...\n");
@@ -105,12 +123,6 @@ void* server_function(void * arg){
                 } else {
                     printf("Mensaje enviado\n");
                 }
-                break;
-            }
-            case SUSE_INIT:
-            {
-                printf("Iniciar\n");
-                suse_init(fd, ip, port, headerStruct);
                 break;
             }
             case SUSE_CREATE:
@@ -143,6 +155,12 @@ void* server_function(void * arg){
                 suse_join(fd, ip, port, headerStruct);
                 break;
             }
+            case SUSE_RETURN:
+            {
+                printf("Unir\n");
+                suse_return(fd, ip, port, headerStruct);
+                break;
+            }
             default:
             {
                 printf("Operacion desconocida. No quieras meter la pata\n");
@@ -151,20 +169,38 @@ void* server_function(void * arg){
         }
 
     }
+    pthread_mutex_lock(&mutex_logger);
+    log_trace(logger, "Hilo de servidor iniciado...");
+    pthread_mutex_unlock(&mutex_logger);
     start_server(socket, &new, &lost, &incoming);
 }
 
-void create_new_program(char* ip, int port){
+void* create_new_program(void* programaNuevoData){
+    t_newProgramData *newProgramData = (t_newProgramData*)programaNuevoData;
+    char* ip = newProgramData->ip;
+    int port = newProgramData->port;
+    char* PID = generate_pid(ip, port);
     t_programa* nuevo_programa = (t_programa*)malloc(sizeof(t_programa));
-    nuevo_programa->identificador = generate_pid(ip, port);
+    nuevo_programa->identificador = PID;
     nuevo_programa->ready = list_create();
-    nuevo_programa->exec = NULL;
-    //TODO:agregarlo a la lista/diccionario de procesos
+    nuevo_programa->exec = malloc(sizeof(t_thread*));
+
+    pthread_mutex_lock(&mutex_programs);
+    dictionary_put(programs, PID, (void*)nuevo_programa);
+    pthread_mutex_unlock(&mutex_programs);
+
+    pthread_mutex_lock(&mutex_logger);
+    log_trace(logger, "Nuevo programa agregado, PID:%s", PID);
+    log_trace(logger, "Nivel de multiprogramacion:%d", dictionary_size(programs));
+    pthread_mutex_unlock(&mutex_logger);
 }
 
 void* metrics_function(void* arg){
+    pthread_mutex_lock(&mutex_logger);
+    log_trace(logger, "Hilo de metricas iniciado...");
+    pthread_mutex_unlock(&mutex_logger);
     while(1){
-        sleep(config.metrics_timer);
+        sleep(config->metrics_timer);
         generate_metrics();
     }
 }
@@ -182,10 +218,11 @@ void generate_metrics(){
     char* system_metrics = generate_system_metrics();
     string_append(&metric_to_log, system_metrics);
     string_append(&metric_to_log, separator);
+    string_append(&metric_to_log, separator);
 
-    pthread_mutex_lock(mutex_logger);
+    pthread_mutex_lock(&mutex_logger);
     log_info(logger, metric_to_log);
-    pthread_mutex_unlock(mutex_logger);
+    pthread_mutex_unlock(&mutex_logger);
 
     free(metric_to_log);
 }
@@ -196,8 +233,6 @@ char* generate_program_metrics(){}
 
 char* generate_system_metrics(){}
 
-void suse_init(int fd, char * ip, int port, MessageHeader * headerStruct){}
-
 void suse_create(int fd, char * ip, int port, MessageHeader * headerStruct){}
 
 void suse_schedule_next(int fd, char * ip, int port, MessageHeader * headerStruct){}
@@ -207,6 +242,8 @@ void suse_wait(int fd, char * ip, int port, MessageHeader * headerStruct){}
 void suse_signal(int fd, char * ip, int port, MessageHeader * headerStruct){}
 
 void suse_join(int fd, char * ip, int port, MessageHeader * headerStruct){}
+
+void suse_return(int fd, char * ip, int port, MessageHeader * headerStruct){}
 
 char* generate_pid(char* ip, int port){
     char* new_pid = string_new();

@@ -27,7 +27,7 @@ void initialize_structures();
 void* server_function(void* arg);
 
 //--Creo un nuevo proceso y lo cargo en la lista de procesos
-void create_new_program(char* ip, int port);
+void* create_new_program(void* programaNuevoData);
 
 //--Funcion que ejecuta la funcion encargada de generar las metricas cada cierto tiempo
 void* metrics_function(void* arg);
@@ -43,10 +43,6 @@ char* generate_program_metrics();
 
 //--Genero las metricas del sistema
 char* generate_system_metrics();
-
-//--Inicializa recursos de biblioteca?
-//--Desaparece?
-void suse_init(int fd, char * ip, int port, MessageHeader * headerStruct);
 
 //--Esta función es invocada cuando se necesita crear un nuevo hilo, donde la función que
 //se pase por parámetro actuará como main del mismo, finalizando el hilo al terminar esa función
@@ -76,6 +72,9 @@ void suse_signal(int fd, char * ip, int port, MessageHeader * headerStruct);
 //--Recibe TID
 //--Devuelve int, mismo TID?
 void suse_join(int fd, char * ip, int port, MessageHeader * headerStruct);
+
+//--Da por finalizado al TID indicado. El thread actual pasará a estar EXIT.
+void suse_return(int fd, char * ip, int port, MessageHeader * headerStruct);
 
 //--Genero un identificador de proceso en base a la ip y al puerto desde los que se conecta el cliente
 char* generate_pid(char* ip, int port);

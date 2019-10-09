@@ -15,6 +15,11 @@ typedef struct _SUSEConfig {
     double alpha_sjf;
 } SUSEConfig;
 
+typedef struct _t_newProgramData{
+    char* ip;
+    int port;
+} t_newProgramData;
+
 typedef struct _t_thread{
     int identificador; //TID?
     char* pid; //Process Id
@@ -23,7 +28,7 @@ typedef struct _t_thread{
 typedef struct _t_programa{
     char* identificador; //IP::PORT::PID?
     t_list* ready; //Thread list
-    t_thread exec;
+    t_thread* exec;
 } t_programa;
 
 #endif //SUSE_SUSESTRUCTURES_H

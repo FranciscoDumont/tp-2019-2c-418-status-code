@@ -66,6 +66,7 @@ Memoria/src/Muse/cmake-build-debug/
 #Planificador
 Planificador/src/libSuse/cmake-build-debug/
 Planificador/src/Suse/cmake-build-debug/
+Planificador/src/libSuse/build
 
 #SharedLibrary
 SharedLibrary/cmake-build-debug/
