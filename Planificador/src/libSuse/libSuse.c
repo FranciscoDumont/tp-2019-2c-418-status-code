@@ -35,17 +35,13 @@ int suse_create(int tid){
     }
     //--Si la conexion no esta inicializada ocurrio algun problema durante la inicializacion, informar, salir
     if(!server_socket_initialized){
-        printf("Ocurrio algun problema al conectarnos con el servidor\n");
         //TODO:retornar?
+        return -1;
+    } else {
+
+        if (tid > max_tid) max_tid = tid;
+        return 0;
     }
-
-
-
-
-
-
-    if (tid > max_tid) max_tid = tid;
-    return 0;
 }
 
 int suse_schedule_next(void){

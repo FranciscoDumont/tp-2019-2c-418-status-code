@@ -22,13 +22,20 @@ typedef struct _t_newProgramData{
 
 typedef struct _t_thread{
     int identificador; //TID?
-    char* pid; //Process Id
+    char* pid; //identificador de programa
 } t_thread;
 
 typedef struct _t_programa{
-    char* identificador; //IP::PORT::PID?
+    char* identificador; //IP::PORT
     t_list* ready; //Thread list
     t_thread* exec;
 } t_programa;
+
+typedef struct _t_new_comm{
+    int fd;
+    char* ip;
+    int port;
+    t_list* received;
+} t_new_comm;
 
 #endif //SUSE_SUSESTRUCTURES_H

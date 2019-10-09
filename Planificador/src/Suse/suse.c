@@ -114,6 +114,15 @@ void* server_function(void * arg){
 
         t_list *cosas = receive_package(fd, headerStruct);
 
+        t_new_comm* newComm = malloc(sizeof(t_new_comm*));
+        newComm->fd = fd;
+        newComm->ip = malloc(sizeof(char*));
+        newComm->ip = ip;
+        newComm->port = port;
+        newComm->received = malloc(sizeof(t_list*));
+        newComm->received = cosas;
+
+
         switch (headerStruct->type){
             //Este caso esta solo de ejemplo, TODO:voletear
             case ABC:
@@ -132,38 +141,44 @@ void* server_function(void * arg){
             }
             case SUSE_CREATE:
             {
-                printf("Crear\n");
-                suse_create(fd, ip, port, headerStruct);
+                pthread_t suse_create_thread;
+                pthread_create(&suse_create_thread, NULL, suse_create, (void*)newComm);
+                pthread_detach(suse_create_thread);
                 break;
             }
             case SUSE_SCHEDULE_NEXT:
             {
-                printf("Schedulear\n");
-                suse_schedule_next(fd, ip, port, headerStruct);
+                pthread_t suse_schedule_next_thread;
+                pthread_create(&suse_schedule_next_thread, NULL, suse_schedule_next, (void*)newComm);
+                pthread_detach(suse_schedule_next_thread);
                 break;
             }
             case SUSE_WAIT:
             {
-                printf("Esperar\n");
-                suse_wait(fd, ip, port, headerStruct);
+                pthread_t suse_wait_thread;
+                pthread_create(&suse_wait_thread, NULL, suse_wait, (void*)newComm);
+                pthread_detach(suse_wait_thread);
                 break;
             }
             case SUSE_SIGNAL:
             {
-                printf("Liberar\n");
-                suse_signal(fd, ip, port, headerStruct);
+                pthread_t suse_signal_thread;
+                pthread_create(&suse_signal_thread, NULL, suse_signal, (void*)newComm);
+                pthread_detach(suse_signal_thread);
                 break;
             }
             case SUSE_JOIN:
             {
-                printf("Unir\n");
-                suse_join(fd, ip, port, headerStruct);
+                pthread_t suse_join_thread;
+                pthread_create(&suse_join_thread, NULL, suse_join, (void*)newComm);
+                pthread_detach(suse_join_thread);
                 break;
             }
             case SUSE_RETURN:
             {
-                printf("Unir\n");
-                suse_return(fd, ip, port, headerStruct);
+                pthread_t suse_return_thread;
+                pthread_create(&suse_return_thread, NULL, suse_return, (void*)newComm);
+                pthread_detach(suse_return_thread);
                 break;
             }
             default:
@@ -238,17 +253,53 @@ char* generate_program_metrics(){}
 
 char* generate_system_metrics(){}
 
-void suse_create(int fd, char * ip, int port, MessageHeader * headerStruct){}
+void* suse_create(void* newComm){
+    t_new_comm* newComm1 = (t_new_comm*)newComm;
+    int fd = newComm1->fd;
+    char* ip = newComm1->ip;
+    int port = newComm1->port;
+    t_list* received = newComm1->received;
+}
 
-void suse_schedule_next(int fd, char * ip, int port, MessageHeader * headerStruct){}
+void* suse_schedule_next(void* newComm){
+    t_new_comm* newComm1 = (t_new_comm*)newComm;
+    int fd = newComm1->fd;
+    char* ip = newComm1->ip;
+    int port = newComm1->port;
+    t_list* received = newComm1->received;
+}
 
-void suse_wait(int fd, char * ip, int port, MessageHeader * headerStruct){}
+void* suse_wait(void* newComm){
+    t_new_comm* newComm1 = (t_new_comm*)newComm;
+    int fd = newComm1->fd;
+    char* ip = newComm1->ip;
+    int port = newComm1->port;
+    t_list* received = newComm1->received;
+}
 
-void suse_signal(int fd, char * ip, int port, MessageHeader * headerStruct){}
+void* suse_signal(void* newComm){
+    t_new_comm* newComm1 = (t_new_comm*)newComm;
+    int fd = newComm1->fd;
+    char* ip = newComm1->ip;
+    int port = newComm1->port;
+    t_list* received = newComm1->received;
+}
 
-void suse_join(int fd, char * ip, int port, MessageHeader * headerStruct){}
+void* suse_join(void* newComm){
+    t_new_comm* newComm1 = (t_new_comm*)newComm;
+    int fd = newComm1->fd;
+    char* ip = newComm1->ip;
+    int port = newComm1->port;
+    t_list* received = newComm1->received;
+}
 
-void suse_return(int fd, char * ip, int port, MessageHeader * headerStruct){}
+void* suse_return(void* newComm){
+    t_new_comm* newComm1 = (t_new_comm*)newComm;
+    int fd = newComm1->fd;
+    char* ip = newComm1->ip;
+    int port = newComm1->port;
+    t_list* received = newComm1->received;
+}
 
 char* generate_pid(char* ip, int port){
     char* new_pid = string_new();
