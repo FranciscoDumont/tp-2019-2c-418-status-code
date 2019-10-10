@@ -35,27 +35,23 @@ int suse_create(int tid){
     }
     //--Si la conexion no esta inicializada ocurrio algun problema durante la inicializacion, informar, salir
     if(!server_socket_initialized){
-        //TODO:retornar?
         return -1;
     } else {
-        printf("TID a planificar: %d\n", tid);
-
         t_paquete *package = create_package(SUSE_CREATE);
         void* _tid = malloc(sizeof(int));
         *((int*)_tid) = tid;
         add_to_package(package, _tid, sizeof(int) + 1);
         if(send_package(package, server_socket) == -1){
-            printf("Error en el envio...\n");
+            return -1;
         } else {
-            printf("Mensaje enviado\n");
+            if(confirm_action()){
+                printf("Hilo en planificacion\n");
+                if (tid > max_tid) max_tid = tid;
+                return 0;
+            } else {
+                return -1;
+            }
         }
-
-        if(confirm_action()){
-            printf("Hilo en planificacion\n");
-        }
-
-        if (tid > max_tid) max_tid = tid;
-        return 0;
     }
 }
 
