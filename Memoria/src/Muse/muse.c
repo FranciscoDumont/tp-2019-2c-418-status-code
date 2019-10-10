@@ -9,7 +9,71 @@ int main() {
 
     main_memory = malloc(config.memory_size);
 
+
+    pthread_t server_thread;
+    pthread_create(&server_thread, NULL, server_function, NULL);
+    pthread_join(server_thread, NULL);
+
+
     return 0;
+}
+
+
+void* server_function(void * arg){
+
+    int port = config.listen_port;
+    int socket;
+
+    if((socket = create_socket()) == -1) {
+        log_error(logger, "Error al crear el socket");
+        return (void *) -1;
+    }
+    if((bind_socket(socket, port)) == -1) {
+        log_error(logger, "Error al bindear el socket");
+        return (void *) -2;
+    }
+
+    //--Funcion que se ejecuta cuando se conecta un nuevo programa
+    void new(int fd, char * ip, int port){
+        log_info(logger, "Nueva conexión")
+    }
+
+    //--Funcion que se ejecuta cuando se pierde la conexion con un cliente
+    void lost(int fd, char * ip, int port){
+        log_info(logger, "Se perdió una conexión")
+    }
+
+    //--funcion que se ejecuta cuando se recibe un nuevo mensaje de un cliente ya conectado
+    void incoming(int fd, char* ip, int port, MessageHeader * headerStruct){
+
+        t_list* cosas = receive_package(fd, headerStruct);
+
+        t_new_comm* newComm = malloc(sizeof(t_new_comm*));
+        newComm->fd = fd;
+        newComm->ip = malloc(sizeof(char*));
+        newComm->ip = ip;
+        newComm->port = port;
+        newComm->received = malloc(sizeof(t_list*));
+        newComm->received = cosas;
+
+        switch (headerStruct->type){
+            case MUSE_INIT:
+            {
+                pthread_t muse_init_thread;
+                pthread_create(&muse_init_thread, NULL, muse_init, (void*)newComm);
+                pthread_detach(muse_init_thread);
+                break;
+            }
+            default:
+            {
+                log_warning(logger, "Operacion desconocida. No quieras meter la pata\n");
+                break;
+            }
+        }
+
+    }
+    log_info(logger, "Hilo de servidor iniciado...");
+    start_server(socket, &new, &lost, &incoming);
 }
 
 
@@ -33,3 +97,17 @@ void read_memory_config(){
         config.page_size, \
         config.swap_size);
 }
+
+
+void muse_init(void* newComm){
+    t_new_comm* newComm1 = (t_new_comm*)newComm;
+    int fd = newComm1->fd;
+    char* ip = newComm1->ip;
+    int port = newComm1->port;
+    t_list* received = newComm1->received;
+
+
+
+}
+
+

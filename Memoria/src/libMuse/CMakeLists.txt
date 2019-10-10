@@ -3,4 +3,4 @@ project(libMuse C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_library(libMuse libmuse.h)
+add_library(libMuse libmuse.c libmuse.h)

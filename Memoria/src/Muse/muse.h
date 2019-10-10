@@ -5,10 +5,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include<commons/log.h>
-#include<commons/string.h>
-#include<commons/config.h>
+#include <commons/log.h>
+#include <commons/string.h>
+#include <commons/config.h>
 #include <commons/collections/list.h>
+#include <altaLibreria/connections.h>
+#include <altaLibreria/structures.h>
 
 
 #ifndef TP_2019_2C_418_STATUS_CODE_MUSE_H
@@ -47,6 +49,10 @@ typedef struct MEMConfig{
 t_config * config_file;
 MEMConfig config;
 
+// Funcion encargada de definir las tres funciones para el servidor
+void* server_function(void* arg);
+
+// Lee el archivo de configuracion y lo carga en una estructura
 void read_memory_config();
 
 

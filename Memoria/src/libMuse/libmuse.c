@@ -3,6 +3,62 @@
 #include <string.h>
 #include <stdlib.h>
 #include <commons/memory.h>
+#include <libmuse.h>
+
+
+/**
+ * Inicializa la biblioteca de MUSE.
+ * @param id El Process (o Thread) ID para identificar el caller en MUSE.
+ * @param ip IP en dot-notation de MUSE.
+ * @param puerto Puerto de conexión a MUSE.
+ * @return Si pasa un error, retorna -1. Si se inicializó correctamente, retorna 0.
+ * @see Para obtener el id de un proceso pueden usar getpid() de la lib POSIX (unistd.h)
+ * @note Debido a la naturaleza centralizada de MUSE, esta función deberá definir
+ *  el ID del proceso/hilo según "IP-ID".
+ */
+int muse_init(int id, char* ip, int puerto){
+    // Inicializo variables
+    log_create("libMuse.log", "LibMuse", 1, LOG_LEVEL_TRACE);
+    config_file = config_create("config");
+
+    if (!config_file){
+        log_error(logger, "No se encontró el archivo de configuración");
+        return -1;
+    }
+    // Levanto la configuracion
+    config.ip = config_get_string_value(config_file, "IP");
+    config.talking_port = config_get_int_value(config_file, "TALKING_PORT");
+
+    // Creo socket
+    if((server_socket = create_socket()) == -1) {
+        log_error(logger, "Error al crear el socket\n");
+        return -1;
+    }
+
+    // Conecto sockets
+    if(connect_socket(server_socket, config.ip, config.talking_port) == -1){
+        log_error(logger, "Error al conectarse al servidor\n");
+        return -1;
+    }
+
+    t_paquete *package = create_package(MUSE_INIT);
+    void* _tid = malloc(sizeof(int));
+    *((int*)_tid) = tid;
+    add_to_package(package, _tid, sizeof(int) + 1);
+    if(send_package(package, server_socket) == -1){
+        return -1;
+    } else {
+        if(confirm_action()){
+            printf("Hilo en planificacion\n");
+            if (tid > max_tid) max_tid = tid;
+            return 0;
+        } else {
+            return -1;
+        }
+    }
+
+}
+
 
 /**
      * Reserva una porción de memoria contígua de tamaño `tam`.
