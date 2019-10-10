@@ -27,7 +27,7 @@ void initialize_structures();
 void* server_function(void* arg);
 
 //--Creo un nuevo proceso y lo cargo en la lista de procesos
-void* create_new_program(void* programaNuevoData);
+void create_new_program(char* ip, int port);
 
 //--Funcion que ejecuta la funcion encargada de generar las metricas cada cierto tiempo
 void* metrics_function(void* arg);

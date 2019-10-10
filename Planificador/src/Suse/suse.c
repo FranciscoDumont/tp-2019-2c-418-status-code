@@ -97,9 +97,7 @@ void* server_function(void * arg){
         newProgram->ip = ip;
         newProgram->port = port;
 
-        pthread_t new_program_thread;
-        pthread_create(&new_program_thread, NULL, create_new_program, (void*)newProgram);
-        pthread_detach(new_program_thread);
+        create_new_program(ip, port);
     }
 
     //--Funcion que se ejecuta cuando se pierde la conexion con un cliente
@@ -180,10 +178,7 @@ void* server_function(void * arg){
     start_server(socket, &new, &lost, &incoming);
 }
 
-void* create_new_program(void* programaNuevoData){
-    t_newProgramData *newProgramData = (t_newProgramData*)programaNuevoData;
-    char* ip = newProgramData->ip;
-    int port = newProgramData->port;
+void create_new_program(char* ip, int port){
     char* PID = generate_pid(ip, port);
     t_programa* nuevo_programa = (t_programa*)malloc(sizeof(t_programa));
     nuevo_programa->identificador = PID;
