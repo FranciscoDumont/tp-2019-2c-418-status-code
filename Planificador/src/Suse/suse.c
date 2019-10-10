@@ -227,8 +227,8 @@ void* metrics_function(void* arg){
 
 void generate_metrics(){
     char* metric_to_log = string_new();
+    string_append(&metric_to_log, "Metricas:\n");
     char* separator = "\n";
-    string_append(&metric_to_log, separator);
     char* thread_metrics = generate_thread_metrics();
     string_append(&metric_to_log, thread_metrics);
     string_append(&metric_to_log, separator);
@@ -247,11 +247,20 @@ void generate_metrics(){
     free(metric_to_log);
 }
 
-char* generate_thread_metrics(){}
+char* generate_thread_metrics(){
+    char* metrics = "Thread metrics\n";
+    return metrics;
+}
 
-char* generate_program_metrics(){}
+char* generate_program_metrics(){
+    char* metrics = "Program metrics\n";
+    return metrics;
+}
 
-char* generate_system_metrics(){}
+char* generate_system_metrics(){
+    char* metrics = "System metrics\n";
+    return metrics;
+}
 
 void* suse_create(void* newComm){
     t_new_comm* newComm1 = (t_new_comm*)newComm;
