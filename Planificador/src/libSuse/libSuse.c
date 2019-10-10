@@ -38,6 +38,21 @@ int suse_create(int tid){
         //TODO:retornar?
         return -1;
     } else {
+        printf("TID a planificar: %d\n", tid);
+
+        t_paquete *package = create_package(SUSE_CREATE);
+        void* _tid = malloc(sizeof(int));
+        *((int*)_tid) = tid;
+        add_to_package(package, _tid, sizeof(int) + 1);
+        if(send_package(package, server_socket) == -1){
+            printf("Error en el envio...\n");
+        } else {
+            printf("Mensaje enviado\n");
+        }
+
+        if(confirm_action()){
+            printf("Hilo en planificacion\n");
+        }
 
         if (tid > max_tid) max_tid = tid;
         return 0;
@@ -85,4 +100,15 @@ static struct hilolay_operations hiloops = {
 
 void hilolay_init(void){
     init_internal(&hiloops);
+}
+
+bool confirm_action(){
+    MessageHeader* buffer_header = malloc(sizeof(MessageHeader));
+    if(-1 == receive_header(server_socket, buffer_header)){
+        return false;
+    }
+    t_list *cosas = receive_package(server_socket, buffer_header);
+
+    int rta = *((int*)list_get(cosas, 0));
+    return (bool)rta;
 }

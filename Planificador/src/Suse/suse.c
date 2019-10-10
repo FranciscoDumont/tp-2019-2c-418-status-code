@@ -44,9 +44,9 @@ void read_config_options(){
     config->listen_port = config_get_int_value(config_file, "LISTEN_PORT");
     config->metrics_timer = config_get_int_value(config_file, "METRICS_TIMER");
     config->max_multiprog = config_get_int_value(config_file, "MAX_MULTIPROG");
-    config->sem_ids = config_get_array_value(config_file, "SEM_IDS");
-    config->sem_init = config_get_array_value(config_file, "SEM_INIT");
-    config->sem_max = config_get_array_value(config_file, "SEM_MAX");
+    //config->sem_ids = config_get_array_value(config_file, "SEM_IDS");
+    //config->sem_init = config_get_array_value(config_file, "SEM_INIT");
+    //config->sem_max = config_get_array_value(config_file, "SEM_MAX");
     config->alpha_sjf = config_get_double_value(config_file, "ALPHA_SJF");
     log_trace(logger,
         "Configuración levantada: LISTEN_PORT: %d, METRICS_TIMER: %d, MAX_MULTIPROG: %d, ALPHA_SJF: %f.",
@@ -61,9 +61,10 @@ void initialize_structures(){
     pthread_mutex_init(&mutex_logger, NULL);
     pthread_mutex_init(&mutex_programs, NULL);
     config = (SUSEConfig*)malloc(sizeof(SUSEConfig*));
-    config->sem_max = malloc(sizeof(char*));
-    config->sem_init = malloc(sizeof(char*));
-    config->sem_max = malloc(sizeof(char*));
+    //TODO: averiguar como inicializar esto
+    //config->sem_max = malloc(sizeof(char*));
+    //config->sem_init = malloc(sizeof(char*));
+    //config->sem_max = malloc(sizeof(char*));
     NEW = list_create();
     BLOCKED = list_create();
     EXIT = list_create();
@@ -87,9 +88,10 @@ void* server_function(void * arg){
 
     //--Funcion que se ejecuta cuando se conecta un nuevo programa
     void new(int fd, char * ip, int port){
-        pthread_mutex_lock(&mutex_logger);
-        log_trace(logger, "Se conecto un nuevo programa, IP:%s, PORT:%d", ip, port);
-        pthread_mutex_unlock(&mutex_logger);
+        //TODO: xq carajo rompe aca?
+        //pthread_mutex_lock(&mutex_logger);
+        //log_trace(logger, "Se conecto un nuevo programa, IP:%s, PORT:%d", ip, port);
+        //pthread_mutex_unlock(&mutex_logger);
         t_newProgramData* newProgram = malloc(sizeof(t_newProgramData*));
         newProgram->ip = malloc(sizeof(char*));
         newProgram->ip = ip;
@@ -109,8 +111,7 @@ void* server_function(void * arg){
     }
 
     //--funcion que se ejecuta cuando se recibe un nuevo mensaje de un cliente ya conectado
-    void incoming(int fd, char * ip, int port, MessageHeader * headerStruct){
-        printf("Esperando mensaje...\n");
+    void incoming(int fd, char* ip, int port, MessageHeader * headerStruct){
 
         t_list *cosas = receive_package(fd, headerStruct);
 
@@ -122,23 +123,7 @@ void* server_function(void * arg){
         newComm->received = malloc(sizeof(t_list*));
         newComm->received = cosas;
 
-
         switch (headerStruct->type){
-            //Este caso esta solo de ejemplo, TODO:voletear
-            case ABC:
-            {
-                ;
-                char *mensaje = (char*)list_get(cosas, 0);
-                printf("Mensaje recibido:%s\n", mensaje);
-                t_paquete *package = create_package(ABC);
-                add_to_package(package, (void*) mensaje, strlen(mensaje) + 1);
-                if(send_package(package, fd) == -1){
-                    printf("Error en el envio...\n");
-                } else {
-                    printf("Mensaje enviado\n");
-                }
-                break;
-            }
             case SUSE_CREATE:
             {
                 pthread_t suse_create_thread;
@@ -263,11 +248,32 @@ char* generate_system_metrics(){
 }
 
 void* suse_create(void* newComm){
+    pthread_mutex_lock(&mutex_logger);
+    log_trace(logger, "create_suse_thread initiated");
+    pthread_mutex_unlock(&mutex_logger);
     t_new_comm* newComm1 = (t_new_comm*)newComm;
     int fd = newComm1->fd;
     char* ip = newComm1->ip;
     int port = newComm1->port;
     t_list* received = newComm1->received;
+
+    char* pid = generate_pid(ip, port);
+    int tid = *((int*)list_get(received, 0));
+
+    //TODO:agregar a la lista de hilos new
+
+    pthread_mutex_lock(&mutex_logger);
+    log_trace(logger, "Nuevo hilo a planificar, TID:%d, del programa, PID:%s", tid, pid);
+    pthread_mutex_unlock(&mutex_logger);
+
+    //Confirmo la planificacion del hilo
+
+    t_paquete *package = create_package(SUSE_CREATE);
+    void* confirmation = malloc(sizeof(int));
+    *((int*)confirmation) = 1;
+    add_to_package(package, confirmation, sizeof(int) + 1);
+    send_package(package, fd);
+
 }
 
 void* suse_schedule_next(void* newComm){
