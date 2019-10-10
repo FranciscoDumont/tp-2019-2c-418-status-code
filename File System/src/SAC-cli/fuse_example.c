@@ -5,6 +5,7 @@
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 
 /* Este es el contenido por defecto que va a contener
@@ -117,6 +118,28 @@ static int hello_readdir(const char *path, void *buf, fuse_fill_dir_t filler, of
 	return 0;
 }
 
+static int example_mknod(const char *path, mode_t mode, dev_t rdev)
+{
+    int res;
+
+    res = mknod(path, mode, rdev);
+    if(res == -1)
+        return -errno;
+
+    return 0;
+}
+
+static int example_utimens(const char *path, const struct timespec ts[2])
+{
+    int res;
+
+    res = utimensat(0, path, ts, AT_SYMLINK_NOFOLLOW);
+    if (res == -1)
+        return -errno;
+
+    return 0;
+}
+
 /*
  * @DESC
  *  Esta función va a ser llamada cuando a la biblioteca de FUSE le llege un pedido
@@ -189,6 +212,8 @@ static struct fuse_operations hello_oper = {
 		.readdir = hello_readdir,
 		.open = example_open,
 		.read = hello_read,
+		.mknod = example_mknod,
+		.utimens = example_utimens
 };
 
 
