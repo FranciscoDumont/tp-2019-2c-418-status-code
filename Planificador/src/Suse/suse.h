@@ -5,6 +5,8 @@
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <stdint.h>
+#include <time.h>
 
 #include <commons/config.h>
 #include <commons/log.h>
@@ -48,7 +50,7 @@ char* generate_system_metrics();
 //se pase por parámetro actuará como main del mismo, finalizando el hilo al terminar esa función
 //--Recibe TID
 //--Retorna int, mismo TID?
-void* suse_create(void* newComm);
+void suse_create(int fd, char* ip, int port, t_list* cosas);
 
 //--Obtiene el próximo hilo a ejecutar
 //--Recibe nada
@@ -71,7 +73,14 @@ void* suse_join(void* newComm);
 //--Da por finalizado al TID indicado. El thread actual pasará a estar EXIT.
 void* suse_return(void* newComm);
 
+//--HELPERS
+
 //--Genero un identificador de proceso en base a la ip y al puerto desde los que se conecta el cliente
 char* generate_pid(char* ip, int port);
+
+//--Hallo el grado de multiprogramacion total del sistema(cant de hilos que no estan en new)
+int multiprogramming_grade();
+
+struct timespec get_time();
 
 #endif //SUSE_H

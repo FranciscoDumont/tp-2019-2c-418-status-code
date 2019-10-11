@@ -6,9 +6,14 @@ t_log* logger;
 t_list* NEW;
 t_list* BLOCKED;
 t_list* EXIT;
-t_dictionary* programs;
+t_list* programs;
+t_list* threads;
 pthread_mutex_t mutex_logger;
 pthread_mutex_t mutex_programs;
+pthread_mutex_t mutex_threads;
+pthread_mutex_t mutex_new;
+pthread_mutex_t mutex_blocked;
+pthread_mutex_t mutex_exit;
 
 int main() {
 
@@ -60,15 +65,21 @@ void read_config_options(){
 void initialize_structures(){
     pthread_mutex_init(&mutex_logger, NULL);
     pthread_mutex_init(&mutex_programs, NULL);
-    config = (SUSEConfig*)malloc(sizeof(SUSEConfig*));
+    pthread_mutex_init(&mutex_threads, NULL);
+    pthread_mutex_init(&mutex_new, NULL);
+    pthread_mutex_init(&mutex_blocked, NULL);
+    pthread_mutex_init(&mutex_exit, NULL);
+    config = malloc(sizeof(SUSEConfig*));
     //TODO: averiguar como inicializar esto
+
     //config->sem_max = malloc(sizeof(char*));
     //config->sem_init = malloc(sizeof(char*));
     //config->sem_max = malloc(sizeof(char*));
     NEW = list_create();
     BLOCKED = list_create();
     EXIT = list_create();
-    programs = dictionary_create();
+    programs = list_create();
+    threads = list_create();
     pthread_mutex_lock(&mutex_logger);
     log_trace(logger, "Estructuras inicializadas...");
     pthread_mutex_unlock(&mutex_logger);
@@ -88,15 +99,6 @@ void* server_function(void * arg){
 
     //--Funcion que se ejecuta cuando se conecta un nuevo programa
     void new(int fd, char * ip, int port){
-        //TODO: xq carajo rompe aca?
-        //pthread_mutex_lock(&mutex_logger);
-        //log_trace(logger, "Se conecto un nuevo programa, IP:%s, PORT:%d", ip, port);
-        //pthread_mutex_unlock(&mutex_logger);
-        t_newProgramData* newProgram = malloc(sizeof(t_newProgramData*));
-        newProgram->ip = malloc(sizeof(char*));
-        newProgram->ip = ip;
-        newProgram->port = port;
-
         create_new_program(ip, port);
     }
 
@@ -111,8 +113,9 @@ void* server_function(void * arg){
     //--funcion que se ejecuta cuando se recibe un nuevo mensaje de un cliente ya conectado
     void incoming(int fd, char* ip, int port, MessageHeader * headerStruct){
 
-        t_list *cosas = receive_package(fd, headerStruct);
+        t_list* cosas = receive_package(fd, headerStruct);
 
+        //TODO:voletear
         t_new_comm* newComm = malloc(sizeof(t_new_comm*));
         newComm->fd = fd;
         newComm->ip = malloc(sizeof(char*));
@@ -124,9 +127,7 @@ void* server_function(void * arg){
         switch (headerStruct->type){
             case SUSE_CREATE:
             {
-                pthread_t suse_create_thread;
-                pthread_create(&suse_create_thread, NULL, suse_create, (void*)newComm);
-                pthread_detach(suse_create_thread);
+                suse_create(fd, ip, port, cosas);
                 break;
             }
             case SUSE_SCHEDULE_NEXT:
@@ -178,20 +179,21 @@ void* server_function(void * arg){
     start_server(socket, &new, &lost, &incoming);
 }
 
+//--LISTO
 void create_new_program(char* ip, int port){
-    char* PID = generate_pid(ip, port);
+    PID pid = generate_pid(ip, port);
     t_programa* nuevo_programa = (t_programa*)malloc(sizeof(t_programa));
-    nuevo_programa->identificador = PID;
+    nuevo_programa->pid = pid;
     nuevo_programa->ready = list_create();
     nuevo_programa->exec = malloc(sizeof(t_thread*));
+    nuevo_programa->executing = false;
 
     pthread_mutex_lock(&mutex_programs);
-    dictionary_put(programs, PID, (void*)nuevo_programa);
+    list_add(programs, (void*)nuevo_programa);
     pthread_mutex_unlock(&mutex_programs);
 
     pthread_mutex_lock(&mutex_logger);
-    log_trace(logger, "Nuevo programa agregado, PID:%s", PID);
-    log_trace(logger, "Nivel de multiprogramacion:%d", dictionary_size(programs));
+    log_trace(logger, "Nuevo programa agregado, PID:%s", pid);
     pthread_mutex_unlock(&mutex_logger);
 }
 
@@ -238,31 +240,57 @@ char* generate_program_metrics(){
 }
 
 char* generate_system_metrics(){
-    char* metrics = "System metrics\n";
+    char* metrics = "System metrics";
     return metrics;
 }
 
-void* suse_create(void* newComm){
-    pthread_mutex_lock(&mutex_logger);
-    log_trace(logger, "create_suse_thread initiated");
-    pthread_mutex_unlock(&mutex_logger);
-    t_new_comm* newComm1 = (t_new_comm*)newComm;
-    int fd = newComm1->fd;
-    char* ip = newComm1->ip;
-    int port = newComm1->port;
-    t_list* received = newComm1->received;
-
+void suse_create(int fd, char * ip, int port, t_list* received){
     char* pid = generate_pid(ip, port);
     int tid = *((int*)list_get(received, 0));
 
-    //TODO:agregar a la lista de hilos new
+    t_thread* new_thread = malloc(sizeof(t_thread*));
+    new_thread->tid = tid;
+    new_thread->pid = pid;
+    new_thread->exec_list = list_create();
+    new_thread->ready_list = list_create();
+    //new_thread->start_time = get_time();
 
-    pthread_mutex_lock(&mutex_logger);
-    log_trace(logger, "Nuevo hilo a planificar, TID:%d, del programa, PID:%s", tid, pid);
-    pthread_mutex_unlock(&mutex_logger);
+    if(multiprogramming_grade() >= config->max_multiprog){
+        list_add(NEW, (void*)new_thread);
+        pthread_mutex_lock(&mutex_logger);
+        log_trace(logger, "Hilo, TID:%d, del programa, PID:%s, agregado a la lista de new", tid, pid);
+        pthread_mutex_unlock(&mutex_logger);
+    } else {
+        bool program_finder(void* program){
+            if(strcmp(((t_programa*)program)->pid, pid) == 0){
+                return true;
+            }
+            return false;
+        }
+
+        t_programa* program = (t_programa*)list_find(programs, &program_finder);
+        if(program->executing) {
+            t_list *ready = program->ready;
+            list_add(ready, new_thread);
+
+            pthread_mutex_lock(&mutex_logger);
+            log_trace(logger, "Hilo, TID:%d, del programa, PID:%s, agregado a la lista de ready", tid, pid);
+            pthread_mutex_unlock(&mutex_logger);
+        } else {
+            interval* first_execution = malloc(sizeof(interval*));
+            first_execution->start_time = get_time();
+            t_list* exec_time = new_thread->exec_list;
+            list_add(exec_time, (void*)first_execution);
+            program->exec = new_thread;
+            program->executing = true;
+
+            pthread_mutex_lock(&mutex_logger);
+            log_trace(logger, "Hilo, TID:%d, del programa, PID:%s, ahora ejecutandose", tid, pid);
+            pthread_mutex_unlock(&mutex_logger);
+        }
+    }
 
     //Confirmo la planificacion del hilo
-
     t_paquete *package = create_package(SUSE_CREATE);
     void* confirmation = malloc(sizeof(int));
     *((int*)confirmation) = 1;
@@ -311,6 +339,8 @@ void* suse_return(void* newComm){
     t_list* received = newComm1->received;
 }
 
+//--Helpers
+
 char* generate_pid(char* ip, int port){
     char* new_pid = string_new();
     char* separator = "::";
@@ -319,4 +349,50 @@ char* generate_pid(char* ip, int port){
     string_append(&new_pid, separator);
     string_append(&new_pid, string_port);
     return new_pid;
+}
+
+int multiprogramming_grade(){
+    int blocked_grade = list_size(BLOCKED);
+
+    //--Readies
+
+    //--Mapeo un programa al tamaño de su lista de ready
+    void* program_to_ready_grade(void* program){
+        t_list* ready = ((t_programa*)program)->ready;
+        void* grade = malloc(sizeof(int));
+        *((int*)grade) = list_size(ready);
+        return grade;
+    }
+
+    t_list* ready_grades = list_map(programs, &program_to_ready_grade);
+    void* seed = malloc(sizeof(int));
+    *((int*)seed) = 0;
+
+
+    void* seed_plus_grade(void* seed, void* grade){
+        void* newSeed = malloc(sizeof(int));
+        *((int*)newSeed) = *((int*) seed) + *((int*) grade);
+        return newSeed;
+    }
+
+    //--Sumo la lista mapeada de arriba con una semilla inicial de 0
+    int ready_grade = *((int*)list_fold(ready_grades, seed, &seed_plus_grade));
+
+    //--Execs
+    //TODO:reveer esto
+    bool executing_program(void* program){
+        return ((t_programa*)program)->executing;
+    }
+
+    t_list* executing_programms = list_filter(programs, &executing_program);
+
+    int execute_grade = list_size(executing_programms);
+
+    return blocked_grade + ready_grade + execute_grade;
+}
+
+struct timespec get_time(){
+    struct timespec start;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    return start;
 }

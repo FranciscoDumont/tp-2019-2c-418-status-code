@@ -5,6 +5,9 @@
 #ifndef SUSE_SUSESTRUCTURES_H
 #define SUSE_SUSESTRUCTURES_H
 
+typedef int TID;
+typedef char* PID;
+
 typedef struct _SUSEConfig {
     int listen_port;
     int metrics_timer;
@@ -15,20 +18,20 @@ typedef struct _SUSEConfig {
     double alpha_sjf;
 } SUSEConfig;
 
-typedef struct _t_newProgramData{
-    char* ip;
-    int port;
-} t_newProgramData;
-
 typedef struct _t_thread{
-    int identificador; //TID?
-    char* pid; //identificador de programa
+    TID tid;
+    PID pid;
+    t_list* exec_list; //Lista de intervals
+    t_list* ready_list; //Lista de intervals
+    struct timespec start_time;
+    //bool planned;
 } t_thread;
 
 typedef struct _t_programa{
-    char* identificador; //IP::PORT
+    PID pid; //IP::PORT
     t_list* ready; //Thread list
     t_thread* exec;
+    bool executing;
 } t_programa;
 
 typedef struct _t_new_comm{
@@ -37,5 +40,10 @@ typedef struct _t_new_comm{
     int port;
     t_list* received;
 } t_new_comm;
+
+typedef struct _interval{
+    struct timespec start_time;
+    struct timespec end_time;
+} interval;
 
 #endif //SUSE_SUSESTRUCTURES_H
