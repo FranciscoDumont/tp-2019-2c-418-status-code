@@ -1,5 +1,5 @@
-#ifndef SUSE_H
-#define SUSE_H
+#ifndef SUSE_SUSE_H
+#define SUSE_SUSE_H
 
 #include <stdio.h>
 #include <string.h>
@@ -19,32 +19,17 @@
 //--Inicializo el log
 void start_log();
 
-//--Leo las configuraciones del archivo y las cargo en el struct SUSEConfig
-void read_config_options();
-
 //--Inicializo las listas de estados
 void initialize_structures();
 
+//--Leo las configuraciones del archivo y las cargo en el struct SUSEConfig
+void read_config_options();
+
 //--Funcion encargada de definir las tres funciones para el servidor
-void* server_function(void* arg);
+void server_function();
 
 //--Creo un nuevo proceso y lo cargo en la lista de procesos
 void create_new_program(char* ip, int port);
-
-//--Funcion que ejecuta la funcion encargada de generar las metricas cada cierto tiempo
-void* metrics_function(void* arg);
-
-//--Funcion que genera y loggea las metricas
-void generate_metrics();
-
-//--Genero las metricas de cada hilo
-char* generate_thread_metrics();
-
-//--Genero las metricas de cada programa
-char* generate_program_metrics();
-
-//--Genero las metricas del sistema
-char* generate_system_metrics();
 
 //--Esta función es invocada cuando se necesita crear un nuevo hilo, donde la función que
 //se pase por parámetro actuará como main del mismo, finalizando el hilo al terminar esa función
@@ -73,6 +58,21 @@ void* suse_join(void* newComm);
 //--Da por finalizado al TID indicado. El thread actual pasará a estar EXIT.
 void* suse_return(void* newComm);
 
+//--Funcion que ejecuta la funcion encargada de generar las metricas cada cierto tiempo
+void* metrics_function(void* arg);
+
+//--Funcion que genera y loggea las metricas
+void generate_metrics();
+
+//--Genero las metricas de cada hilo
+char* generate_thread_metrics();
+
+//--Genero las metricas de cada programa
+char* generate_program_metrics();
+
+//--Genero las metricas del sistema
+char* generate_system_metrics();
+
 //--HELPERS
 
 //--Genero un identificador de proceso en base a la ip y al puerto desde los que se conecta el cliente
@@ -83,4 +83,6 @@ int multiprogramming_grade();
 
 struct timespec get_time();
 
-#endif //SUSE_H
+void free_list(t_list* received, void(*element_destroyer)(void*));
+
+#endif //SUSE_SUSE_H

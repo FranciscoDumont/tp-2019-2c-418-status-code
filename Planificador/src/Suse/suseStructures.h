@@ -1,7 +1,3 @@
-//
-// Created by utnso on 05/10/19.
-//
-
 #ifndef SUSE_SUSESTRUCTURES_H
 #define SUSE_SUSESTRUCTURES_H
 
@@ -24,7 +20,6 @@ typedef struct _t_thread{
     t_list* exec_list; //Lista de intervals
     t_list* ready_list; //Lista de intervals
     struct timespec start_time;
-    //bool planned;
 } t_thread;
 
 typedef struct _t_programa{
