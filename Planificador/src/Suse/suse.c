@@ -2,12 +2,10 @@
 
 SUSEConfig* config;
 t_log* logger;
-//Aplica a los 3, dictionary(tid-hilo)
 t_list* NEW;
 t_list* BLOCKED;
 t_list* EXIT;
 t_list* programs;
-t_list* threads;
 pthread_mutex_t mutex_logger;
 pthread_mutex_t mutex_programs;
 pthread_mutex_t mutex_threads;
@@ -79,7 +77,6 @@ void initialize_structures(){
     BLOCKED = list_create();
     EXIT = list_create();
     programs = list_create();
-    threads = list_create();
     pthread_mutex_lock(&mutex_logger);
     log_trace(logger, "Estructuras inicializadas...");
     pthread_mutex_unlock(&mutex_logger);
@@ -89,11 +86,11 @@ void* server_function(void * arg){
     int PORT = config->listen_port;
     int socket;
     if((socket = create_socket()) == -1) {
-        printf("Error al crear el socket");
+        printf("Error al crear el socket\n");
         return (void *) -1;
     }
     if((bind_socket(socket, PORT)) == -1) {
-        printf("Error al bindear el socket");
+        printf("Error al bindear el socket\n");
         return (void *) -2;
     }
 
@@ -105,7 +102,7 @@ void* server_function(void * arg){
     //--Funcion que se ejecuta cuando se pierde la conexion con un cliente
     void lost(int fd, char * ip, int port){
         pthread_mutex_lock(&mutex_logger);
-        log_trace(logger, "El programa en IP:%s, PORT:%d ha muerto", ip, port);
+        log_trace(logger, "El programa en IP:%s, PORT:%d se ha desconectado", ip, port);
         pthread_mutex_unlock(&mutex_logger);
         //TODO:remove program from programs list
     }
@@ -253,7 +250,7 @@ void suse_create(int fd, char * ip, int port, t_list* received){
     new_thread->pid = pid;
     new_thread->exec_list = list_create();
     new_thread->ready_list = list_create();
-    //new_thread->start_time = get_time();
+    new_thread->start_time = get_time();
 
     if(multiprogramming_grade() >= config->max_multiprog){
         list_add(NEW, (void*)new_thread);
@@ -262,10 +259,7 @@ void suse_create(int fd, char * ip, int port, t_list* received){
         pthread_mutex_unlock(&mutex_logger);
     } else {
         bool program_finder(void* program){
-            if(strcmp(((t_programa*)program)->pid, pid) == 0){
-                return true;
-            }
-            return false;
+            return strcmp(((t_programa*)program)->pid, pid) == 0;
         }
 
         t_programa* program = (t_programa*)list_find(programs, &program_finder);
@@ -379,14 +373,11 @@ int multiprogramming_grade(){
     int ready_grade = *((int*)list_fold(ready_grades, seed, &seed_plus_grade));
 
     //--Execs
-    //TODO:reveer esto
     bool executing_program(void* program){
         return ((t_programa*)program)->executing;
     }
 
-    t_list* executing_programms = list_filter(programs, &executing_program);
-
-    int execute_grade = list_size(executing_programms);
+    int execute_grade = list_count_satisfying(programs, &executing_program);
 
     return blocked_grade + ready_grade + execute_grade;
 }
