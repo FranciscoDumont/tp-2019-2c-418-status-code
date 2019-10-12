@@ -85,6 +85,10 @@ struct timespec get_time();
 
 void free_list(t_list* received, void(*element_destroyer)(void*));
 
+//--Retorno un programa el programa al que le corresponde el PID dado
 t_programa* find_program(PID pid);
+
+//--Intercambio el hilo en ejecucion por uno dado
+void exchange_executing_threads(t_programa* program, t_thread* new_one);
 
 #endif //SUSE_SUSE_H

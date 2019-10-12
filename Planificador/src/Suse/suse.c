@@ -149,7 +149,7 @@ void suse_create(int fd, char * ip, int port, t_list* received){
     if(multiprogramming_grade() >= config->max_multiprog){
         list_add(NEW, (void*)new_thread);
         pthread_mutex_lock(&mutex_logger);
-        log_trace(logger, "Hilo, TID:%d, del programa, PID:%s, agregado a la lista de new", tid, pid);
+        log_trace(logger, "Program(%s)'s Thread(%d) added to NEW list", pid, tid);
         pthread_mutex_unlock(&mutex_logger);
     } else {
         t_programa* program = find_program(pid);
@@ -158,7 +158,7 @@ void suse_create(int fd, char * ip, int port, t_list* received){
             list_add(ready, new_thread);
 
             pthread_mutex_lock(&mutex_logger);
-            log_trace(logger, "Hilo, TID:%d, del programa, PID:%s, agregado a la lista de ready", tid, pid);
+            log_trace(logger, "Thread(%d), added to Program(%s)'s ready list", tid, pid);
             pthread_mutex_unlock(&mutex_logger);
         } else {
             interval* first_execution = malloc(sizeof(interval));
@@ -169,7 +169,7 @@ void suse_create(int fd, char * ip, int port, t_list* received){
             program->executing = true;
 
             pthread_mutex_lock(&mutex_logger);
-            log_trace(logger, "Hilo, TID:%d, del programa, PID:%s, ahora ejecutandose", tid, pid);
+            log_trace(logger, "Program(%s)'s Thread(%d) now executing", pid, tid);
             pthread_mutex_unlock(&mutex_logger);
         }
     }
@@ -192,6 +192,46 @@ void suse_create(int fd, char * ip, int port, t_list* received){
 void suse_schedule_next(int fd, char * ip, int port, t_list* received){
     char* pid = generate_pid(ip, port);
     t_programa* program = find_program(pid);
+
+    pthread_mutex_lock(&mutex_logger);
+    log_trace(logger, "Program(%s), asking for new thread", pid);
+    pthread_mutex_unlock(&mutex_logger);
+
+    int return_tid;
+
+    if(program->executing){
+        //TODO: implementar SJFE
+        t_list* ready = program->ready;
+        if(list_size(ready) > 0){
+            //Take thread from ready list and instantiate a new interval for the execution
+            t_thread* thread_to_execute = (t_thread*)list_remove(ready, 0);
+
+            return_tid = thread_to_execute->tid;
+
+            interval* new_execution = malloc(sizeof(interval));
+            new_execution->start_time = get_time();
+
+            list_add(thread_to_execute->exec_list, (void*)new_execution);
+
+            exchange_executing_threads(program, thread_to_execute);
+
+        } else {
+            //TODO: si no hay mas hilos, que retorno?
+            return_tid = program->exec->tid;
+        }
+    } else {
+        //TODO: si el programa no esta ejecutando(porque todos sus hilos estan en new, que retorno?, -1?)
+        return_tid = -1;
+    }
+
+    //Confirmo la planificacion del hilo
+    t_paquete *package = create_package(SUSE_SCHEDULE_NEXT);
+    void* confirmation = malloc(sizeof(int));
+    *((int*)confirmation) = return_tid;
+    add_to_package(package, confirmation, sizeof(int));
+    send_package(package, fd);
+    free(confirmation);
+    free_package(package);
 
     void element_destroyer(void* element){
         free(element);
@@ -312,4 +352,25 @@ t_programa* find_program(PID pid){
         return strcmp(((t_programa*)program)->pid, pid) == 0;
     }
     return (t_programa*)list_find(programs, &program_finder);
+}
+
+void exchange_executing_threads(t_programa* program, t_thread* new_one){
+    t_list* exec_list_OLDONE = program->exec->exec_list;
+    int exec_list_size_OLDONE = list_size(exec_list_OLDONE) - 1;
+    interval* last_execution_OLDONE = list_get(exec_list_OLDONE, exec_list_size_OLDONE);
+
+    t_list* exec_list_NEWONE = new_one->exec_list;
+    int exec_list_size_NEWONE = list_size(exec_list_NEWONE) - 1;
+    interval* last_execution_NEWONE = list_get(exec_list_NEWONE, exec_list_size_NEWONE);
+
+    memcpy((void*)&last_execution_OLDONE->end_time, (void*)&last_execution_NEWONE->start_time, sizeof(interval));
+
+    TID old_tid = program->exec->tid;
+    list_add(program->ready, (void*)program->exec);
+    program->exec = new_one;
+    TID new_tid = program->exec->tid;
+
+    pthread_mutex_lock(&mutex_logger);
+    log_trace(logger, "Thread: %d, exchanged for Thread: %d", old_tid, new_tid);
+    pthread_mutex_unlock(&mutex_logger);
 }

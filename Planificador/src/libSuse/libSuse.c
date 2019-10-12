@@ -48,7 +48,7 @@ int suse_create(int tid){
         } else {
             free(_tid);
             free_package(package);
-            if((bool)confirm_action()){
+            if(confirm_action() == 1){
                 printf("Hilo en planificacion\n");
                 //TODO: averiguar si dejar esto aca
                 if (tid > max_tid) max_tid = tid;
@@ -74,9 +74,8 @@ int suse_schedule_next(void){
         free(placebo);
         free_package(package);
         int new_scheduled_thread = confirm_action();
-        if(new_scheduled_thread > 0){
-            printf("Scheduling next item %i...\n", new_scheduled_thread);
-            //if (tid > max_tid) max_tid = tid;
+        if(new_scheduled_thread >= 0){
+            printf("Scheduling next thread %i...\n", new_scheduled_thread);
             return new_scheduled_thread;
         } else {
             printf("Failed receiving scheduled thread\n");
@@ -133,11 +132,11 @@ int confirm_action(){
 
     MessageHeader* buffer_header = malloc(sizeof(MessageHeader));
     if(-1 == receive_header(server_socket, buffer_header)){
-        return false;
+        return -1;
     }
     t_list *cosas = receive_package(server_socket, buffer_header);
 
     int rta = *((int*)list_get(cosas, 0));
-    list_destroy_and_destroy_elements(cosas, element_destroyer);
+    //list_destroy_and_destroy_elements(cosas, element_destroyer);
     return rta;
 }
