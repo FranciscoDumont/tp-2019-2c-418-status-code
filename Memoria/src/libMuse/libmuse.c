@@ -41,20 +41,25 @@ int muse_init(int id, char* ip, int puerto){
         return -1;
     }
 
+    //Procedo con esa tal comunicacion con el server
     t_paquete *package = create_package(MUSE_INIT);
-    void* _tid = malloc(sizeof(int));
-    *((int*)_tid) = tid;
-    add_to_package(package, _tid, sizeof(int) + 1);
+    void* _id = malloc(sizeof(int));
+    *((int*)_id) = id;
+    add_to_package(package, _id, sizeof(int));
+
     if(send_package(package, server_socket) == -1){
+        log_error(logger, "Error al enviar paquete\n");
         return -1;
     } else {
-        if(confirm_action()){
-            printf("Hilo en planificacion\n");
-            if (tid > max_tid) max_tid = tid;
-            return 0;
-        } else {
-            return -1;
-        }
+        // Espero la respuesta del server diciendo que todo está ok
+        MessageHeader* buffer_header = malloc(sizeof(MessageHeader));
+
+        receive_header(server_socket, buffer_header);
+
+        t_list *cosas = receive_package(server_socket, buffer_header);
+
+        int rta = *((int*)list_get(cosas, 0));
+        return rta;
     }
 
 }

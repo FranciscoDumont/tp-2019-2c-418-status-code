@@ -55,5 +55,6 @@ void* server_function(void* arg);
 // Lee el archivo de configuracion y lo carga en una estructura
 void read_memory_config();
 
+void* muse_init(void* newComm);
 
 #endif //TP_2019_2C_418_STATUS_CODE_MUSE_H

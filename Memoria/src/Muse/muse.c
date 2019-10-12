@@ -35,12 +35,12 @@ void* server_function(void * arg){
 
     //--Funcion que se ejecuta cuando se conecta un nuevo programa
     void new(int fd, char * ip, int port){
-        log_info(logger, "Nueva conexión")
+        log_info(logger, "Nueva conexión");
     }
 
     //--Funcion que se ejecuta cuando se pierde la conexion con un cliente
     void lost(int fd, char * ip, int port){
-        log_info(logger, "Se perdió una conexión")
+        log_info(logger, "Se perdió una conexión");
     }
 
     //--funcion que se ejecuta cuando se recibe un nuevo mensaje de un cliente ya conectado
@@ -99,15 +99,25 @@ void read_memory_config(){
 }
 
 
-void muse_init(void* newComm){
+void* muse_init(void* newComm){
     t_new_comm* newComm1 = (t_new_comm*)newComm;
     int fd = newComm1->fd;
     char* ip = newComm1->ip;
     int port = newComm1->port;
     t_list* received = newComm1->received;
 
+    // Guardo el entero que recibo en una variable
+    int id = *((int*)list_get(received, 0));
 
+    // Loggeo el valor del id que recibi
+    log_info(logger, "El id que recibo de libMuse es: %d", id);
 
+    // Le respondo a libMuse que esta todo bien
+    t_paquete *package = create_package(MUSE_INIT);
+    void* confirmation = malloc(sizeof(int));
+    *((int*)confirmation) = 1;
+    add_to_package(package, confirmation, sizeof(int));
+    send_package(package, fd);
 }
 
 
