@@ -32,6 +32,6 @@ int suse_signal(int tid);
 
 int suse_return(int tid);
 
-bool confirm_action();
+int confirm_action();
 
 #endif //HILOLAY_LIBRARY_H

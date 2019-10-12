@@ -99,6 +99,11 @@ void server_function(){
                 suse_create(fd, ip, port, cosas);
                 break;
             }
+            case SUSE_SCHEDULE_NEXT:
+            {
+                suse_schedule_next(fd, ip, port, cosas);
+                break;
+            }
             default:
             {
                 printf("Unknown operation\n");
@@ -147,11 +152,7 @@ void suse_create(int fd, char * ip, int port, t_list* received){
         log_trace(logger, "Hilo, TID:%d, del programa, PID:%s, agregado a la lista de new", tid, pid);
         pthread_mutex_unlock(&mutex_logger);
     } else {
-        bool program_finder(void* program){
-            return strcmp(((t_programa*)program)->pid, pid) == 0;
-        }
-
-        t_programa* program = (t_programa*)list_find(programs, &program_finder);
+        t_programa* program = find_program(pid);
         if(program->executing) {
             t_list *ready = program->ready;
             list_add(ready, new_thread);
@@ -181,6 +182,16 @@ void suse_create(int fd, char * ip, int port, t_list* received){
     send_package(package, fd);
     free(confirmation);
     free_package(package);
+
+    void element_destroyer(void* element){
+        free(element);
+    }
+    free_list(received, element_destroyer);
+}
+
+void suse_schedule_next(int fd, char * ip, int port, t_list* received){
+    char* pid = generate_pid(ip, port);
+    t_programa* program = find_program(pid);
 
     void element_destroyer(void* element){
         free(element);
@@ -294,4 +305,11 @@ struct timespec get_time(){
 
 void free_list(t_list* received, void(*element_destroyer)(void*)){
     list_destroy_and_destroy_elements(received, element_destroyer);
+}
+
+t_programa* find_program(PID pid){
+    bool program_finder(void* program){
+        return strcmp(((t_programa*)program)->pid, pid) == 0;
+    }
+    return (t_programa*)list_find(programs, &program_finder);
 }

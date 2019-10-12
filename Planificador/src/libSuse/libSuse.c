@@ -6,8 +6,8 @@ int server_socket = 0;
 libSUSEConfig* config;
 
 void suse_init(){
-    config = (libSUSEConfig*)malloc(sizeof(libSUSEConfig*));
-    config->ip = malloc(sizeof(char*));
+    config = malloc(sizeof(libSUSEConfig));
+    config->ip = malloc(sizeof(char));
     read_config_options();
     if((server_socket = create_socket()) == -1) {
         printf("Error al crear el socket\n");
@@ -40,12 +40,17 @@ int suse_create(int tid){
         t_paquete *package = create_package(SUSE_CREATE);
         void* _tid = malloc(sizeof(int));
         *((int*)_tid) = tid;
-        add_to_package(package, _tid, sizeof(int) + 1);
+        add_to_package(package, _tid, sizeof(int));
         if(send_package(package, server_socket) == -1){
+            free(_tid);
+            free_package(package);
             return -1;
         } else {
-            if(confirm_action()){
+            free(_tid);
+            free_package(package);
+            if((bool)confirm_action()){
                 printf("Hilo en planificacion\n");
+                //TODO: averiguar si dejar esto aca
                 if (tid > max_tid) max_tid = tid;
                 return 0;
             } else {
@@ -56,6 +61,29 @@ int suse_create(int tid){
 }
 
 int suse_schedule_next(void){
+    t_paquete *package = create_package(SUSE_SCHEDULE_NEXT);
+    void* placebo = malloc(sizeof(int));
+    *((int*)placebo) = 1;
+    add_to_package(package, placebo, sizeof(int));
+    if(send_package(package, server_socket) == -1){
+        free(placebo);
+        free_package(package);
+        printf("Failed asking for new scheduled thread\n");
+        return -1;
+    } else {
+        free(placebo);
+        free_package(package);
+        int new_scheduled_thread = confirm_action();
+        if(new_scheduled_thread > 0){
+            printf("Scheduling next item %i...\n", new_scheduled_thread);
+            //if (tid > max_tid) max_tid = tid;
+            return new_scheduled_thread;
+        } else {
+            printf("Failed receiving scheduled thread\n");
+            return -1;
+        }
+    }
+
     int next = max_tid;
     printf("Scheduling next item %i...\n", next);
     return next;
@@ -98,7 +126,11 @@ void hilolay_init(void){
     init_internal(&hiloops);
 }
 
-bool confirm_action(){
+int confirm_action(){
+    void element_destroyer(void* element){
+        free(element);
+    }
+
     MessageHeader* buffer_header = malloc(sizeof(MessageHeader));
     if(-1 == receive_header(server_socket, buffer_header)){
         return false;
@@ -106,5 +138,6 @@ bool confirm_action(){
     t_list *cosas = receive_package(server_socket, buffer_header);
 
     int rta = *((int*)list_get(cosas, 0));
-    return (bool)rta;
+    list_destroy_and_destroy_elements(cosas, element_destroyer);
+    return rta;
 }

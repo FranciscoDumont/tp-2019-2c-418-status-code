@@ -40,7 +40,7 @@ void suse_create(int fd, char* ip, int port, t_list* cosas);
 //--Obtiene el próximo hilo a ejecutar
 //--Recibe nada
 //--Retorna el proximo TID a ejecutar
-void* suse_schedule_next(void* newComm);
+void suse_schedule_next(int fd, char * ip, int port, t_list* received);
 
 //--Genera una operación de wait sobre el semáforo dado
 void* suse_wait(void* newComm);
@@ -84,5 +84,7 @@ int multiprogramming_grade();
 struct timespec get_time();
 
 void free_list(t_list* received, void(*element_destroyer)(void*));
+
+t_programa* find_program(PID pid);
 
 #endif //SUSE_SUSE_H
