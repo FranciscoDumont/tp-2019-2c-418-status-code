@@ -3,4 +3,11 @@ project(libMuse C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_library(libMuse libmuse.c libmuse.h)
+include_directories("/usr/include/commons" "/usr/include/altaLibreria")
+
+add_library(libMuse SHARED libmuse.c libmuse.h)
+
+target_link_libraries(libMuse "/usr/lib/libcommons.so" "/usr/lib/libaltaLibreria.so")
+
+install(TARGETS libMuse DESTINATION /usr/lib)
+install(FILES libmuse.h DESTINATION /usr/include/libMuse)

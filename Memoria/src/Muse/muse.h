@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <pthread.h>
 #include <commons/log.h>
 #include <commons/string.h>
 #include <commons/config.h>

@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <commons/memory.h>
-#include <libmuse.h>
+#include "libmuse.h"
 
 
 /**
@@ -17,27 +17,15 @@
  *  el ID del proceso/hilo según "IP-ID".
  */
 int muse_init(int id, char* ip, int puerto){
-    // Inicializo variables
-    log_create("libMuse.log", "LibMuse", 1, LOG_LEVEL_TRACE);
-    config_file = config_create("config");
-
-    if (!config_file){
-        log_error(logger, "No se encontró el archivo de configuración");
-        return -1;
-    }
-    // Levanto la configuracion
-    config.ip = config_get_string_value(config_file, "IP");
-    config.talking_port = config_get_int_value(config_file, "TALKING_PORT");
-
     // Creo socket
     if((server_socket = create_socket()) == -1) {
-        log_error(logger, "Error al crear el socket\n");
+        printf("Error al crear el socket\n");
         return -1;
     }
 
     // Conecto sockets
-    if(connect_socket(server_socket, config.ip, config.talking_port) == -1){
-        log_error(logger, "Error al conectarse al servidor\n");
+    if(connect_socket(server_socket, ip, puerto) == -1){
+        printf("Error al conectarse al servidor\n");
         return -1;
     }
 
@@ -48,7 +36,7 @@ int muse_init(int id, char* ip, int puerto){
     add_to_package(package, _id, sizeof(int));
 
     if(send_package(package, server_socket) == -1){
-        log_error(logger, "Error al enviar paquete\n");
+        printf("Error al enviar paquete\n");
         return -1;
     } else {
         // Espero la respuesta del server diciendo que todo está ok

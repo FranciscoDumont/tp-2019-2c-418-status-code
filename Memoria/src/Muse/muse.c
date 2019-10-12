@@ -48,12 +48,12 @@ void* server_function(void * arg){
 
         t_list* cosas = receive_package(fd, headerStruct);
 
-        t_new_comm* newComm = malloc(sizeof(t_new_comm*));
+        t_new_comm* newComm = malloc(sizeof(t_new_comm));
         newComm->fd = fd;
-        newComm->ip = malloc(sizeof(char*));
+        newComm->ip = malloc(sizeof(char));
         newComm->ip = ip;
         newComm->port = port;
-        newComm->received = malloc(sizeof(t_list*));
+        newComm->received = malloc(sizeof(t_list));
         newComm->received = cosas;
 
         switch (headerStruct->type){
@@ -61,7 +61,7 @@ void* server_function(void * arg){
             {
                 pthread_t muse_init_thread;
                 pthread_create(&muse_init_thread, NULL, muse_init, (void*)newComm);
-                pthread_detach(muse_init_thread);
+                pthread_join(muse_init_thread, NULL);
                 break;
             }
             default:
@@ -70,6 +70,8 @@ void* server_function(void * arg){
                 break;
             }
         }
+
+        free(newComm);
 
     }
     log_info(logger, "Hilo de servidor iniciado...");
