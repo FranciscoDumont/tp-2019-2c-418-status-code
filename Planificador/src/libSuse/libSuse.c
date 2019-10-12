@@ -44,6 +44,7 @@ int suse_create(int tid){
         if(send_package(package, server_socket) == -1){
             free(_tid);
             free_package(package);
+            printf("Error sending a new thread to planning server\n");
             return -1;
         } else {
             free(_tid);
@@ -54,6 +55,7 @@ int suse_create(int tid){
                 if (tid > max_tid) max_tid = tid;
                 return 0;
             } else {
+                printf("Failed receiving closing new thread confirmation\n");
                 return -1;
             }
         }
@@ -94,6 +96,29 @@ int suse_join(int tid){
 }
 
 int suse_close(int tid){
+    t_paquete *package = create_package(SUSE_CLOSE);
+    void* _tid = malloc(sizeof(int));
+    *((int*)_tid) = tid;
+    add_to_package(package, _tid, sizeof(int));
+    if(send_package(package, server_socket) == -1){
+        free(_tid);
+        free_package(package);
+        printf("Error sending a thread(%d) to close\n", tid);
+        return -1;
+    } else {
+        free(_tid);
+        free_package(package);
+        if(confirm_action() == 1){
+            printf("Closed thread %i\n", tid);
+            //TODO: averiguar si dejar esto aca
+            max_tid--;
+            return 0;
+        } else {
+            printf("Failed receiving closing thread confirmation\n");
+            return -1;
+        }
+    }
+
     printf("Closed thread %i\n", tid);
     max_tid--;
     return 0;

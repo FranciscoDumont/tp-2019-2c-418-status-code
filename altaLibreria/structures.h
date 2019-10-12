@@ -22,7 +22,7 @@ typedef enum _MessageType {
 	SUSE_WAIT,
 	SUSE_SIGNAL,
 	SUSE_JOIN,
-	SUSE_RETURN
+	SUSE_CLOSE
 
 } MessageType;
 
