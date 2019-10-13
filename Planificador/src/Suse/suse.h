@@ -37,10 +37,14 @@ void create_new_program(char* ip, int port);
 //--Retorna int, mismo TID?
 void suse_create(int fd, char* ip, int port, t_list* cosas);
 
-//--Obtiene el próximo hilo a ejecutar
-//--Recibe nada
 //--Retorna el proximo TID a ejecutar
 void suse_schedule_next(int fd, char * ip, int port, t_list* received);
+
+//--Nucleo de la planificacion, lo separo porque utilizo la misma funcionalidad en suse close si quedan hilos por planificar
+int schedule_next(t_programa* program);
+
+//--Da por finalizado al TID indicado. El thread actual pasará a estar EXIT.
+void suse_close(int fd, char * ip, int port, t_list* received);
 
 //--Genera una operación de wait sobre el semáforo dado
 void* suse_wait(void* newComm);
@@ -90,5 +94,18 @@ t_programa* find_program(PID pid);
 
 //--Intercambio el hilo en ejecucion por uno dado
 void exchange_executing_threads(t_programa* program, t_thread* new_one);
+
+//--Creo un hilo para responderle al cliente
+void create_response_thread(int fd, int response, MessageType header);
+
+//--Creo un paquete de respuesta con los datos dados
+void* create_response_package(int fd, int response, MessageType header);
+
+//--Funcion encargada de enviar la respuesta al cliente
+void* response_function(void* response_package);
+
+interval* last_exec(t_thread* thread);
+
+interval* last_ready(t_thread* thread);
 
 #endif //SUSE_SUSE_H

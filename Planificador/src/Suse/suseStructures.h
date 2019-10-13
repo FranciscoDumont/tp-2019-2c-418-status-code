@@ -36,6 +36,12 @@ typedef struct _t_new_comm{
     t_list* received;
 } t_new_comm;
 
+typedef struct _t_new_response{
+    int fd;
+    int response;
+    MessageType header;
+} t_new_response;
+
 typedef struct _interval{
     struct timespec start_time;
     struct timespec end_time;

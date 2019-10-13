@@ -104,6 +104,11 @@ void server_function(){
                 suse_schedule_next(fd, ip, port, cosas);
                 break;
             }
+            case SUSE_CLOSE:
+            {
+                suse_close(fd, ip, port, cosas);
+                break;
+            }
             default:
             {
                 printf("Unknown operation\n");
@@ -131,7 +136,7 @@ void create_new_program(char* ip, int port){
     pthread_mutex_unlock(&mutex_programs);
 
     pthread_mutex_lock(&mutex_logger);
-    log_trace(logger, "Nuevo programa agregado, PID:%s", pid);
+    log_trace(logger, "New program added, PID:%s", pid);
     pthread_mutex_unlock(&mutex_logger);
 }
 
@@ -153,18 +158,21 @@ void suse_create(int fd, char * ip, int port, t_list* received){
         pthread_mutex_unlock(&mutex_logger);
     } else {
         t_programa* program = find_program(pid);
+
+        interval* first_iteration = malloc(sizeof(interval));
+        first_iteration->start_time = get_time();
+
         if(program->executing) {
             t_list *ready = program->ready;
             list_add(ready, new_thread);
+
+            list_add(new_thread->ready_list, (void*)first_iteration);
 
             pthread_mutex_lock(&mutex_logger);
             log_trace(logger, "Thread(%d), added to Program(%s)'s ready list", tid, pid);
             pthread_mutex_unlock(&mutex_logger);
         } else {
-            interval* first_execution = malloc(sizeof(interval));
-            first_execution->start_time = get_time();
-            t_list* exec_time = new_thread->exec_list;
-            list_add(exec_time, (void*)first_execution);
+            list_add(new_thread->exec_list, (void*)first_iteration);
             program->exec = new_thread;
             program->executing = true;
 
@@ -175,6 +183,7 @@ void suse_create(int fd, char * ip, int port, t_list* received){
     }
 
     //Confirmo la planificacion del hilo
+    /**
     t_paquete *package = create_package(SUSE_CREATE);
     void* confirmation = malloc(sizeof(int));
     *((int*)confirmation) = 1;
@@ -182,6 +191,8 @@ void suse_create(int fd, char * ip, int port, t_list* received){
     send_package(package, fd);
     free(confirmation);
     free_package(package);
+    */
+    create_response_thread(fd, 1, SUSE_CREATE);
 
     void element_destroyer(void* element){
         free(element);
@@ -197,23 +208,73 @@ void suse_schedule_next(int fd, char * ip, int port, t_list* received){
     log_trace(logger, "Program(%s), asking for new thread", pid);
     pthread_mutex_unlock(&mutex_logger);
 
+    int return_tid = schedule_next(program);
+
+    //Confirmo la planificacion del hilo
+    /**
+    t_paquete *package = create_package(SUSE_SCHEDULE_NEXT);
+    void* confirmation = malloc(sizeof(int));
+    *((int*)confirmation) = return_tid;
+    add_to_package(package, confirmation, sizeof(int));
+    send_package(package, fd);
+    free(confirmation);
+    free_package(package);
+    */
+    create_response_thread(fd, return_tid, SUSE_SCHEDULE_NEXT);
+
+    void element_destroyer(void* element){
+        free(element);
+    }
+    free_list(received, element_destroyer);
+}
+
+int schedule_next(t_programa* program){
     int return_tid;
 
+    //Si no esta en ejecucion significa que todos sus hilos estan en el estado new, aun no puedo hacer nada
     if(program->executing){
-        //TODO: implementar SJFE
         t_list* ready = program->ready;
         if(list_size(ready) > 0){
-            //Take thread from ready list and instantiate a new interval for the execution
+            //Tomo el primer hilo de la lista de readys(FIFO)TODO:implementar SJFE
             t_thread* thread_to_execute = (t_thread*)list_remove(ready, 0);
 
             return_tid = thread_to_execute->tid;
 
-            interval* new_execution = malloc(sizeof(interval));
-            new_execution->start_time = get_time();
+            interval* new_start = malloc(sizeof(interval));
+            new_start->start_time = get_time();
 
-            list_add(thread_to_execute->exec_list, (void*)new_execution);
+            list_add(thread_to_execute->exec_list, (void*)new_start);
 
-            exchange_executing_threads(program, thread_to_execute);
+            //Obtengo el ultimo elemento(interval) de la lista de ejecutados del hilo actualmente en ejecucion
+            interval* last_execution_OLDONE = last_exec(program->exec);
+
+            //Obtengo el ultimo elemento(interval) de la lista de ejecutados del proximo hilo a ejecutar
+            interval* last_execution_NEWONE = last_exec(thread_to_execute);
+
+            //Copio el momento de inicio del nuevo hilo al momento de final del anterior hilo
+            memcpy((void*)&last_execution_OLDONE->end_time, (void*)&last_execution_NEWONE->start_time, sizeof(interval));
+
+            //Obtengo el ultimo elemento(interval) de la lista de readys del hilo actualmente en ejecucion
+            interval* last_ready_OLDONE = last_ready(program->exec);
+
+            //Obtengo el ultimo elemento(interval) de la lista de readys del proximo hilo a ejecutar
+            interval* last_ready_NEWONE = last_ready(thread_to_execute);
+
+            //Copio el momento de inicio(exec) del nuevo hilo al momento de inicio(ready) del anterior hilo
+            memcpy((void*)&last_ready_OLDONE->start_time, (void*)&last_execution_NEWONE->start_time, sizeof(interval));
+
+            //Copio el momento de inicio(exec) del nuevo hilo al momento de final(ready) del nuevo hilo
+            memcpy((void*)&last_ready_NEWONE->end_time, (void*)&last_execution_NEWONE->start_time, sizeof(interval));
+
+            //Agrego el hilo en ejecucion a la lista de readys y le asigno a exec el nuevo hilo a ejecutar
+            TID old_tid = program->exec->tid;
+            list_add(program->ready, (void*)program->exec);
+            program->exec = thread_to_execute;
+            TID new_tid = program->exec->tid;
+
+            pthread_mutex_lock(&mutex_logger);
+            log_trace(logger, "Thread: %d, exchanged for Thread: %d", old_tid, new_tid);
+            pthread_mutex_unlock(&mutex_logger);
 
         } else {
             //TODO: si no hay mas hilos, que retorno?
@@ -224,14 +285,22 @@ void suse_schedule_next(int fd, char * ip, int port, t_list* received){
         return_tid = -1;
     }
 
-    //Confirmo la planificacion del hilo
-    t_paquete *package = create_package(SUSE_SCHEDULE_NEXT);
-    void* confirmation = malloc(sizeof(int));
-    *((int*)confirmation) = return_tid;
-    add_to_package(package, confirmation, sizeof(int));
-    send_package(package, fd);
-    free(confirmation);
-    free_package(package);
+    return return_tid;
+}
+
+void suse_close(int fd, char * ip, int port, t_list* received){
+    char* pid = generate_pid(ip, port);
+    int tid = *((int*)list_get(received, 0));
+    t_programa* program = find_program(pid);
+
+    pthread_mutex_lock(&mutex_logger);
+    log_trace(logger, "Program(%s), asking to finish thread: %d", pid, tid);
+    pthread_mutex_unlock(&mutex_logger);
+
+
+
+    //TODO:si el programa muere, mandar un 1, si se planifica un nuevo hilo, un 2
+    create_response_thread(fd, 1, SUSE_CLOSE);
 
     void element_destroyer(void* element){
         free(element);
@@ -354,23 +423,52 @@ t_programa* find_program(PID pid){
     return (t_programa*)list_find(programs, &program_finder);
 }
 
-void exchange_executing_threads(t_programa* program, t_thread* new_one){
-    t_list* exec_list_OLDONE = program->exec->exec_list;
-    int exec_list_size_OLDONE = list_size(exec_list_OLDONE) - 1;
-    interval* last_execution_OLDONE = list_get(exec_list_OLDONE, exec_list_size_OLDONE);
+void create_response_thread(int fd, int response, MessageType header){
+    void* response_package = create_response_package(fd, response, header);
 
-    t_list* exec_list_NEWONE = new_one->exec_list;
-    int exec_list_size_NEWONE = list_size(exec_list_NEWONE) - 1;
-    interval* last_execution_NEWONE = list_get(exec_list_NEWONE, exec_list_size_NEWONE);
+    pthread_t response_thread;
+    pthread_create(&response_thread, NULL, response_function, response_package);
+    pthread_detach(response_thread);
+}
 
-    memcpy((void*)&last_execution_OLDONE->end_time, (void*)&last_execution_NEWONE->start_time, sizeof(interval));
+void* create_response_package(int fd, int response, MessageType header){
+    t_new_response* response_package = malloc(sizeof(t_new_response));
+    response_package->fd = fd;
+    response_package->response = response;
+    response_package->header = header;
 
-    TID old_tid = program->exec->tid;
-    list_add(program->ready, (void*)program->exec);
-    program->exec = new_one;
-    TID new_tid = program->exec->tid;
+    return (void*)response_package;
+}
 
-    pthread_mutex_lock(&mutex_logger);
-    log_trace(logger, "Thread: %d, exchanged for Thread: %d", old_tid, new_tid);
-    pthread_mutex_unlock(&mutex_logger);
+void* response_function(void* response_package){
+    //TODO:free response_package
+    t_new_response* new_response_package = (t_new_response*)response_package;
+    int fd = new_response_package->fd;
+    int response = new_response_package->response;
+    MessageType header = new_response_package->header;
+
+    t_paquete *package = create_package(header);
+    void* confirmation = malloc(sizeof(int));
+    *((int*)confirmation) = response;
+    add_to_package(package, confirmation, sizeof(int));
+    send_package(package, fd);
+    free(confirmation);
+    free_package(package);
+}
+
+interval* last_exec(t_thread* thread){
+    t_list* exec_list = thread->exec_list;
+    int exec_list_size = list_size(exec_list) - 1;
+    return list_get(exec_list, exec_list_size);
+}
+
+interval* last_ready(t_thread* thread){
+    t_list* ready_list = thread->ready_list;
+    int ready_list_size = list_size(ready_list) - 1;
+    void* last_ready = list_get(ready_list, ready_list_size);
+    if(last_ready == NULL){
+        last_ready = malloc(sizeof(interval));
+        list_add(ready_list, last_ready);
+    }
+    return (interval*)last_ready;
 }
