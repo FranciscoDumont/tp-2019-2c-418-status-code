@@ -11,15 +11,27 @@
 #include <altaLibreria/structures.h>
 #include "libSuseStructures.h"
 
-//--Inicializo la conexion con el servidor
+/**
+ * Inicializo la conexion con el servidor
+ */
 void suse_init();
 
-//--Leo el archivo de configuracion y cargo sus valores en el la estructura de configuracion
+/**
+ * Leo el archivo de configuracion y cargo sus valores en el la estructura de configuracion
+ */
 void read_config_options();
 
-//--Creo un hilo en SUSE, si la conexion con el servidor no fue realizada, realizo esta primero
+/**
+ * Creo las estructuras correspondientes al hilo que me pasa por parametro hilolay en SUSE
+ * @param tid
+ * @return 0 en caso de exito, -1 en caso de error?
+ */
 int suse_create(int tid);
 
+/**
+ * Hilolay me pide que replanifique el proceso, le paso el siguiente hilo segun la planificacion de SUSE
+ * @return el sgte hilo segun la planificacion de SUSE o -1 si no puedo?
+ */
 int suse_schedule_next(void);
 
 int suse_join(int tid);

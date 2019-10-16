@@ -149,7 +149,8 @@ void suse_create(int fd, char * ip, int port, t_list* received){
     new_thread->pid = pid;
     new_thread->exec_list = list_create();
     new_thread->ready_list = list_create();
-    new_thread->start_time = get_time();
+    new_thread->start_time = malloc(sizeof(struct timespec));
+    *(new_thread->start_time) = get_time();
 
     if(multiprogramming_grade() >= config->max_multiprog){
         list_add(NEW, (void*)new_thread);
@@ -159,10 +160,10 @@ void suse_create(int fd, char * ip, int port, t_list* received){
     } else {
         t_programa* program = find_program(pid);
 
-        interval* first_iteration = malloc(sizeof(interval));
-        first_iteration->start_time = get_time();
+        interval* first_iteration = new_interval();
+        *(first_iteration->start_time) = get_time();
 
-        if(program->executing) {
+        if(program->executing) { //And if exec!= NULL?
             t_list *ready = program->ready;
             list_add(ready, new_thread);
 
@@ -183,15 +184,6 @@ void suse_create(int fd, char * ip, int port, t_list* received){
     }
 
     //Confirmo la planificacion del hilo
-    /**
-    t_paquete *package = create_package(SUSE_CREATE);
-    void* confirmation = malloc(sizeof(int));
-    *((int*)confirmation) = 1;
-    add_to_package(package, confirmation, sizeof(int));
-    send_package(package, fd);
-    free(confirmation);
-    free_package(package);
-    */
     create_response_thread(fd, 1, SUSE_CREATE);
 
     void element_destroyer(void* element){
@@ -211,21 +203,13 @@ void suse_schedule_next(int fd, char * ip, int port, t_list* received){
     int return_tid = schedule_next(program);
 
     //Confirmo la planificacion del hilo
-    /**
-    t_paquete *package = create_package(SUSE_SCHEDULE_NEXT);
-    void* confirmation = malloc(sizeof(int));
-    *((int*)confirmation) = return_tid;
-    add_to_package(package, confirmation, sizeof(int));
-    send_package(package, fd);
-    free(confirmation);
-    free_package(package);
-    */
     create_response_thread(fd, return_tid, SUSE_SCHEDULE_NEXT);
 
     void element_destroyer(void* element){
         free(element);
     }
     free_list(received, element_destroyer);
+    free((void*)pid);
 }
 
 int schedule_next(t_programa* program){
@@ -240,31 +224,30 @@ int schedule_next(t_programa* program){
 
             return_tid = thread_to_execute->tid;
 
-            interval* new_start = malloc(sizeof(interval));
-            new_start->start_time = get_time();
+            struct timespec* change_time = malloc(sizeof(struct timespec));
+            *(change_time) = get_time();
+
+            interval* new_start = new_interval();
+            new_start->start_time = change_time;
 
             list_add(thread_to_execute->exec_list, (void*)new_start);
 
             //Obtengo el ultimo elemento(interval) de la lista de ejecutados del hilo actualmente en ejecucion
             interval* last_execution_OLDONE = last_exec(program->exec);
 
-            //Obtengo el ultimo elemento(interval) de la lista de ejecutados del proximo hilo a ejecutar
-            interval* last_execution_NEWONE = last_exec(thread_to_execute);
+            *(last_execution_OLDONE->end_time) = *(change_time);
 
-            //Copio el momento de inicio del nuevo hilo al momento de final del anterior hilo
-            memcpy((void*)&last_execution_OLDONE->end_time, (void*)&last_execution_NEWONE->start_time, sizeof(interval));
+            //Creo un nuevo elemento para la lista ready, le asigno el tiempo de inicio y lo agrego a la lista de readys del elemento en ejecucion
+            interval* new_ready_OLDONE = new_interval();
 
-            //Obtengo el ultimo elemento(interval) de la lista de readys del hilo actualmente en ejecucion
-            interval* last_ready_OLDONE = last_ready(program->exec);
+            *(new_ready_OLDONE->start_time) = *(change_time);
 
-            //Obtengo el ultimo elemento(interval) de la lista de readys del proximo hilo a ejecutar
+            list_add(program->exec->ready_list, new_ready_OLDONE);
+
+            //Obtengo el ultimo elemento(interval) de la lista de readys del proximo hilo a ejecutar y le agrego el tiempo final
             interval* last_ready_NEWONE = last_ready(thread_to_execute);
 
-            //Copio el momento de inicio(exec) del nuevo hilo al momento de inicio(ready) del anterior hilo
-            memcpy((void*)&last_ready_OLDONE->start_time, (void*)&last_execution_NEWONE->start_time, sizeof(interval));
-
-            //Copio el momento de inicio(exec) del nuevo hilo al momento de final(ready) del nuevo hilo
-            memcpy((void*)&last_ready_NEWONE->end_time, (void*)&last_execution_NEWONE->start_time, sizeof(interval));
+            *(last_ready_NEWONE->end_time) = *(change_time);
 
             //Agrego el hilo en ejecucion a la lista de readys y le asigno a exec el nuevo hilo a ejecutar
             TID old_tid = program->exec->tid;
@@ -454,21 +437,25 @@ void* response_function(void* response_package){
     send_package(package, fd);
     free(confirmation);
     free_package(package);
+    free(new_response_package);
 }
 
 interval* last_exec(t_thread* thread){
     t_list* exec_list = thread->exec_list;
     int exec_list_size = list_size(exec_list) - 1;
-    return list_get(exec_list, exec_list_size);
+    return (interval*)list_get(exec_list, exec_list_size);
 }
 
 interval* last_ready(t_thread* thread){
     t_list* ready_list = thread->ready_list;
     int ready_list_size = list_size(ready_list) - 1;
     void* last_ready = list_get(ready_list, ready_list_size);
-    if(last_ready == NULL){
-        last_ready = malloc(sizeof(interval));
-        list_add(ready_list, last_ready);
-    }
     return (interval*)last_ready;
+}
+
+interval* new_interval(){
+    interval* iteration = malloc(sizeof(interval));
+    iteration->start_time = malloc(sizeof(struct timespec));
+    iteration->end_time = malloc(sizeof(struct timespec));
+    return iteration;
 }

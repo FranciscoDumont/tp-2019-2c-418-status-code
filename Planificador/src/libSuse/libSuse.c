@@ -96,6 +96,7 @@ int suse_join(int tid){
 }
 
 int suse_close(int tid){
+    /**
     t_paquete *package = create_package(SUSE_CLOSE);
     void* _tid = malloc(sizeof(int));
     *((int*)_tid) = tid;
@@ -118,7 +119,7 @@ int suse_close(int tid){
             return -1;
         }
     }
-
+    */
     printf("Closed thread %i\n", tid);
     max_tid--;
     return 0;

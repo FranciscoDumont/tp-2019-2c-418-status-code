@@ -16,31 +16,60 @@
 #include <altaLibreria/structures.h>
 #include "suseStructures.h"
 
-//--Inicializo el log
+/**
+ * Inicializo el log
+ */
 void start_log();
 
-//--Inicializo las listas de estados
+/**
+ * Inicializo semaforos, listas de estados comunes y la estructura de configuracion
+ */
 void initialize_structures();
 
-//--Leo las configuraciones del archivo y las cargo en el struct SUSEConfig
+/**
+ * Leo las configuraciones del archivo y las cargo en el struct SUSEConfig
+ */
 void read_config_options();
 
-//--Funcion encargada de definir las tres funciones para el servidor
+/**
+ * Funcion encargada de definir las tres funciones para el servidor(new, incoming y lost)
+ */
 void server_function();
 
-//--Creo un nuevo proceso y lo cargo en la lista de procesos
+/**
+ * Creo un nuevo proceso y lo cargo en la lista de procesos
+ * @param ip
+ * @param port
+ */
 void create_new_program(char* ip, int port);
 
-//--Esta función es invocada cuando se necesita crear un nuevo hilo, donde la función que
-//se pase por parámetro actuará como main del mismo, finalizando el hilo al terminar esa función
-//--Recibe TID
-//--Retorna int, mismo TID?
-void suse_create(int fd, char* ip, int port, t_list* cosas);
+/**
+ * Creo las estructuras necesarias para representar al tid suministrado por hilolay
+ * @param fd
+ * @param ip
+ * @param port
+ * @param cosas(tid)
+ * Retorna por socket un 0 en caso de exito o un -1 en caso de exito
+ */
+void suse_create(int fd, char* ip, int port, t_list* received);
 
-//--Retorna el proximo TID a ejecutar
+/**
+ * Retorna el proximo TID a ejecutar segun el algoritmo de planificacion de SUSE
+ * @param fd
+ * @param ip
+ * @param port
+ * @param received
+ * Retorno por socket el proximo tid a ejecutar
+ */
 void suse_schedule_next(int fd, char * ip, int port, t_list* received);
 
-//--Nucleo de la planificacion, lo separo porque utilizo la misma funcionalidad en suse close si quedan hilos por planificar
+/**
+ * Nucleo de la planificacion, lo separo porque utilizo la misma funcionalidad en suse close/return si quedan hilos por
+ * planificar luego de quitar al que esta en ejecucion, ademas actualizo las listas de intervalos de ready y exec de
+ * los distintos threads
+ * @param program
+ * @return int tid a ejecutar a continuacion, o -1 si el programa no esta en ejecucion?
+ */
 int schedule_next(t_programa* program);
 
 //--Da por finalizado al TID indicado. El thread actual pasará a estar EXIT.
@@ -62,50 +91,114 @@ void* suse_join(void* newComm);
 //--Da por finalizado al TID indicado. El thread actual pasará a estar EXIT.
 void* suse_return(void* newComm);
 
-//--Funcion que ejecuta la funcion encargada de generar las metricas cada cierto tiempo
+/**
+ * Funcion que ejecuta a la funcion que produce las metricas, corre en un hilo paralelo
+ * @param arg
+ * @return
+ */
 void* metrics_function(void* arg);
 
-//--Funcion que genera y loggea las metricas
+/**
+ * Funcion que genera y loggea las metricas
+ */
 void generate_metrics();
 
-//--Genero las metricas de cada hilo
+/**
+ * Genero las metricas de cada hilo
+ * @return char* metricas
+ */
 char* generate_thread_metrics();
 
-//--Genero las metricas de cada programa
+/**
+ * Genero las metricas de cada programa
+ * @return char* metricas
+ */
 char* generate_program_metrics();
 
-//--Genero las metricas del sistema
+/**
+ * Genero las metricas del sistema
+ * @return char* metricas
+ */
 char* generate_system_metrics();
 
 //--HELPERS
 
-//--Genero un identificador de proceso en base a la ip y al puerto desde los que se conecta el cliente
-char* generate_pid(char* ip, int port);
+/**
+ * Genero un identificador de proceso en base a la ip y al puerto desde los que se conecta el cliente
+ * @param ip
+ * @param port
+ * @return PID pid
+ */
+PID generate_pid(char* ip, int port);
 
-//--Hallo el grado de multiprogramacion total del sistema(cant de hilos que no estan en new)
+/**
+ * Hallo el grado de multiprogramacion total del sistema(cant de hilos que no estan en new)
+ * @return int grado
+ */
 int multiprogramming_grade();
 
+/**
+ * Retorno una estructura que representa al tiempo en segundos y microsegundos
+ * @return
+ */
 struct timespec get_time();
 
+/**
+ * Wrapper para liberar una lista, nombre mas corto
+ * @param received Lista
+ * @param element_destroyer
+ */
 void free_list(t_list* received, void(*element_destroyer)(void*));
 
-//--Retorno un programa el programa al que le corresponde el PID dado
+/**
+ * Retorno el programa al que le corresponde un PID dado
+ * @param pid
+ * @return t_programa*
+ */
 t_programa* find_program(PID pid);
 
-//--Intercambio el hilo en ejecucion por uno dado
-void exchange_executing_threads(t_programa* program, t_thread* new_one);
-
-//--Creo un hilo para responderle al cliente
+/**
+ * Creo un hilo para responderle al cliente
+ * @param fd
+ * @param response
+ * @param header
+ */
 void create_response_thread(int fd, int response, MessageType header);
 
-//--Creo un paquete de respuesta con los datos dados
+/**
+ * Creo un paquete de respuesta con los datos dados(para enviar al cliente)
+ * @param fd
+ * @param response
+ * @param header
+ * @return
+ */
 void* create_response_package(int fd, int response, MessageType header);
 
-//--Funcion encargada de enviar la respuesta al cliente
+/**
+ * Funcion encargada de enviar la respuesta al cliente
+ * @param response_package
+ * @return
+ */
 void* response_function(void* response_package);
 
+/**
+ * Hallo el ultimo intervalo de la lista de ejecucion
+ * @param thread
+ * @return interval* interval
+ */
 interval* last_exec(t_thread* thread);
 
+/**
+ * Hallo el ultimo intervalo de la lista de listos
+ * @param thread
+ * @return interval* interval
+ */
 interval* last_ready(t_thread* thread);
+
+/**
+ * Creo un nuevo intervalo con su memoria ya alocada
+ * @return interval* interval
+ */
+interval* new_interval();
 
 #endif //SUSE_SUSE_H
