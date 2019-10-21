@@ -75,7 +75,7 @@ void server_function(){
 
     //--Funcion que se ejecuta cuando se conecta un nuevo programa
     void new(int fd, char * ip, int port){
-        create_new_program(ip, port);
+        create_new_program(ip, port, fd);
     }
 
     //--Funcion que se ejecuta cuando se pierde la conexion con un cliente
@@ -123,10 +123,12 @@ void server_function(){
     start_server(socket, &new, &lost, &incoming);
 }
 
-void create_new_program(char* ip, int port){
+//--LISTO
+void create_new_program(char* ip, int port, int fd){
     PID pid = generate_pid(ip, port);
     t_programa* nuevo_programa = (t_programa*)malloc(sizeof(t_programa));
     nuevo_programa->pid = pid;
+    nuevo_programa->fd = fd;
     nuevo_programa->ready = list_create();
     nuevo_programa->exec = malloc(sizeof(t_thread));
     nuevo_programa->executing = false;
@@ -140,6 +142,7 @@ void create_new_program(char* ip, int port){
     pthread_mutex_unlock(&mutex_logger);
 }
 
+//--LISTO
 void suse_create(int fd, char * ip, int port, t_list* received){
     char* pid = generate_pid(ip, port);
     int tid = *((int*)list_get(received, 0));
@@ -195,12 +198,19 @@ void suse_create(int fd, char * ip, int port, t_list* received){
 void suse_schedule_next(int fd, char * ip, int port, t_list* received){
     char* pid = generate_pid(ip, port);
     t_programa* program = find_program(pid);
+    int return_tid;
 
-    pthread_mutex_lock(&mutex_logger);
-    log_trace(logger, "Program(%s), asking for new thread", pid);
-    pthread_mutex_unlock(&mutex_logger);
+    //Verifico que el programa exista(que no se haya cerrado con suse_close)
+    if(program != NULL) {
 
-    int return_tid = schedule_next(program);
+        pthread_mutex_lock(&mutex_logger);
+        log_trace(logger, "Program(%s), asking for new thread", pid);
+        pthread_mutex_unlock(&mutex_logger);
+
+        return_tid = schedule_next(program);
+    } else {
+        return_tid = -1;
+    }
 
     //Confirmo la planificacion del hilo
     create_response_thread(fd, return_tid, SUSE_SCHEDULE_NEXT);
@@ -219,7 +229,7 @@ int schedule_next(t_programa* program){
     if(program->executing){
         t_list* ready = program->ready;
         if(list_size(ready) > 0){
-            //Tomo el primer hilo de la lista de readys(FIFO)TODO:implementar SJFE
+            //Tomo el primer hilo de la lista de readys(FIFO)TODO:implementar SJF-E
             t_thread* thread_to_execute = (t_thread*)list_remove(ready, 0);
 
             return_tid = thread_to_execute->tid;
@@ -232,32 +242,50 @@ int schedule_next(t_programa* program){
 
             list_add(thread_to_execute->exec_list, (void*)new_start);
 
-            //Obtengo el ultimo elemento(interval) de la lista de ejecutados del hilo actualmente en ejecucion
-            interval* last_execution_OLDONE = last_exec(program->exec);
+            //Si el hilo ejecutado anterior fue cerrado(suse_close), el campo estara en NULL
+            if(program->exec != NULL){
 
-            *(last_execution_OLDONE->end_time) = *(change_time);
+                //Obtengo el ultimo elemento(interval) de la lista de ejecutados del hilo actualmente en ejecucion
+                interval* last_execution_OLDONE = last_exec(program->exec);
 
-            //Creo un nuevo elemento para la lista ready, le asigno el tiempo de inicio y lo agrego a la lista de readys del elemento en ejecucion
-            interval* new_ready_OLDONE = new_interval();
+                *(last_execution_OLDONE->end_time) = *(change_time);
 
-            *(new_ready_OLDONE->start_time) = *(change_time);
+                //Creo un nuevo elemento para la lista ready, le asigno el tiempo de inicio y lo agrego a la lista de readys del elemento en ejecucion
+                interval* new_ready_OLDONE = new_interval();
 
-            list_add(program->exec->ready_list, new_ready_OLDONE);
+                *(new_ready_OLDONE->start_time) = *(change_time);
 
-            //Obtengo el ultimo elemento(interval) de la lista de readys del proximo hilo a ejecutar y le agrego el tiempo final
-            interval* last_ready_NEWONE = last_ready(thread_to_execute);
+                list_add(program->exec->ready_list, new_ready_OLDONE);
 
-            *(last_ready_NEWONE->end_time) = *(change_time);
+                //Obtengo el ultimo elemento(interval) de la lista de readys del proximo hilo a ejecutar y le agrego el tiempo final
+                interval* last_ready_NEWONE = last_ready(thread_to_execute);
 
-            //Agrego el hilo en ejecucion a la lista de readys y le asigno a exec el nuevo hilo a ejecutar
-            TID old_tid = program->exec->tid;
-            list_add(program->ready, (void*)program->exec);
-            program->exec = thread_to_execute;
-            TID new_tid = program->exec->tid;
+                *(last_ready_NEWONE->end_time) = *(change_time);
 
-            pthread_mutex_lock(&mutex_logger);
-            log_trace(logger, "Thread: %d, exchanged for Thread: %d", old_tid, new_tid);
-            pthread_mutex_unlock(&mutex_logger);
+                //Agrego el hilo en ejecucion a la lista de readys y le asigno a exec el nuevo hilo a ejecutar
+                TID old_tid = program->exec->tid;
+                list_add(program->ready, (void*)program->exec);
+                program->exec = thread_to_execute;
+                TID new_tid = program->exec->tid;
+
+                pthread_mutex_lock(&mutex_logger);
+                log_trace(logger, "Thread: %d, exchanged for Thread: %d on Program: %s", old_tid, new_tid, program->pid);
+                pthread_mutex_unlock(&mutex_logger);
+            } else {
+
+                //Obtengo el ultimo elemento(interval) de la lista de readys del proximo hilo a ejecutar y le agrego el tiempo final
+                interval* last_ready_NEWONE = last_ready(thread_to_execute);
+
+                *(last_ready_NEWONE->end_time) = *(change_time);
+
+                //Le asigno a exec el nuevo hilo a ejecutar
+                program->exec = thread_to_execute;
+                TID new_tid = program->exec->tid;
+
+                pthread_mutex_lock(&mutex_logger);
+                log_trace(logger, "Thread: %d, now executing on Program: %s", new_tid, program->pid);
+                pthread_mutex_unlock(&mutex_logger);
+            }
 
         } else {
             //TODO: si no hay mas hilos, que retorno?
@@ -424,7 +452,6 @@ void* create_response_package(int fd, int response, MessageType header){
 }
 
 void* response_function(void* response_package){
-    //TODO:free response_package
     t_new_response* new_response_package = (t_new_response*)response_package;
     int fd = new_response_package->fd;
     int response = new_response_package->response;

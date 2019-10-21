@@ -40,15 +40,16 @@ void server_function();
  * Creo un nuevo proceso y lo cargo en la lista de procesos
  * @param ip
  * @param port
+ * @param fd socket del cliente
  */
-void create_new_program(char* ip, int port);
+void create_new_program(char* ip, int port, int fd);
 
 /**
  * Creo las estructuras necesarias para representar al tid suministrado por hilolay
  * @param fd
  * @param ip
  * @param port
- * @param cosas(tid)
+ * @param received(tid)
  * Retorna por socket un 0 en caso de exito o un -1 en caso de exito
  */
 void suse_create(int fd, char* ip, int port, t_list* received);
@@ -64,15 +65,21 @@ void suse_create(int fd, char* ip, int port, t_list* received);
 void suse_schedule_next(int fd, char * ip, int port, t_list* received);
 
 /**
- * Nucleo de la planificacion, lo separo porque utilizo la misma funcionalidad en suse close/return si quedan hilos por
- * planificar luego de quitar al que esta en ejecucion, ademas actualizo las listas de intervalos de ready y exec de
- * los distintos threads
+ * Nucleo de la planificacion, actualizo las listas de intervalos de ready y exec de los
+ * threads sobre los que trabajo.
  * @param program
- * @return int tid a ejecutar a continuacion, o -1 si el programa no esta en ejecucion?
+ * @return int tid a ejecutar a continuacion, o -1 si el programa no esta en ejecucion
  */
 int schedule_next(t_programa* program);
 
-//--Da por finalizado al TID indicado. El thread actual pasará a estar EXIT.
+/**
+ * Da por finalizado el TID indicado, el thread actual pasa a EXIT, llamo a la funcion de las
+ * metricas y elimino la estructura del programa
+ * @param fd
+ * @param ip
+ * @param port
+ * @param received
+ */
 void suse_close(int fd, char * ip, int port, t_list* received);
 
 //--Genera una operación de wait sobre el semáforo dado

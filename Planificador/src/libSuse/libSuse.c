@@ -5,6 +5,7 @@ bool server_socket_initialized = false;
 int server_socket = 0;
 libSUSEConfig* config;
 
+//--LISTO
 void suse_init(){
     config = malloc(sizeof(libSUSEConfig));
     config->ip = malloc(sizeof(char));
@@ -21,6 +22,7 @@ void suse_init(){
     server_socket_initialized = true;
 }
 
+//--LISTO
 void read_config_options(){
     t_config* config_file = config_create("../libsuse.config");
     config->ip = strcpy(config->ip, config_get_string_value(config_file, "IP"));
@@ -28,6 +30,7 @@ void read_config_options(){
     config_destroy(config_file);
 }
 
+//--LISTO
 int suse_create(int tid){
     //--Si la conexion no esta inicializada la inicializo
     if(!server_socket_initialized){
@@ -62,8 +65,12 @@ int suse_create(int tid){
     }
 }
 
+//--TODO:Agregar un recv bloqueante si no hay mas hilos en SUSE?
 int suse_schedule_next(void){
     t_paquete *package = create_package(SUSE_SCHEDULE_NEXT);
+    //Para hacer el servidor lo mas generico posible, todas las peticiones deben enviar algun dato,
+    // pero en este caso(y otros probablemente) no es necesario enviar nada, por lo que envio un dato inutil para
+    // evitar que el servidor se cuelgue esperando.
     void* placebo = malloc(sizeof(int));
     *((int*)placebo) = 1;
     add_to_package(package, placebo, sizeof(int));
@@ -125,17 +132,12 @@ int suse_close(int tid){
     return 0;
 }
 
-int suse_wait(int tid){
+int suse_wait(int tid, char *sem_name){
     // Not supported
     return 0;
 }
 
-int suse_signal(int tid){
-    // Not supported
-    return 0;
-}
-
-int suse_return(int tid){
+int suse_signal(int tid, char *sem_name){
     // Not supported
     return 0;
 }
@@ -144,7 +146,9 @@ static struct hilolay_operations hiloops = {
         .suse_create = &suse_create,
         .suse_schedule_next = &suse_schedule_next,
         .suse_join = &suse_join,
-        .suse_close = &suse_close
+        .suse_close = &suse_close,
+        .suse_wait = &suse_wait,
+        .suse_signal = &suse_signal
 };
 
 void hilolay_init(void){

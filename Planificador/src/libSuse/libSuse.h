@@ -30,20 +30,27 @@ int suse_create(int tid);
 
 /**
  * Hilolay me pide que replanifique el proceso, le paso el siguiente hilo segun la planificacion de SUSE
- * @return el sgte hilo segun la planificacion de SUSE o -1 si no puedo?
+ * @return el sgte hilo segun la planificacion de SUSE o -1 si no puedo?, TODO:hacer que se quede bloqueado en un recv hasta que algun close me libere lugar para el hilo
  */
 int suse_schedule_next(void);
 
 int suse_join(int tid);
 
+/**
+ * Da por finalizado el thread indicado en el parametro
+ * @param tid, thread a cerrar
+ * @return
+ */
 int suse_close(int tid);
 
-int suse_wait(int tid);
+int suse_wait(int tid, char *sem_name);
 
-int suse_signal(int tid);
+int suse_signal(int tid, char *sem_name);
 
-int suse_return(int tid);
-
+/**
+ * Por decision de diseño, todas las funciones de SUSE envian un codigo de rta, segun el codigo, realizo una u otra accion
+ * @return Codigo de rta enviado por SUSE
+ */
 int confirm_action();
 
 #endif //HILOLAY_LIBRARY_H
