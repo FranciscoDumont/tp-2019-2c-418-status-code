@@ -108,7 +108,7 @@ void* metrics_function(void* arg);
 /**
  * Funcion que genera y loggea las metricas
  */
-void generate_metrics();
+void* generate_metrics(void* arg);
 
 /**
  * Genero las metricas de cada hilo

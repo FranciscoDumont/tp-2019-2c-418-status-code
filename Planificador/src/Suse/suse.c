@@ -303,15 +303,38 @@ void suse_close(int fd, char * ip, int port, t_list* received){
     char* pid = generate_pid(ip, port);
     int tid = *((int*)list_get(received, 0));
     t_programa* program = find_program(pid);
+    int response;
 
     pthread_mutex_lock(&mutex_logger);
     log_trace(logger, "Program(%s), asking to finish thread: %d", pid, tid);
     pthread_mutex_unlock(&mutex_logger);
 
+    t_thread* exec_thread = program->exec;
+
+    //Es posible que el hilo a cerrar no sea el que este en ejecucion?
+    if(exec_thread->tid == tid) {
+
+        //Obtengo el ultimo intervalo de ejecucion
+        interval* last_exec = last_exec(exec_thread);
 
 
-    //TODO:si el programa muere, mandar un 1, si se planifica un nuevo hilo, un 2
-    create_response_thread(fd, 1, SUSE_CLOSE);
+
+        //TODO:actualizar el ultimo interval de exec
+        //TODO:enviar hilo a EXIT
+        //TODO:setear exec en NULL
+        //TODO:verificar si el programa posee hilos en ready o en new, si no cumple ninguno, liberar la estructura(?)
+
+        pthread_t end_thread_metrics_thread;
+        pthread_create(&end_thread_metrics_thread, NULL, generate_metrics, NULL);
+        pthread_detach(end_thread_metrics_thread);
+
+        response = 1;
+    } else {
+        response = -1;
+    }
+
+    //1 para exito, -1 en el caso de error
+    create_response_thread(fd, response, SUSE_CLOSE);
 
     void element_destroyer(void* element){
         free(element);
@@ -325,11 +348,11 @@ void* metrics_function(void* arg){
     pthread_mutex_unlock(&mutex_logger);
     while(1){
         sleep(config->metrics_timer);
-        generate_metrics();
+        generate_metrics(NULL);
     }
 }
 
-void generate_metrics(){
+void* generate_metrics(void* arg){
     char* metric_to_log = string_new();
     string_append(&metric_to_log, "---------METRICS:\n");
     char* separator = "\n";
@@ -476,8 +499,7 @@ interval* last_exec(t_thread* thread){
 interval* last_ready(t_thread* thread){
     t_list* ready_list = thread->ready_list;
     int ready_list_size = list_size(ready_list) - 1;
-    void* last_ready = list_get(ready_list, ready_list_size);
-    return (interval*)last_ready;
+    return (interval*)list_get(ready_list, ready_list_size);
 }
 
 interval* new_interval(){
@@ -485,4 +507,10 @@ interval* new_interval(){
     iteration->start_time = malloc(sizeof(struct timespec));
     iteration->end_time = malloc(sizeof(struct timespec));
     return iteration;
+}
+
+struct timespec* new_time(){
+    struct timespec* new_time = malloc(sizeof(struct timespec));
+    *(new_time) = get_time();
+    return new_time;
 }
