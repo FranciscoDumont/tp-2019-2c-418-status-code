@@ -54,8 +54,6 @@ int suse_create(int tid){
             free_package(package);
             if(confirm_action() == 1){
                 printf("Hilo en planificacion\n");
-                //TODO: averiguar si dejar esto aca
-                if (tid > max_tid) max_tid = tid;
                 return 0;
             } else {
                 printf("Failed receiving closing new thread confirmation\n");
@@ -91,10 +89,6 @@ int suse_schedule_next(void){
             return -1;
         }
     }
-
-    int next = max_tid;
-    printf("Scheduling next item %i...\n", next);
-    return next;
 }
 
 int suse_join(int tid){
@@ -103,7 +97,7 @@ int suse_join(int tid){
 }
 
 int suse_close(int tid){
-    /**
+
     t_paquete *package = create_package(SUSE_CLOSE);
     void* _tid = malloc(sizeof(int));
     *((int*)_tid) = tid;
@@ -118,18 +112,12 @@ int suse_close(int tid){
         free_package(package);
         if(confirm_action() == 1){
             printf("Closed thread %i\n", tid);
-            //TODO: averiguar si dejar esto aca
-            max_tid--;
             return 0;
         } else {
             printf("Failed receiving closing thread confirmation\n");
             return -1;
         }
     }
-    */
-    printf("Closed thread %i\n", tid);
-    max_tid--;
-    return 0;
 }
 
 int suse_wait(int tid, char *sem_name){

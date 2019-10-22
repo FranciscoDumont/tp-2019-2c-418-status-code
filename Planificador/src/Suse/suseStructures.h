@@ -37,13 +37,13 @@ typedef struct _t_thread{
  * ademas de una lista de hilos en estado de listo
  * y un hilo en estado de ejecucion, finalmente un campo booleano indicando si alguno de sus hilos se comenzo a ejecutar
  */
-typedef struct _t_programa{
+typedef struct _t_program{
     PID pid;
     int fd;
     t_list* ready;
     t_thread* exec;
     bool executing;
-} t_programa;
+} t_program;
 
 /**
  * Estrucura encargada de representar una respuesta al cliente
@@ -61,9 +61,9 @@ typedef struct _t_new_response{
  * Esta formada a su vez por otras dos estructuras timespec, las cuales almacenan timestamps y con las cuales se puede
  * operar para obtener la diferencia entre ambas
  */
-typedef struct _interval{
+typedef struct _t_interval{
     struct timespec* start_time;
     struct timespec* end_time;
-} interval;
+} t_interval;
 
 #endif //SUSE_SUSESTRUCTURES_H

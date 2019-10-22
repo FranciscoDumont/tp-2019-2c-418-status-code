@@ -9,6 +9,7 @@ t_list* BLOCKED;
 pthread_mutex_t mutex_logger;
 pthread_mutex_t mutex_programs;
 
+//--LISTO
 int main() {
     pthread_t metrics_thread;
     void* metrics_thread_error;
@@ -28,6 +29,7 @@ int main() {
     return 0;
 }
 
+//--LISTO
 void start_log(){
     logger = log_create("../suse.log", "suse", 1, LOG_LEVEL_TRACE);
 }
@@ -83,8 +85,6 @@ void server_function(){
         pthread_mutex_lock(&mutex_logger);
         log_trace(logger, "Program on IP:%s, PORT:%d has disconnected", ip, port);
         pthread_mutex_unlock(&mutex_logger);
-        //TODO:remove program from programs list
-        //TODO:free all resources from the program
     }
 
     //--funcion que se ejecuta cuando se recibe un nuevo mensaje de un cliente ya conectado
@@ -126,15 +126,15 @@ void server_function(){
 //--LISTO
 void create_new_program(char* ip, int port, int fd){
     PID pid = generate_pid(ip, port);
-    t_programa* nuevo_programa = (t_programa*)malloc(sizeof(t_programa));
-    nuevo_programa->pid = pid;
-    nuevo_programa->fd = fd;
-    nuevo_programa->ready = list_create();
-    nuevo_programa->exec = malloc(sizeof(t_thread));
-    nuevo_programa->executing = false;
+    t_program* new_program = (t_program*)malloc(sizeof(t_program));
+    new_program->pid = pid;
+    new_program->fd = fd;
+    new_program->ready = list_create();
+    new_program->exec = malloc(sizeof(t_thread));
+    new_program->executing = false;
 
     pthread_mutex_lock(&mutex_programs);
-    list_add(programs, (void*)nuevo_programa);
+    list_add(programs, (void*)new_program);
     pthread_mutex_unlock(&mutex_programs);
 
     pthread_mutex_lock(&mutex_logger);
@@ -161,9 +161,9 @@ void suse_create(int fd, char * ip, int port, t_list* received){
         log_trace(logger, "Program(%s)'s Thread(%d) added to NEW list", pid, tid);
         pthread_mutex_unlock(&mutex_logger);
     } else {
-        t_programa* program = find_program(pid);
+        t_program* program = find_program(pid);
 
-        interval* first_iteration = new_interval();
+        t_interval* first_iteration = new_interval();
         *(first_iteration->start_time) = get_time();
 
         if(program->executing) { //And if exec!= NULL?
@@ -197,7 +197,7 @@ void suse_create(int fd, char * ip, int port, t_list* received){
 
 void suse_schedule_next(int fd, char * ip, int port, t_list* received){
     char* pid = generate_pid(ip, port);
-    t_programa* program = find_program(pid);
+    t_program* program = find_program(pid);
     int return_tid;
 
     //Verifico que el programa exista(que no se haya cerrado con suse_close)
@@ -222,7 +222,7 @@ void suse_schedule_next(int fd, char * ip, int port, t_list* received){
     free((void*)pid);
 }
 
-int schedule_next(t_programa* program){
+int schedule_next(t_program* program){
     int return_tid;
 
     //Si no esta en ejecucion significa que todos sus hilos estan en el estado new, aun no puedo hacer nada
@@ -237,7 +237,7 @@ int schedule_next(t_programa* program){
             struct timespec* change_time = malloc(sizeof(struct timespec));
             *(change_time) = get_time();
 
-            interval* new_start = new_interval();
+            t_interval* new_start = new_interval();
             new_start->start_time = change_time;
 
             list_add(thread_to_execute->exec_list, (void*)new_start);
@@ -246,19 +246,19 @@ int schedule_next(t_programa* program){
             if(program->exec != NULL){
 
                 //Obtengo el ultimo elemento(interval) de la lista de ejecutados del hilo actualmente en ejecucion
-                interval* last_execution_OLDONE = last_exec(program->exec);
+                t_interval* last_execution_OLDONE = last_exec(program->exec);
 
                 *(last_execution_OLDONE->end_time) = *(change_time);
 
                 //Creo un nuevo elemento para la lista ready, le asigno el tiempo de inicio y lo agrego a la lista de readys del elemento en ejecucion
-                interval* new_ready_OLDONE = new_interval();
+                t_interval* new_ready_OLDONE = new_interval();
 
                 *(new_ready_OLDONE->start_time) = *(change_time);
 
                 list_add(program->exec->ready_list, new_ready_OLDONE);
 
                 //Obtengo el ultimo elemento(interval) de la lista de readys del proximo hilo a ejecutar y le agrego el tiempo final
-                interval* last_ready_NEWONE = last_ready(thread_to_execute);
+                t_interval* last_ready_NEWONE = last_ready(thread_to_execute);
 
                 *(last_ready_NEWONE->end_time) = *(change_time);
 
@@ -274,7 +274,7 @@ int schedule_next(t_programa* program){
             } else {
 
                 //Obtengo el ultimo elemento(interval) de la lista de readys del proximo hilo a ejecutar y le agrego el tiempo final
-                interval* last_ready_NEWONE = last_ready(thread_to_execute);
+                t_interval* last_ready_NEWONE = last_ready(thread_to_execute);
 
                 *(last_ready_NEWONE->end_time) = *(change_time);
 
@@ -288,7 +288,7 @@ int schedule_next(t_programa* program){
             }
 
         } else {
-            //TODO: si no hay mas hilos, que retorno?
+            //Si no hay mas hilos en ready, retorno el mismo tid
             return_tid = program->exec->tid;
         }
     } else {
@@ -302,7 +302,7 @@ int schedule_next(t_programa* program){
 void suse_close(int fd, char * ip, int port, t_list* received){
     char* pid = generate_pid(ip, port);
     int tid = *((int*)list_get(received, 0));
-    t_programa* program = find_program(pid);
+    t_program* program = find_program(pid);
     int response;
 
     pthread_mutex_lock(&mutex_logger);
@@ -314,24 +314,35 @@ void suse_close(int fd, char * ip, int port, t_list* received){
     //Es posible que el hilo a cerrar no sea el que este en ejecucion?
     if(exec_thread->tid == tid) {
 
-        //Obtengo el ultimo intervalo de ejecucion
-        interval* last_exec = last_exec(exec_thread);
+        program->exec = NULL;
 
+        destroy_thread(exec_thread);
 
+        pthread_mutex_lock(&mutex_logger);
+        log_trace(logger, "Thread: %d, from Program: %s, closed", tid, pid);
+        pthread_mutex_unlock(&mutex_logger);
 
-        //TODO:actualizar el ultimo interval de exec
-        //TODO:enviar hilo a EXIT
-        //TODO:setear exec en NULL
-        //TODO:verificar si el programa posee hilos en ready o en new, si no cumple ninguno, liberar la estructura(?)
+        if(no_more_threads(program)){
+            destroy_program(program);
+            pthread_mutex_lock(&mutex_logger);
+            log_trace(logger, "Program: %s, exited SUSE", pid);
+            pthread_mutex_unlock(&mutex_logger);
+        }
 
+        //Lanzo un hilo detacheable que genera metricas
         pthread_t end_thread_metrics_thread;
         pthread_create(&end_thread_metrics_thread, NULL, generate_metrics, NULL);
         pthread_detach(end_thread_metrics_thread);
 
+        //TODO:Lanzar detachable thread que agregue los hilos de NEW a los programas correspondientes
+
         response = 1;
     } else {
+        //El hilo a cerrar no era el que estaba en ejecucion
         response = -1;
     }
+
+    free(pid);
 
     //1 para exito, -1 en el caso de error
     create_response_thread(fd, response, SUSE_CLOSE);
@@ -408,7 +419,7 @@ int multiprogramming_grade(){
 
     //--Mapeo un programa al tamaño de su lista de ready
     void* program_to_ready_grade(void* program){
-        t_list* ready = ((t_programa*)program)->ready;
+        t_list* ready = ((t_program*)program)->ready;
         void* grade = malloc(sizeof(int));
         *((int*)grade) = list_size(ready);
         return grade;
@@ -432,7 +443,7 @@ int multiprogramming_grade(){
 
     //--Execs
     bool executing_program(void* program){
-        return ((t_programa*)program)->executing;
+        return ((t_program*)program)->executing;
     }
 
     int execute_grade = list_count_satisfying(programs, &executing_program);
@@ -450,11 +461,11 @@ void free_list(t_list* received, void(*element_destroyer)(void*)){
     list_destroy_and_destroy_elements(received, element_destroyer);
 }
 
-t_programa* find_program(PID pid){
+t_program* find_program(PID pid){
     bool program_finder(void* program){
-        return strcmp(((t_programa*)program)->pid, pid) == 0;
+        return strcmp(((t_program*)program)->pid, pid) == 0;
     }
-    return (t_programa*)list_find(programs, &program_finder);
+    return (t_program*)list_find(programs, &program_finder);
 }
 
 void create_response_thread(int fd, int response, MessageType header){
@@ -490,27 +501,66 @@ void* response_function(void* response_package){
     free(new_response_package);
 }
 
-interval* last_exec(t_thread* thread){
+t_interval* last_exec(t_thread* thread){
     t_list* exec_list = thread->exec_list;
     int exec_list_size = list_size(exec_list) - 1;
-    return (interval*)list_get(exec_list, exec_list_size);
+    return (t_interval*)list_get(exec_list, exec_list_size);
 }
 
-interval* last_ready(t_thread* thread){
+t_interval* last_ready(t_thread* thread){
     t_list* ready_list = thread->ready_list;
     int ready_list_size = list_size(ready_list) - 1;
-    return (interval*)list_get(ready_list, ready_list_size);
+    return (t_interval*)list_get(ready_list, ready_list_size);
 }
 
-interval* new_interval(){
-    interval* iteration = malloc(sizeof(interval));
+t_interval* new_interval(){
+    t_interval* iteration = malloc(sizeof(t_interval));
     iteration->start_time = malloc(sizeof(struct timespec));
     iteration->end_time = malloc(sizeof(struct timespec));
     return iteration;
 }
 
-struct timespec* new_time(){
-    struct timespec* new_time = malloc(sizeof(struct timespec));
-    *(new_time) = get_time();
-    return new_time;
+void destroy_thread(t_thread* thread){
+    void interval_destroyer(void* _interval){
+        t_interval* interval = (t_interval*)_interval;
+        free(interval->end_time);
+        free(interval->start_time);
+        free(interval);
+    }
+    free_list(thread->ready_list, interval_destroyer);
+    free_list(thread->exec_list, interval_destroyer);
+    free(thread->start_time);
+    free(thread->pid);
+    free(thread);
+}
+
+bool no_more_threads(t_program* program){
+    return (threads_in_new(program) + threads_in_ready(program) + threads_in_blocked(program)) == 0;
+}
+
+int threads_in_new(t_program* program){
+    bool condition(void* _thread){
+        t_thread* thread = (t_thread*)_thread;
+        return strcmp(program->pid, thread->pid) == 0;
+    }
+    return list_count_satisfying(NEW, condition);
+}
+
+int threads_in_ready(t_program* program){
+    return program->ready->elements_count;
+}
+
+//TODO: Implementar
+int threads_in_blocked(t_program* program){
+    return 0;
+}
+
+//TODO: Implementar
+int threads_in_exec(t_program* program){
+    return 0;
+}
+
+void destroy_program(t_program* program){
+    free(program->pid);
+    free(program);
 }

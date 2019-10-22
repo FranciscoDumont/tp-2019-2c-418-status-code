@@ -70,7 +70,7 @@ void suse_schedule_next(int fd, char * ip, int port, t_list* received);
  * @param program
  * @return int tid a ejecutar a continuacion, o -1 si el programa no esta en ejecucion
  */
-int schedule_next(t_programa* program);
+int schedule_next(t_program* program);
 
 /**
  * Da por finalizado el TID indicado, el thread actual pasa a EXIT, llamo a la funcion de las
@@ -94,9 +94,6 @@ void* suse_signal(void* newComm);
 //--Recibe TID
 //--Devuelve int, mismo TID?
 void* suse_join(void* newComm);
-
-//--Da por finalizado al TID indicado. El thread actual pasará a estar EXIT.
-void* suse_return(void* newComm);
 
 /**
  * Funcion que ejecuta a la funcion que produce las metricas, corre en un hilo paralelo
@@ -160,9 +157,9 @@ void free_list(t_list* received, void(*element_destroyer)(void*));
 /**
  * Retorno el programa al que le corresponde un PID dado
  * @param pid
- * @return t_programa*
+ * @return t_program*
  */
-t_programa* find_program(PID pid);
+t_program* find_program(PID pid);
 
 /**
  * Creo un hilo para responderle al cliente
@@ -193,19 +190,66 @@ void* response_function(void* response_package);
  * @param thread
  * @return interval* interval
  */
-interval* last_exec(t_thread* thread);
+t_interval* last_exec(t_thread* thread);
 
 /**
  * Hallo el ultimo intervalo de la lista de listos
  * @param thread
  * @return interval* interval
  */
-interval* last_ready(t_thread* thread);
+t_interval* last_ready(t_thread* thread);
 
 /**
  * Creo un nuevo intervalo con su memoria ya alocada
  * @return interval* interval
  */
-interval* new_interval();
+t_interval* new_interval();
+
+/**
+ * Destruyo el hilo a cerrar
+ * @param thread, hilo a destruir
+ */
+void destroy_thread(t_thread* thread);
+
+/**
+ * Verifico si un programa dado no posee mas hilos en ready, blocked y new
+ * @param program, programa sobre el que se verifica
+ * @return true si no tiene mas hilos, false si tiene mas hilos
+ */
+bool no_more_threads(t_program* program);
+
+/**
+ * Retorna la cantidad de hilos en el estado NEW de un programa especifico
+ * @param program
+ * @return int, cant de hilos en NEW
+ */
+int threads_in_new(t_program* program);
+
+/**
+ * Retorna la cantidad de hilos en el estado READY de un programa especifico
+ * @param program
+ * @return int, cant de hilos en READY
+ */
+int threads_in_ready(t_program* program);
+
+/**
+ * Retorna la cantidad de hilos en el estado BLOCKED de un programa especifico
+ * @param program
+ * @return int, cant de hilos en BLOCKED
+ */
+int threads_in_blocked(t_program* program);
+
+/**
+ * Retorna la cantidad de hilos en el estado EXEC de un programa especifico
+ * @param program
+ * @return int, cant de hilos en EXEC
+ */
+int threads_in_exec(t_program* program);
+
+/**
+ * Destruyo el programa dado junto a todas sus estructuras asociadas
+ * @param program, programa a destruir
+ */
+void destroy_program(t_program* program);
 
 #endif //SUSE_SUSE_H
