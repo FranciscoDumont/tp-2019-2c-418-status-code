@@ -4,6 +4,11 @@
 typedef int TID;
 typedef char* PID;
 
+typedef enum _BlockType {
+    JOIN,
+    SEMAPHORE
+} BlockType;
+
 /**
  * Estructura encargada de almacenar las configuraciones que se pasan por archivo
  */
@@ -66,4 +71,26 @@ typedef struct _t_interval{
     struct timespec* end_time;
 } t_interval;
 
+/**
+ * Struct generico que sirve para relacionar al tipo de bloqueo con la estructura correspondiente
+ */
+typedef struct _t_block{
+    BlockType block_type;
+    void* block_structure;
+} t_block;
+
+/**
+ * Struct que representa un bloqueo generado por un join
+ */
+typedef struct _t_join_block{
+    t_thread* blocked_thread;
+    t_list* blocking_threads;
+} t_join_block;
+
+/**
+ * Struct que representa un bloqueo generado por un wait
+ */
+typedef struct _t_semaphore_block{
+    int a;
+} t_semaphore_block;
 #endif //SUSE_SUSESTRUCTURES_H

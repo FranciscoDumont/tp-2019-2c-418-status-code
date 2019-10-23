@@ -72,6 +72,21 @@ void suse_schedule_next(int fd, char * ip, int port, t_list* received);
  */
 int schedule_next(t_program* program);
 
+//--Bloquea al thread esperando que el mismo termine. El thread actual pasará a estar
+//BLOCKED y saldrá del mismo luego de que el PID indicado finalice su ejecución. También es posible
+//realizar un join a un thread ya finalizado
+//--Recibe TID
+//--Devuelve int, mismo TID?
+/**
+ * Bloqueo un thread esperando que el mismo termine. El thread actual pasara a estar en BLOCKED y saldra solo cuando el
+ * hilo que lo bloqueo termine su ejecucion con suse_close. Es posible bloquear a un hilo con un hilo ya finalizado.
+ * @param fd
+ * @param ip
+ * @param port
+ * @param received
+ */
+void suse_join(int fd, char * ip, int port, t_list* received);
+
 /**
  * Da por finalizado el TID indicado, el thread actual pasa a EXIT, llamo a la funcion de las
  * metricas y elimino la estructura del programa
@@ -87,13 +102,6 @@ void* suse_wait(void* newComm);
 
 //--Genera una operación de signal sobre el semáforo dado
 void* suse_signal(void* newComm);
-
-//--Bloquea al thread esperando que el mismo termine. El thread actual pasará a estar
-//BLOCKED y saldrá del mismo luego de que el PID indicado finalice su ejecución. También es posible
-//realizar un join a un thread ya finalizado
-//--Recibe TID
-//--Devuelve int, mismo TID?
-void* suse_join(void* newComm);
 
 /**
  * Funcion que ejecuta a la funcion que produce las metricas, corre en un hilo paralelo

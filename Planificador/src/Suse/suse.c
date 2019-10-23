@@ -104,6 +104,11 @@ void server_function(){
                 suse_schedule_next(fd, ip, port, cosas);
                 break;
             }
+            case SUSE_JOIN:
+            {
+                suse_join(fd, ip, port, cosas);
+                break;
+            }
             case SUSE_CLOSE:
             {
                 suse_close(fd, ip, port, cosas);
@@ -299,6 +304,11 @@ int schedule_next(t_program* program){
     return return_tid;
 }
 
+void suse_join(int fd, char * ip, int port, t_list* received){
+
+}
+
+//TODO:reveer toda la logica, no es exactamente lo que tiene que hacer
 void suse_close(int fd, char * ip, int port, t_list* received){
     char* pid = generate_pid(ip, port);
     int tid = *((int*)list_get(received, 0));
