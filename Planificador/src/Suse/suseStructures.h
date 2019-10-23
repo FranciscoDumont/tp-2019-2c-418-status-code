@@ -72,7 +72,9 @@ typedef struct _t_interval{
 } t_interval;
 
 /**
- * Struct generico que sirve para relacionar al tipo de bloqueo con la estructura correspondiente
+ * Struct generico que sirve para relacionar al tipo de bloqueo con la estructura correspondiente, esta formado por una
+ * instancia del enum correspondiente al blockeo(JOIN o SEMAPHORE) y un void* que apunta a la estructura responsable
+ * de representar el bloqueo correspondiente(t_join_block o t_semaphore_block).
  */
 typedef struct _t_block{
     BlockType block_type;
@@ -80,11 +82,12 @@ typedef struct _t_block{
 } t_block;
 
 /**
- * Struct que representa un bloqueo generado por un join
+ * Struct que representa un bloqueo generado por un join, esta formado por un puntero que apunta al hilo blockeado y
+ * una lista que contiene a los hilos que le solicitaron un join
  */
 typedef struct _t_join_block{
     t_thread* blocked_thread;
-    t_list* blocking_threads;
+    t_thread* blocking_thread;
 } t_join_block;
 
 /**

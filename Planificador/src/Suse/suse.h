@@ -65,18 +65,20 @@ void suse_create(int fd, char* ip, int port, t_list* received);
 void suse_schedule_next(int fd, char * ip, int port, t_list* received);
 
 /**
- * Nucleo de la planificacion, actualizo las listas de intervalos de ready y exec de los
- * threads sobre los que trabajo.
+ * Realiza las tareas administrativas como actualizar los intervalos y mover los hilos de una cola a la otra luego de
+ * replanificar el proceso
  * @param program
  * @return int tid a ejecutar a continuacion, o -1 si el programa no esta en ejecucion
  */
 int schedule_next(t_program* program);
 
-//--Bloquea al thread esperando que el mismo termine. El thread actual pasará a estar
-//BLOCKED y saldrá del mismo luego de que el PID indicado finalice su ejecución. También es posible
-//realizar un join a un thread ya finalizado
-//--Recibe TID
-//--Devuelve int, mismo TID?
+/**
+ * Retorno el sgte hilo a ejecutarse utilizando el algoritmo SJF-E
+ * @param program, programa al que le busco el nuevo hilo
+ * @return t_thread*, sgte hilo a ejecutarse
+ */
+t_thread* schedule_new_thread(t_program* program);
+
 /**
  * Bloqueo un thread esperando que el mismo termine. El thread actual pasara a estar en BLOCKED y saldra solo cuando el
  * hilo que lo bloqueo termine su ejecucion con suse_close. Es posible bloquear a un hilo con un hilo ya finalizado.
@@ -106,12 +108,13 @@ void* suse_signal(void* newComm);
 /**
  * Funcion que ejecuta a la funcion que produce las metricas, corre en un hilo paralelo
  * @param arg
- * @return
+ * @return Este return esta solo para cumplir con la firma de las funcion que acepta pthread, no devuelve nada
  */
 void* metrics_function(void* arg);
 
 /**
  * Funcion que genera y loggea las metricas
+ * @return Este return esta solo para cumplir con la firma de las funcion que acepta pthread, no devuelve nada
  */
 void* generate_metrics(void* arg);
 
@@ -168,6 +171,14 @@ void free_list(t_list* received, void(*element_destroyer)(void*));
  * @return t_program*
  */
 t_program* find_program(PID pid);
+
+/**
+ * Retorno el hilo al que pertenece un tid y pid dados
+ * @param program
+ * @param tid
+ * @return t_thread*
+ */
+t_thread* find_thread(t_program* program, TID tid);
 
 /**
  * Creo un hilo para responderle al cliente
@@ -259,5 +270,12 @@ int threads_in_exec(t_program* program);
  * @param program, programa a destruir
  */
 void destroy_program(t_program* program);
+
+/**
+ * Verifico si el hilo esta muerto(en la cola de EXIT)
+ * @param thread, hilo que voy a revisar
+ * @return bool, true para muerto, false para vivo
+ */
+bool blocking_thread_is_dead(t_thread* thread);
 
 #endif //SUSE_SUSE_H

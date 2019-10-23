@@ -5,6 +5,7 @@ t_log* logger;
 t_list* programs;
 t_list* NEW;
 t_list* BLOCKED;
+t_list* EXIT; //Solo se elimina un hilo y su programa cuando todos los hilos del mismo son enviados a EXIT
 
 pthread_mutex_t mutex_logger;
 pthread_mutex_t mutex_programs;
@@ -42,6 +43,7 @@ void initialize_structures(){
     programs = list_create();
     NEW = list_create();
     BLOCKED = list_create();
+    EXIT = list_create();
 
     pthread_mutex_lock(&mutex_logger);
     log_trace(logger, "Structures initialized...");
@@ -234,38 +236,35 @@ int schedule_next(t_program* program){
     if(program->executing){
         t_list* ready = program->ready;
         if(list_size(ready) > 0){
-            //Tomo el primer hilo de la lista de readys(FIFO)TODO:implementar SJF-E
-            t_thread* thread_to_execute = (t_thread*)list_remove(ready, 0);
+
+            t_thread* thread_to_execute = schedule_new_thread(program);
 
             return_tid = thread_to_execute->tid;
 
-            struct timespec* change_time = malloc(sizeof(struct timespec));
-            *(change_time) = get_time();
-
             t_interval* new_start = new_interval();
-            new_start->start_time = change_time;
+            *(new_start->start_time) = get_time();
 
             list_add(thread_to_execute->exec_list, (void*)new_start);
 
-            //Si el hilo ejecutado anterior fue cerrado(suse_close), el campo estara en NULL
+            //Si el hilo ejecutado anterior fue cerrado(suse_close) o bloqueado(suse_wait, suse_join), el campo estara en NULL
             if(program->exec != NULL){
 
                 //Obtengo el ultimo elemento(interval) de la lista de ejecutados del hilo actualmente en ejecucion
                 t_interval* last_execution_OLDONE = last_exec(program->exec);
 
-                *(last_execution_OLDONE->end_time) = *(change_time);
+                *(last_execution_OLDONE->end_time) = *(new_start->start_time);
 
                 //Creo un nuevo elemento para la lista ready, le asigno el tiempo de inicio y lo agrego a la lista de readys del elemento en ejecucion
                 t_interval* new_ready_OLDONE = new_interval();
 
-                *(new_ready_OLDONE->start_time) = *(change_time);
+                *(new_ready_OLDONE->start_time) = *(new_start->start_time);
 
                 list_add(program->exec->ready_list, new_ready_OLDONE);
 
                 //Obtengo el ultimo elemento(interval) de la lista de readys del proximo hilo a ejecutar y le agrego el tiempo final
                 t_interval* last_ready_NEWONE = last_ready(thread_to_execute);
 
-                *(last_ready_NEWONE->end_time) = *(change_time);
+                *(last_ready_NEWONE->end_time) = *(new_start->start_time);
 
                 //Agrego el hilo en ejecucion a la lista de readys y le asigno a exec el nuevo hilo a ejecutar
                 TID old_tid = program->exec->tid;
@@ -281,7 +280,7 @@ int schedule_next(t_program* program){
                 //Obtengo el ultimo elemento(interval) de la lista de readys del proximo hilo a ejecutar y le agrego el tiempo final
                 t_interval* last_ready_NEWONE = last_ready(thread_to_execute);
 
-                *(last_ready_NEWONE->end_time) = *(change_time);
+                *(last_ready_NEWONE->end_time) = *(new_start->start_time);
 
                 //Le asigno a exec el nuevo hilo a ejecutar
                 program->exec = thread_to_execute;
@@ -304,8 +303,73 @@ int schedule_next(t_program* program){
     return return_tid;
 }
 
-void suse_join(int fd, char * ip, int port, t_list* received){
+//TODO:implementar SJF-E, actualmente es FIFO
+t_thread* schedule_new_thread(t_program* program){
+    return (t_thread*)list_remove(program->ready, 0);
+}
 
+void suse_join(int fd, char * ip, int port, t_list* received){
+    char* pid = generate_pid(ip, port);
+    int tid = *((int*)list_get(received, 0));
+    t_program* program = find_program(pid);
+    int response;
+
+    //Obtengo el hilo en ejecucion
+    t_thread* executing_thread = program->exec;
+    int executing_tid = executing_thread->tid;
+
+    //Obtengo el ultimo intervalo de ejecucion y le asigno su tiempo de finalizacion
+    t_interval* last_execd = last_exec(executing_thread);
+    *(last_execd->end_time) = get_time();
+
+    //Busco el hilo que me quiere bloquear
+    t_thread* blocking_thread = find_thread(program, tid);
+
+    //Si el hilo bloqueante esta en EXIT
+    if(blocking_thread_is_dead(blocking_thread)){
+
+        //Creo un nuevo intervalo y le asigno el tiempo de inicio para agregar a la lista de ready del hilo
+        t_interval* new_ready = new_interval();
+        *(new_ready->start_time) = get_time();
+
+        list_add(executing_thread->ready_list, (void*)new_ready);
+
+        //Agrego el hilo que estaba ejecutandose a la lista de listos
+        list_add(program->ready, (void*)executing_thread);
+
+    } else {
+
+        //Creo un nuevo blockeo y le asigno el tipo
+        t_block* new_block = malloc(sizeof(t_block));
+        new_block->block_type = JOIN;
+
+        //Creo la estructura encargada de representar los bloqueos por join y le asigno el hilo bloqueado y bloqueante
+        t_join_block* new_join_block = malloc(sizeof(t_join_block));
+
+        new_join_block->blocked_thread = executing_thread;
+        new_join_block->blocking_thread = blocking_thread;
+
+        //Le asigno el blockeo de join a la estructura del bloqueo
+        new_block->block_structure = (void*)new_join_block;
+
+        //Agrego el nuevo blockeo a la lista de BLOCKED
+        list_add(BLOCKED, (void*)new_block);
+    }
+
+    program->exec = NULL;
+
+    pthread_mutex_lock(&mutex_logger);
+    log_trace(logger, "Program(%s), asking to join thread: %d with thread: %d", pid, executing_tid, tid);
+    pthread_mutex_unlock(&mutex_logger);
+
+    //TODO:create response codes
+    create_response_thread(fd, 1, SUSE_JOIN);
+
+    void element_destroyer(void* element){
+        free(element);
+    }
+    free_list(received, element_destroyer);
+    free((void*)pid);
 }
 
 //TODO:reveer toda la logica, no es exactamente lo que tiene que hacer
@@ -478,6 +542,30 @@ t_program* find_program(PID pid){
     return (t_program*)list_find(programs, &program_finder);
 }
 
+t_thread* find_thread(t_program* program, TID tid){
+    t_thread* thread = NULL;
+    PID pid = program->pid;
+
+    //Busco el hilo en la lista de ready del programa al que pertenece
+    bool ready_thread_finder(void* _thread){
+        return ((t_thread*)_thread)->tid == tid;
+    }
+    thread = (t_thread*)list_find(program->ready, ready_thread_finder);
+
+    //Si el hilo no se encuentra en la lista de readys del programa, busco en EXIT
+    if(thread == NULL){
+        //Busco el hilo en EXIT
+        bool exit_thread_finder(void* _thread){
+            return ((t_thread*)_thread)->tid == tid && strcmp(((t_thread*)_thread)->pid, program->pid) == 0;
+        }
+        thread = (t_thread*)list_find(program->ready, exit_thread_finder);
+
+        //TODO:verificar que no sea NULL y si lo es, buscar en la lista de BLOCKED
+    }
+
+    return thread;
+}
+
 void create_response_thread(int fd, int response, MessageType header){
     void* response_package = create_response_package(fd, response, header);
 
@@ -573,4 +661,9 @@ int threads_in_exec(t_program* program){
 void destroy_program(t_program* program){
     free(program->pid);
     free(program);
+}
+
+//TODO: Implementar
+bool blocking_thread_is_dead(t_thread* thread){
+    return true;
 }
