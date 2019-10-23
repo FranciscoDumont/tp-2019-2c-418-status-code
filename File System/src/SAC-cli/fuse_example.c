@@ -126,6 +126,7 @@ static int example_mknod(const char *path, mode_t mode, dev_t rdev)
     if(res == -1)
         return -errno;
 
+    printf("mknod\n");
     return 0;
 }
 
