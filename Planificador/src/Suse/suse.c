@@ -92,7 +92,6 @@ void server_function(){
     //--funcion que se ejecuta cuando se recibe un nuevo mensaje de un cliente ya conectado
     void incoming(int fd, char* ip, int port, MessageHeader * headerStruct){
 
-        //TODO: free this list within every message
         t_list* cosas = receive_package(fd, headerStruct);
 
         switch (headerStruct->type){
@@ -330,7 +329,7 @@ void suse_join(int fd, char * ip, int port, t_list* received){
 
         //Creo un nuevo intervalo y le asigno el tiempo de inicio para agregar a la lista de ready del hilo
         t_interval* new_ready = new_interval();
-        *(new_ready->start_time) = get_time();
+        *(new_ready->start_time) = *(last_execd->end_time);
 
         list_add(executing_thread->ready_list, (void*)new_ready);
 
@@ -645,7 +644,7 @@ int threads_in_new(t_program* program){
 }
 
 int threads_in_ready(t_program* program){
-    return program->ready->elements_count;
+    return list_size(program->ready);
 }
 
 //TODO: Implementar
@@ -663,7 +662,10 @@ void destroy_program(t_program* program){
     free(program);
 }
 
-//TODO: Implementar
 bool blocking_thread_is_dead(t_thread* thread){
-    return true;
+    bool condition(void* _thread){
+        t_thread* thread_to_compare = (t_thread*)_thread;
+        return thread_to_compare->tid == thread->tid && strcmp(thread_to_compare->pid, thread->pid) == 0;
+    }
+    return list_any_satisfy(EXIT, condition);
 }

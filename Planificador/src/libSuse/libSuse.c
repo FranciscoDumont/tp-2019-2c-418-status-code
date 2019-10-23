@@ -92,8 +92,27 @@ int suse_schedule_next(void){
 }
 
 int suse_join(int tid){
-    // Not supported
-    return 0;
+
+    t_paquete *package = create_package(SUSE_JOIN);
+    void* _tid = malloc(sizeof(int));
+    *((int*)_tid) = tid;
+    add_to_package(package, _tid, sizeof(int));
+    if(send_package(package, server_socket) == -1){
+        free(_tid);
+        free_package(package);
+        printf("Error sending thread: %d to block\n", tid);
+        return -1;
+    } else {
+        free(_tid);
+        free_package(package);
+        if(confirm_action() == 1){
+            printf("Blocked thread %i\n", tid);
+            return 0;
+        } else {
+            printf("Failed receiving blocking thread confirmation\n");
+            return -1;
+        }
+    }
 }
 
 int suse_close(int tid){
@@ -105,7 +124,7 @@ int suse_close(int tid){
     if(send_package(package, server_socket) == -1){
         free(_tid);
         free_package(package);
-        printf("Error sending a thread(%d) to close\n", tid);
+        printf("Error sending thread: %d to close\n", tid);
         return -1;
     } else {
         free(_tid);
