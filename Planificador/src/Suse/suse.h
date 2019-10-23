@@ -278,4 +278,10 @@ void destroy_program(t_program* program);
  */
 bool blocking_thread_is_dead(t_thread* thread);
 
+/**
+ * Libero los posibles join_blocks que pueda llegar a tener un hilo
+ * @param thread
+ */
+void free_join_blocks(t_thread* thread);
+
 #endif //SUSE_SUSE_H

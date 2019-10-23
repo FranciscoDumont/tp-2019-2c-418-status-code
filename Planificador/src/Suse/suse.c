@@ -317,6 +317,10 @@ void suse_join(int fd, char * ip, int port, t_list* received){
     t_thread* executing_thread = program->exec;
     int executing_tid = executing_thread->tid;
 
+    pthread_mutex_lock(&mutex_logger);
+    log_trace(logger, "Program: %s, asking to join Thread: %d with Thread: %d", pid, executing_tid, tid);
+    pthread_mutex_unlock(&mutex_logger);
+
     //Obtengo el ultimo intervalo de ejecucion y le asigno su tiempo de finalizacion
     t_interval* last_execd = last_exec(executing_thread);
     *(last_execd->end_time) = get_time();
@@ -336,6 +340,9 @@ void suse_join(int fd, char * ip, int port, t_list* received){
         //Agrego el hilo que estaba ejecutandose a la lista de listos
         list_add(program->ready, (void*)executing_thread);
 
+        pthread_mutex_lock(&mutex_logger);
+        log_trace(logger, "Blocking Thread(%d) was dead, blocked Thread(%d) sent to ready", tid, executing_tid);
+        pthread_mutex_unlock(&mutex_logger);
     } else {
 
         //Creo un nuevo blockeo y le asigno el tipo
@@ -353,15 +360,14 @@ void suse_join(int fd, char * ip, int port, t_list* received){
 
         //Agrego el nuevo blockeo a la lista de BLOCKED
         list_add(BLOCKED, (void*)new_block);
+
+        pthread_mutex_lock(&mutex_logger);
+        log_trace(logger, "Thread: %d blocked by a join with Thread: %d", executing_tid, tid);
+        pthread_mutex_unlock(&mutex_logger);
     }
 
     program->exec = NULL;
 
-    pthread_mutex_lock(&mutex_logger);
-    log_trace(logger, "Program(%s), asking to join thread: %d with thread: %d", pid, executing_tid, tid);
-    pthread_mutex_unlock(&mutex_logger);
-
-    //TODO:create response codes
     create_response_thread(fd, 1, SUSE_JOIN);
 
     void element_destroyer(void* element){
@@ -371,7 +377,6 @@ void suse_join(int fd, char * ip, int port, t_list* received){
     free((void*)pid);
 }
 
-//TODO:reveer toda la logica, no es exactamente lo que tiene que hacer
 void suse_close(int fd, char * ip, int port, t_list* received){
     char* pid = generate_pid(ip, port);
     int tid = *((int*)list_get(received, 0));
@@ -379,7 +384,7 @@ void suse_close(int fd, char * ip, int port, t_list* received){
     int response;
 
     pthread_mutex_lock(&mutex_logger);
-    log_trace(logger, "Program(%s), asking to finish thread: %d", pid, tid);
+    log_trace(logger, "Program: %s, asking to finish thread: %d", pid, tid);
     pthread_mutex_unlock(&mutex_logger);
 
     t_thread* exec_thread = program->exec;
@@ -388,6 +393,26 @@ void suse_close(int fd, char * ip, int port, t_list* received){
     if(exec_thread->tid == tid) {
 
         program->exec = NULL;
+
+        //Cierro el ultimo intervalo de ejecucion del hilo y lo agrego a la lista EXIT
+        t_interval* last_execd = last_exec(exec_thread);
+        *(last_execd->end_time) = get_time();
+
+        list_add(EXIT, (void*)exec_thread);
+
+        //TODO:verificar si hay algun join_block asociado a este y liberarlo
+        free_join_blocks(exec_thread);
+
+        //TODO:verificar si quedan mas hilos del programa activos
+        //Si no hay mas hilos activos
+        //TODO:destruir todos los hilos
+        //TODO:destruir el programa
+
+        //TODO:lanzar hilo de metricas
+
+        //TODO:retornar codigo de exito(o no exito)
+
+        //TODO:agregar el/los hilo/s que esten en new hasta cumplir con el grado de multiprogramacion a sus respectivos programas
 
         destroy_thread(exec_thread);
 
@@ -406,8 +431,6 @@ void suse_close(int fd, char * ip, int port, t_list* received){
         pthread_t end_thread_metrics_thread;
         pthread_create(&end_thread_metrics_thread, NULL, generate_metrics, NULL);
         pthread_detach(end_thread_metrics_thread);
-
-        //TODO:Lanzar detachable thread que agregue los hilos de NEW a los programas correspondientes
 
         response = 1;
     } else {
@@ -668,4 +691,8 @@ bool blocking_thread_is_dead(t_thread* thread){
         return thread_to_compare->tid == thread->tid && strcmp(thread_to_compare->pid, thread->pid) == 0;
     }
     return list_any_satisfy(EXIT, condition);
+}
+
+void free_join_blocks(t_thread* thread){
+
 }
