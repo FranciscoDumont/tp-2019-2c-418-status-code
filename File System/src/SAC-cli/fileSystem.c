@@ -57,6 +57,8 @@ void escribirNodeTabla (){
 
 }
 
+
+
 int obtenerTamanioArchivo (char* file ){
     File* fd = fopen(file,"r");
 
