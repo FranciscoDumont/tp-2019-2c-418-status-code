@@ -1,4 +1,15 @@
+#include "operaciones.h"
 #include "fuse_example.h"
+#include <stddef.h>
+#include <stdlib.h>
+#include <fuse.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <altaLibreria/connections.h>
+#include <altaLibreria/structures.h>
 
 // Dentro de los argumentos que recibe nuestro programa obligatoriamente
 // debe estar el path al directorio donde vamos a montar nuestro FS
