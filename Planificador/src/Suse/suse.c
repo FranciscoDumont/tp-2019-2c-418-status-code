@@ -400,27 +400,22 @@ void suse_close(int fd, char * ip, int port, t_list* received){
 
         list_add(EXIT, (void*)exec_thread);
 
-        //TODO:verificar si hay algun join_block asociado a este y liberarlo
-        free_join_blocks(exec_thread);
+        //Libero los bloqueos que haya generado el hilo
+        free_join_blocks(exec_thread, program);
 
-        //TODO:verificar si quedan mas hilos del programa activos
-        //Si no hay mas hilos activos
-        //TODO:destruir todos los hilos
-        //TODO:destruir el programa
-
-        //TODO:lanzar hilo de metricas
-
-        //TODO:retornar codigo de exito(o no exito)
-
-        //TODO:agregar el/los hilo/s que esten en new hasta cumplir con el grado de multiprogramacion a sus respectivos programas
-
+        //Mato al thread
         destroy_thread(exec_thread);
 
         pthread_mutex_lock(&mutex_logger);
         log_trace(logger, "Thread: %d, from Program: %s, closed", tid, pid);
         pthread_mutex_unlock(&mutex_logger);
 
+        //Verifico si no quedan mas hilos en ready o exec
         if(no_more_threads(program)){
+
+            //TODO:destruir todos los hilos
+
+            //Destruyo el programa
             destroy_program(program);
             pthread_mutex_lock(&mutex_logger);
             log_trace(logger, "Program: %s, exited SUSE", pid);
@@ -431,6 +426,8 @@ void suse_close(int fd, char * ip, int port, t_list* received){
         pthread_t end_thread_metrics_thread;
         pthread_create(&end_thread_metrics_thread, NULL, generate_metrics, NULL);
         pthread_detach(end_thread_metrics_thread);
+
+        //TODO:agregar el/los hilo/s que esten en new hasta cumplir con el grado de multiprogramacion a sus respectivos programas
 
         response = 1;
     } else {
@@ -655,7 +652,7 @@ void destroy_thread(t_thread* thread){
 }
 
 bool no_more_threads(t_program* program){
-    return (threads_in_new(program) + threads_in_ready(program) + threads_in_blocked(program)) == 0;
+    return (threads_in_new(program) + threads_in_ready(program) + threads_in_blocked(program) + threads_in_exec(program)) == 0;
 }
 
 int threads_in_new(t_program* program){
@@ -670,13 +667,23 @@ int threads_in_ready(t_program* program){
     return list_size(program->ready);
 }
 
-//TODO: Implementar
 int threads_in_blocked(t_program* program){
+    return threads_in_join_block(program) + threads_in_semaphore_block(program);
+}
+
+int threads_in_join_block(t_program* program){
     return 0;
 }
 
-//TODO: Implementar
+//TODO:Implementar
+int threads_in_semaphore_block(t_program* program){
+    return 0;
+}
+
 int threads_in_exec(t_program* program){
+    if(program->exec != NULL){
+        return 1;
+    }
     return 0;
 }
 
@@ -693,6 +700,44 @@ bool blocking_thread_is_dead(t_thread* thread){
     return list_any_satisfy(EXIT, condition);
 }
 
-void free_join_blocks(t_thread* thread){
+void free_join_blocks(t_thread* thread, t_program* program){
+    bool execute = true;
 
+    //Mientras que siga habiendo elementos, sigo iterando sobre la lista de BLOCKED
+    while(execute){
+        bool condition(void* _block){
+            t_block* block = (t_block*)_block;
+            t_join_block* join_block = (t_join_block*)block->block_structure;
+            PID pid = join_block->blocking_thread->pid;
+            TID tid = join_block->blocking_thread->tid;
+
+            //Si el tipo de bloqueo es JOIN, y si el tid y el pid del hilo bloqueante coincide con el tid y
+            // el pid del hilo pasado(hilo a liberar), lo retorno.
+            return block->block_type == JOIN && thread->tid == tid && strcmp(thread->pid, pid) == 0;
+        }
+        t_block* block = (t_block*)list_remove_by_condition(BLOCKED, condition);
+
+        //Mientras que siga encontrando bloqueos, sigo ejecutando, cuando no encuentre mas, corto las iteraciones
+        if(block == NULL){
+
+            execute = false;
+        } else {
+
+            t_join_block* join_block = (t_join_block*)block->block_structure;
+            t_thread* blocked = join_block->blocked_thread;
+
+            //Creo un nuevo intervalo y le asigno su tiempo de inicio para agregarlo a la lista de readys del hilo bloqueado
+            t_interval* new_ready = new_interval();
+            *(new_ready->start_time) = get_time();
+
+            list_add(blocked->ready_list, (void*)new_ready);
+
+            //Agrego el hilo a la lista de readys de su programa correspondiente
+            list_add(program->ready, (void*)blocked);
+
+            //Libero las estructuras del bloqueo
+            free(block->block_structure);
+            free(block);
+        }
+    }
 }
