@@ -102,6 +102,7 @@ void read_memory_config(){
 
 
 void* muse_init(void* newComm){
+    log_error(logger, "Empieza el muse_init");
     t_new_comm* newComm1 = (t_new_comm*)newComm;
     int fd = newComm1->fd;
     char* ip = newComm1->ip;
@@ -123,3 +124,184 @@ void* muse_init(void* newComm){
 }
 
 
+void muse_close(){
+    log_error(logger, "Empieza el muse_close");
+    t_new_comm* newComm1 = (t_new_comm*)newComm;
+    int fd = newComm1->fd;
+    char* ip = newComm1->ip;
+    int port = newComm1->port;
+    t_list* received = newComm1->received;
+
+    // Guardo el entero que recibo en una variable
+    int id = *((int*)list_get(received, 0));
+
+    // Loggeo el valor del id que recibi
+    log_info(logger, "El id que recibo de libMuse es: %d", id);
+
+    // Le respondo a libMuse que esta todo bien
+    t_paquete *package = create_package(MUSE_INIT);
+    void* confirmation = malloc(sizeof(int));
+    *((int*)confirmation) = 1;
+    add_to_package(package, confirmation, sizeof(int));
+    send_package(package, fd);
+}
+
+
+uint32_t muse_alloc(uint32_t tam){
+    log_error(logger, "Empieza el muse_alloc");
+    t_new_comm* newComm1 = (t_new_comm*)newComm;
+    int fd = newComm1->fd;
+    char* ip = newComm1->ip;
+    int port = newComm1->port;
+    t_list* received = newComm1->received;
+
+    // Guardo el entero que recibo en una variable
+    int id = *((int*)list_get(received, 0));
+
+    // Loggeo el valor del id que recibi
+    log_info(logger, "El id que recibo de libMuse es: %d", id);
+
+    // Le respondo a libMuse que esta todo bien
+    t_paquete *package = create_package(MUSE_INIT);
+    void* confirmation = malloc(sizeof(int));
+    *((int*)confirmation) = 1;
+    add_to_package(package, confirmation, sizeof(int));
+    send_package(package, fd);
+}
+
+void muse_free(uint32_t dir){
+    log_error(logger, "Empieza el muse_free");
+    t_new_comm* newComm1 = (t_new_comm*)newComm;
+    int fd = newComm1->fd;
+    char* ip = newComm1->ip;
+    int port = newComm1->port;
+    t_list* received = newComm1->received;
+
+    // Guardo el entero que recibo en una variable
+    int id = *((int*)list_get(received, 0));
+
+    // Loggeo el valor del id que recibi
+    log_info(logger, "El id que recibo de libMuse es: %d", id);
+
+    // Le respondo a libMuse que esta todo bien
+    t_paquete *package = create_package(MUSE_INIT);
+    void* confirmation = malloc(sizeof(int));
+    *((int*)confirmation) = 1;
+    add_to_package(package, confirmation, sizeof(int));
+    send_package(package, fd);
+}
+
+
+int muse_get(void *dst, uint32_t src, size_t n){
+    log_error(logger, "Empieza el muse_get");
+    t_new_comm* newComm1 = (t_new_comm*)newComm;
+    int fd = newComm1->fd;
+    char* ip = newComm1->ip;
+    int port = newComm1->port;
+    t_list* received = newComm1->received;
+
+    // Guardo el entero que recibo en una variable
+    int id = *((int*)list_get(received, 0));
+
+    // Loggeo el valor del id que recibi
+    log_info(logger, "El id que recibo de libMuse es: %d", id);
+
+    // Le respondo a libMuse que esta todo bien
+    t_paquete *package = create_package(MUSE_INIT);
+    void* confirmation = malloc(sizeof(int));
+    *((int*)confirmation) = 1;
+    add_to_package(package, confirmation, sizeof(int));
+    send_package(package, fd);
+}
+
+
+int muse_cpy(uint32_t dst, void *src, int n){
+    log_error(logger, "Empieza el muse_cpy");
+    t_new_comm* newComm1 = (t_new_comm*)newComm;
+    int fd = newComm1->fd;
+    char* ip = newComm1->ip;
+    int port = newComm1->port;
+    t_list* received = newComm1->received;
+
+    // Guardo el entero que recibo en una variable
+    int id = *((int*)list_get(received, 0));
+
+    // Loggeo el valor del id que recibi
+    log_info(logger, "El id que recibo de libMuse es: %d", id);
+
+    // Le respondo a libMuse que esta todo bien
+    t_paquete *package = create_package(MUSE_INIT);
+    void* confirmation = malloc(sizeof(int));
+    *((int*)confirmation) = 1;
+    add_to_package(package, confirmation, sizeof(int));
+    send_package(package, fd);
+}
+
+
+uint32_t muse_map(char *path, size_t length, int flags){
+    log_error(logger, "Empieza el muse_map");
+    t_new_comm* newComm1 = (t_new_comm*)newComm;
+    int fd = newComm1->fd;
+    char* ip = newComm1->ip;
+    int port = newComm1->port;
+    t_list* received = newComm1->received;
+
+    // Guardo el entero que recibo en una variable
+    int id = *((int*)list_get(received, 0));
+
+    // Loggeo el valor del id que recibi
+    log_info(logger, "El id que recibo de libMuse es: %d", id);
+
+    // Le respondo a libMuse que esta todo bien
+    t_paquete *package = create_package(MUSE_INIT);
+    void* confirmation = malloc(sizeof(int));
+    *((int*)confirmation) = 1;
+    add_to_package(package, confirmation, sizeof(int));
+    send_package(package, fd);
+}
+
+
+int muse_sync(uint32_t addr, size_t len){
+    log_error(logger, "Empieza el muse_sync");
+    t_new_comm* newComm1 = (t_new_comm*)newComm;
+    int fd = newComm1->fd;
+    char* ip = newComm1->ip;
+    int port = newComm1->port;
+    t_list* received = newComm1->received;
+
+    // Guardo el entero que recibo en una variable
+    int id = *((int*)list_get(received, 0));
+
+    // Loggeo el valor del id que recibi
+    log_info(logger, "El id que recibo de libMuse es: %d", id);
+
+    // Le respondo a libMuse que esta todo bien
+    t_paquete *package = create_package(MUSE_INIT);
+    void* confirmation = malloc(sizeof(int));
+    *((int*)confirmation) = 1;
+    add_to_package(package, confirmation, sizeof(int));
+    send_package(package, fd);
+}
+
+
+int muse_unmap(uint32_t dir){
+    log_error(logger, "Empieza el muse_unmap");
+    t_new_comm* newComm1 = (t_new_comm*)newComm;
+    int fd = newComm1->fd;
+    char* ip = newComm1->ip;
+    int port = newComm1->port;
+    t_list* received = newComm1->received;
+
+    // Guardo el entero que recibo en una variable
+    int id = *((int*)list_get(received, 0));
+
+    // Loggeo el valor del id que recibi
+    log_info(logger, "El id que recibo de libMuse es: %d", id);
+
+    // Le respondo a libMuse que esta todo bien
+    t_paquete *package = create_package(MUSE_INIT);
+    void* confirmation = malloc(sizeof(int));
+    *((int*)confirmation) = 1;
+    add_to_package(package, confirmation, sizeof(int));
+    send_package(package, fd);
+}
