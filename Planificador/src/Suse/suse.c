@@ -413,10 +413,10 @@ void suse_close(int fd, char * ip, int port, t_list* received){
         //Verifico si no quedan mas hilos en ready o exec
         if(no_more_threads(program)){
 
-            destroy_exit_threads(program);
+            destroy_exit_threads(pid);
 
             //Destruyo el programa
-            destroy_program(program);
+            destroy_program(pid);
             pthread_mutex_lock(&mutex_logger);
             log_trace(logger, "Program: %s, exited SUSE", pid);
             pthread_mutex_unlock(&mutex_logger);
@@ -693,17 +693,26 @@ int threads_in_exec(t_program* program){
     return 0;
 }
 
-void destroy_program(t_program* program){
-    free(program->pid);
-    free(program);
+void destroy_program(PID pid){
+
+    bool condition(void* _program){
+        t_program* program = (t_program*)_program;
+        return strcmp(pid, program->pid) == 0;
+    }
+    void element_destroyer(void* _program){
+        t_program* program = (t_program*)_program;
+        free(program->pid);
+        free(program);
+    }
+    list_remove_and_destroy_by_condition(programs, condition, element_destroyer);
 }
 
-void destroy_exit_threads(t_program* program){
+void destroy_exit_threads(PID pid){
     bool execute = true;
     while(execute){
         bool condition(void* _thread){
             t_thread* thread1 = (t_thread*)_thread;
-            return strcmp(thread1->pid, program->pid) == 0;
+            return strcmp(thread1->pid, pid) == 0;
         }
         t_thread* thread = (t_thread*)list_remove_by_condition(EXIT, condition);
         if(thread == NULL){

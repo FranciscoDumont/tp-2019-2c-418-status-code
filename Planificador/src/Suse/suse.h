@@ -281,15 +281,15 @@ int threads_in_exec(t_program* program);
 
 /**
  * Destruyo el programa dado junto a todas sus estructuras asociadas
- * @param program, programa a destruir
+ * @param pid, pid del programa a destruir
  */
-void destroy_program(t_program* program);
+void destroy_program(PID pid);
 
 /**
  * Destruyo todos los hilos de EXIT que pertenezcan a un programa dado
- * @param program
+ * @param pid
  */
-void destroy_exit_threads(t_program* program);
+void destroy_exit_threads(PID pid);
 
 /**
  * Verifico si el hilo esta muerto(en la cola de EXIT)
