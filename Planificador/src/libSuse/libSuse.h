@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include <hilolay/alumnos.h>
+#include <hilolay/hilolay.h>
 #include <commons/config.h>
 #include <altaLibreria/connections.h>
 #include <altaLibreria/structures.h>

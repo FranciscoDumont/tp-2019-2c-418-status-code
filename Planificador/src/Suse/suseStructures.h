@@ -4,6 +4,9 @@
 typedef int TID;
 typedef char* PID;
 
+/**
+ * Enum para diferenciar los tipos de block, join o semaphore
+ */
 typedef enum _BlockType {
     JOIN,
     SEMAPHORE

@@ -11,11 +11,11 @@ void suse_init(){
     config->ip = malloc(sizeof(char));
     read_config_options();
     if((server_socket = create_socket()) == -1) {
-        printf("Error al crear el socket\n");
+        printf("Error creating socket\n");
         return;
     }
     if(-1 == connect_socket(server_socket, config->ip, config->talk_port)){
-        printf("Error al conectarse al servidor\n");
+        printf("Error connecting to SUSE server\n");
         return;
     }
 
@@ -93,6 +93,7 @@ int suse_schedule_next(void){
 
 int suse_join(int tid){
 
+    int tid_to_block = hilolay_get_tid();
     t_paquete *package = create_package(SUSE_JOIN);
     void* _tid = malloc(sizeof(int));
     *((int*)_tid) = tid;
@@ -100,13 +101,13 @@ int suse_join(int tid){
     if(send_package(package, server_socket) == -1){
         free(_tid);
         free_package(package);
-        printf("Error sending thread: %d to block\n", tid);
+        printf("Error sending thread: %d to block\n", tid_to_block);
         return -1;
     } else {
         free(_tid);
         free_package(package);
         if(confirm_action() == 1){
-            printf("Blocked thread %i\n", tid);
+            printf("Blocked thread %i\n", tid_to_block);
             return 0;
         } else {
             printf("Failed receiving blocking thread confirmation\n");

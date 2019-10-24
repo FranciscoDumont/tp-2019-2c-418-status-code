@@ -210,7 +210,7 @@ void suse_schedule_next(int fd, char * ip, int port, t_list* received){
     if(program != NULL) {
 
         pthread_mutex_lock(&mutex_logger);
-        log_trace(logger, "Program(%s), asking for new thread", pid);
+        log_trace(logger, "Program: %s, asking to schedule a new thread", pid);
         pthread_mutex_unlock(&mutex_logger);
 
         return_tid = schedule_next(program);
@@ -284,10 +284,6 @@ int schedule_next(t_program* program){
                 //Le asigno a exec el nuevo hilo a ejecutar
                 program->exec = thread_to_execute;
                 TID new_tid = program->exec->tid;
-
-                pthread_mutex_lock(&mutex_logger);
-                log_trace(logger, "Thread: %d, now executing on Program: %s", new_tid, program->pid);
-                pthread_mutex_unlock(&mutex_logger);
             }
 
         } else {
@@ -298,6 +294,10 @@ int schedule_next(t_program* program){
         //TODO: si el programa no esta ejecutando(porque todos sus hilos estan en new, que retorno?, -1?)
         return_tid = -1;
     }
+
+    pthread_mutex_lock(&mutex_logger);
+    log_trace(logger, "Thread: %d, now executing on Program: %s", return_tid, program->pid);
+    pthread_mutex_unlock(&mutex_logger);
 
     return return_tid;
 }
@@ -404,16 +404,16 @@ void suse_close(int fd, char * ip, int port, t_list* received){
         free_join_blocks(exec_thread, program);
 
         //Mato al thread
-        destroy_thread(exec_thread);
+        //destroy_thread(exec_thread);
 
         pthread_mutex_lock(&mutex_logger);
-        log_trace(logger, "Thread: %d, from Program: %s, closed", tid, pid);
+        log_trace(logger, "Thread: %d, from Program: %s, sent to EXIT", tid, pid);
         pthread_mutex_unlock(&mutex_logger);
 
         //Verifico si no quedan mas hilos en ready o exec
         if(no_more_threads(program)){
 
-            //TODO:destruir todos los hilos
+            destroy_exit_threads(program);
 
             //Destruyo el programa
             destroy_program(program);
@@ -672,7 +672,13 @@ int threads_in_blocked(t_program* program){
 }
 
 int threads_in_join_block(t_program* program){
-    return 0;
+    bool condition(void* _block){
+        t_block* block = (t_block*)_block;
+        t_join_block* join_block = (t_join_block*)(block->block_structure);
+        t_thread* blocked_thread = join_block->blocked_thread;
+        return block->block_type == JOIN && strcmp(blocked_thread->pid, program->pid) == 0;
+    }
+    return list_count_satisfying(BLOCKED, condition);
 }
 
 //TODO:Implementar
@@ -690,6 +696,22 @@ int threads_in_exec(t_program* program){
 void destroy_program(t_program* program){
     free(program->pid);
     free(program);
+}
+
+void destroy_exit_threads(t_program* program){
+    bool execute = true;
+    while(execute){
+        bool condition(void* _thread){
+            t_thread* thread1 = (t_thread*)_thread;
+            return strcmp(thread1->pid, program->pid) == 0;
+        }
+        t_thread* thread = (t_thread*)list_remove_by_condition(EXIT, condition);
+        if(thread == NULL){
+            execute = false;
+        } else {
+            destroy_thread(thread);
+        }
+    }
 }
 
 bool blocking_thread_is_dead(t_thread* thread){

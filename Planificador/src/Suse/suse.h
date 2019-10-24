@@ -259,6 +259,20 @@ int threads_in_ready(t_program* program);
 int threads_in_blocked(t_program* program);
 
 /**
+ * Retorna la cantidad de hilos en join_block de un programa especifico
+ * @param program
+ * @return
+ */
+int threads_in_join_block(t_program* program);
+
+/**
+ * Retorna la cantidad de hilos en semaphore_block de un programa especifico
+ * @param program
+ * @return
+ */
+int threads_in_semaphore_block(t_program* program);
+
+/**
  * Retorna la cantidad de hilos en el estado EXEC de un programa especifico
  * @param program
  * @return int, cant de hilos en EXEC
@@ -272,6 +286,12 @@ int threads_in_exec(t_program* program);
 void destroy_program(t_program* program);
 
 /**
+ * Destruyo todos los hilos de EXIT que pertenezcan a un programa dado
+ * @param program
+ */
+void destroy_exit_threads(t_program* program);
+
+/**
  * Verifico si el hilo esta muerto(en la cola de EXIT)
  * @param thread, hilo que voy a revisar
  * @return bool, true para muerto, false para vivo
@@ -280,8 +300,9 @@ bool blocking_thread_is_dead(t_thread* thread);
 
 /**
  * Libero los posibles join_blocks que pueda llegar a tener un hilo
- * @param thread
+ * @param thread, hilo del que voy a liberar los blocks
+ * @param program
  */
-void free_join_blocks(t_thread* thread);
+void free_join_blocks(t_thread* thread, t_program* program);
 
 #endif //SUSE_SUSE_H
