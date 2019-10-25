@@ -85,8 +85,17 @@ int suse_schedule_next(void){
             printf("Scheduling next thread %i...\n", new_scheduled_thread);
             return new_scheduled_thread;
         } else {
-            printf("Failed receiving scheduled thread\n");
-            return -1;
+            //Si la respuesta es menor a 0 significa que todos sus hilos estan en NEW, por lo que se debe quedar
+            // esperando hasta que algun hilo de otro programa termine para que le habilite alguno a este
+            // segun el grado de multiprogramacion
+            int new_scheduled_thread = confirm_action();
+            if(new_scheduled_thread >= 0){
+                printf("Scheduling next thread %i...\n", new_scheduled_thread);
+                return new_scheduled_thread;
+            } else {
+                printf("Failed receiving scheduled thread\n");
+                return -1;
+            }
         }
     }
 }

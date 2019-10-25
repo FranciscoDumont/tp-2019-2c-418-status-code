@@ -29,7 +29,7 @@ typedef struct _SUSEConfig {
  * Estructura encargada de representar un hilo de un programa
  * Posee basicamente un identificador propio, un identificador del programa al que pertenece
  * y dos listas, en la primera se almacenan los intervalos de ejecucion, y en la segunda los intervalos en los que
- * estuvo en cola de listo
+ * estuvo en cola de listo, y tambien un identificador de tiempo de inicio
  */
 typedef struct _t_thread{
     TID tid;

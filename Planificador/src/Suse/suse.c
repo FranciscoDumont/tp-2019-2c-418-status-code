@@ -136,7 +136,7 @@ void create_new_program(char* ip, int port, int fd){
     new_program->pid = pid;
     new_program->fd = fd;
     new_program->ready = list_create();
-    new_program->exec = malloc(sizeof(t_thread));
+    new_program->exec = NULL;
     new_program->executing = false;
 
     pthread_mutex_lock(&mutex_programs);
@@ -172,7 +172,7 @@ void suse_create(int fd, char * ip, int port, t_list* received){
         t_interval* first_iteration = new_interval();
         *(first_iteration->start_time) = get_time();
 
-        if(program->executing) { //And if exec!= NULL?
+        if(program->executing) {
             t_list *ready = program->ready;
             list_add(ready, new_thread);
 
@@ -460,14 +460,14 @@ void* generate_metrics(void* arg){
     char* metric_to_log = string_new();
     string_append(&metric_to_log, "---------METRICS:\n");
     char* separator = "\n";
-    char* thread_metrics = generate_thread_metrics();
-    string_append(&metric_to_log, thread_metrics);
+    char* system_metrics = generate_system_metrics();
+    string_append(&metric_to_log, system_metrics);
     string_append(&metric_to_log, separator);
     char* program_metrics = generate_program_metrics();
     string_append(&metric_to_log, program_metrics);
     string_append(&metric_to_log, separator);
-    char* system_metrics = generate_system_metrics();
-    string_append(&metric_to_log, system_metrics);
+    char* thread_metrics = generate_thread_metrics();
+    string_append(&metric_to_log, thread_metrics);
     string_append(&metric_to_log, separator);
 
     pthread_mutex_lock(&mutex_logger);
@@ -483,12 +483,41 @@ char* generate_thread_metrics(){
 }
 
 char* generate_program_metrics(){
-    char* metrics = "Program metrics:\n";
+
+    char* metrics = string_new();
+    string_append(&metrics, "Program metrics:\n");
+
+    void iterate(void* _program){
+        t_program* program = (t_program*)_program;
+        string_append(&metrics, "--Program: ");
+        string_append(&metrics, program->pid);
+        string_append(&metrics, "\n");
+        string_append(&metrics, "----Threads in NEW: ");
+        string_append(&metrics, string_itoa(threads_in_new(program)));
+        string_append(&metrics, "\n");
+        string_append(&metrics, "----Threads in READY: ");
+        string_append(&metrics, string_itoa(threads_in_ready(program)));
+        string_append(&metrics, "\n");
+        string_append(&metrics, "----Threads in RUN: ");
+        string_append(&metrics, string_itoa(threads_in_exec(program)));
+        string_append(&metrics, "\n");
+        string_append(&metrics, "----Threads in BLOCKED: ");
+        string_append(&metrics, string_itoa(threads_in_blocked(program)));
+        string_append(&metrics, "\n");
+    }
+    list_iterate(programs, iterate);
+
     return metrics;
 }
 
 char* generate_system_metrics(){
-    char* metrics = "System metrics:\n";
+    char* metrics = string_new();
+    string_append(&metrics, "System metrics:\n");
+    string_append(&metrics, "--Multiprogramming grade: ");
+    string_append(&metrics, string_itoa(multiprogramming_grade()));
+    string_append(&metrics, "\n");
+    string_append(&metrics, "--Semaphores: ");
+    string_append(&metrics, "\n");
     return metrics;
 }
 
@@ -506,6 +535,7 @@ char* generate_pid(char* ip, int port){
 }
 
 int multiprogramming_grade(){
+    //TODO:revisar esto
     int blocked_grade = list_size(BLOCKED);
 
     //--Readies
@@ -536,7 +566,7 @@ int multiprogramming_grade(){
 
     //--Execs
     bool executing_program(void* program){
-        return ((t_program*)program)->executing;
+        return ((t_program*)program)->exec != NULL;
     }
 
     int execute_grade = list_count_satisfying(programs, &executing_program);
@@ -702,6 +732,7 @@ void destroy_program(PID pid){
     void element_destroyer(void* _program){
         t_program* program = (t_program*)_program;
         free(program->pid);
+        list_destroy(program->ready);
         free(program);
     }
     list_remove_and_destroy_by_condition(programs, condition, element_destroyer);
