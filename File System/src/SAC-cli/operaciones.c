@@ -1,4 +1,4 @@
-#include "fuse_example.h"
+#include "operaciones.h"
 
 
  int hello_getattr(const char *path, struct stat *stbuf) {

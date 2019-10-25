@@ -1,4 +1,6 @@
 #include "fuse_example.h"
+#include <altaLibreria/connections.h>
+#include <altaLibreria/structures.h>
 
 
 // Dentro de los argumentos que recibe nuestro programa obligatoriamente
