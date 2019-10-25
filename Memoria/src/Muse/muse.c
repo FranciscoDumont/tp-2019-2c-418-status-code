@@ -58,12 +58,86 @@ void* server_function(void * arg){
 
         switch (headerStruct->type){
             case MUSE_INIT:
+            ;
             {
                 pthread_t muse_init_thread;
                 pthread_create(&muse_init_thread, NULL, muse_init, (void*)newComm);
                 pthread_join(muse_init_thread, NULL);
                 break;
             }
+
+            case MUSE_CLOSE:
+            ;
+            {
+                pthread_t muse_close_thread;
+                pthread_create(&muse_close_thread, NULL, muse_close, (void*)newComm);
+                pthread_join(muse_close_thread, NULL);
+                break;
+            }
+            
+            case MUSE_ALLOC:
+            ;
+            {
+                pthread_t muse_alloc_thread;
+                pthread_create(&muse_alloc_thread, NULL, muse_alloc, (void*)newComm);
+                pthread_join(muse_alloc_thread, NULL);
+                break;
+            }
+            
+            case MUSE_FREE:
+            ;
+            {
+                pthread_t muse_free_thread;
+                pthread_create(&muse_free_thread, NULL, muse_free, (void*)newComm);
+                pthread_join(muse_free_thread, NULL);
+                break;
+            }
+            
+            case MUSE_GET:
+            ;
+            {
+                pthread_t muse_get_thread;
+                pthread_create(&muse_get_thread, NULL, muse_get, (void*)newComm);
+                pthread_join(muse_get_thread, NULL);
+                break;
+            }
+            
+            case MUSE_CPY:
+            ;
+            {
+                pthread_t muse_cpy_thread;
+                pthread_create(&muse_cpy_thread, NULL, muse_cpy, (void*)newComm);
+                pthread_join(muse_cpy_thread, NULL);
+                break;
+            }
+            
+            case MUSE_MAP:
+            ;
+            {
+                pthread_t muse_map_thread;
+                pthread_create(&muse_map_thread, NULL, muse_map, (void*)newComm);
+                pthread_join(muse_map_thread, NULL);
+                break;
+            }
+            
+            case MUSE_SYNC:
+            ;
+            {
+                pthread_t muse_sync_thread;
+                pthread_create(&muse_sync_thread, NULL, muse_sync, (void*)newComm);
+                pthread_join(muse_sync_thread, NULL);
+                break;
+            }
+            
+            case MUSE_UNMAP:
+            ;
+            {
+                pthread_t muse_unmap_thread;
+                pthread_create(&muse_unmap_thread, NULL, muse_unmap, (void*)newComm);
+                pthread_join(muse_unmap_thread, NULL);
+                break;
+            }
+
             default:
             {
                 log_warning(logger, "Operacion desconocida. No quieras meter la pata\n");
@@ -101,7 +175,7 @@ void read_memory_config(){
 }
 
 
-void* muse_init(void* newComm){
+void muse_init(void* newComm){
     log_error(logger, "Empieza el muse_init");
     t_new_comm* newComm1 = (t_new_comm*)newComm;
     int fd = newComm1->fd;
@@ -124,7 +198,7 @@ void* muse_init(void* newComm){
 }
 
 
-void muse_close(){
+void muse_close(void* newComm){
     log_error(logger, "Empieza el muse_close");
     t_new_comm* newComm1 = (t_new_comm*)newComm;
     int fd = newComm1->fd;
@@ -147,7 +221,8 @@ void muse_close(){
 }
 
 
-uint32_t muse_alloc(uint32_t tam){
+//uint32_t muse_alloc(uint32_t tam){
+void muse_alloc(void* newComm){
     log_error(logger, "Empieza el muse_alloc");
     t_new_comm* newComm1 = (t_new_comm*)newComm;
     int fd = newComm1->fd;
@@ -169,7 +244,8 @@ uint32_t muse_alloc(uint32_t tam){
     send_package(package, fd);
 }
 
-void muse_free(uint32_t dir){
+//void muse_free(uint32_t dir){
+void muse_free(void* newComm){
     log_error(logger, "Empieza el muse_free");
     t_new_comm* newComm1 = (t_new_comm*)newComm;
     int fd = newComm1->fd;
@@ -192,7 +268,8 @@ void muse_free(uint32_t dir){
 }
 
 
-int muse_get(void *dst, uint32_t src, size_t n){
+//int muse_get(void *dst, uint32_t src, size_t n){
+void muse_get(void* newComm){
     log_error(logger, "Empieza el muse_get");
     t_new_comm* newComm1 = (t_new_comm*)newComm;
     int fd = newComm1->fd;
@@ -215,7 +292,8 @@ int muse_get(void *dst, uint32_t src, size_t n){
 }
 
 
-int muse_cpy(uint32_t dst, void *src, int n){
+//int muse_cpy(uint32_t dst, void *src, int n){
+void muse_cpy(void* newComm){
     log_error(logger, "Empieza el muse_cpy");
     t_new_comm* newComm1 = (t_new_comm*)newComm;
     int fd = newComm1->fd;
@@ -238,7 +316,8 @@ int muse_cpy(uint32_t dst, void *src, int n){
 }
 
 
-uint32_t muse_map(char *path, size_t length, int flags){
+//uint32_t muse_map(char *path, size_t length, int flags){
+void muse_map(void* newComm){
     log_error(logger, "Empieza el muse_map");
     t_new_comm* newComm1 = (t_new_comm*)newComm;
     int fd = newComm1->fd;
@@ -261,7 +340,8 @@ uint32_t muse_map(char *path, size_t length, int flags){
 }
 
 
-int muse_sync(uint32_t addr, size_t len){
+//int muse_sync(uint32_t addr, size_t len){
+void muse_sync(void* newComm){
     log_error(logger, "Empieza el muse_sync");
     t_new_comm* newComm1 = (t_new_comm*)newComm;
     int fd = newComm1->fd;
@@ -284,7 +364,8 @@ int muse_sync(uint32_t addr, size_t len){
 }
 
 
-int muse_unmap(uint32_t dir){
+//int muse_unmap(uint32_t dir){
+void muse_unmap(void* newComm){
     log_error(logger, "Empieza el muse_unmap");
     t_new_comm* newComm1 = (t_new_comm*)newComm;
     int fd = newComm1->fd;
