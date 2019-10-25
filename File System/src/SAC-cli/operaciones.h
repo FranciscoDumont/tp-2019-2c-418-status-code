@@ -2,19 +2,9 @@
 // Created by utnso on 23/10/19.
 //
 
-#ifndef TP_2019_2C_418_STATUS_CODE_OPERACIONES_H
-#define TP_2019_2C_418_STATUS_CODE_OPERACIONES_H
+#ifndef TP_2019_2C_418_STATUS_CODE_OPERACIONES_H_
+#define TP_2019_2C_418_STATUS_CODE_OPERACIONES_H_
 
-#include <stddef.h>
-#include <stdlib.h>
-#include <fuse.h>
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <altaLibreria/connections.h>
-#include <altaLibreria/structures.h>
 #define PORT 8080
 
 
@@ -33,9 +23,9 @@
  * 	@RETURN
  * 		O archivo/directorio fue encontrado. -ENOENT archivo/directorio no encontrado
  */
-static int hello_getattr(const char *path, struct stat *stbuf);
+ int hello_getattr(const char *path, struct stat *stbuf);
 
-static int example_fopen(const char *path, struct stat *stbuf);
+ int example_fopen(const char *path, struct stat *stbuf);
 
 /*
  * @DESC
@@ -53,11 +43,11 @@ static int example_fopen(const char *path, struct stat *stbuf);
  * 	@RETURN
  * 		O directorio fue encontrado. -ENOENT directorio no encontrado
  */
-static int hello_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi);
+ int hello_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi);
 
-static int example_mknod(const char *path, mode_t mode, dev_t rdev);
+ int example_mknod(const char *path, mode_t mode, dev_t rdev);
 
-static int example_utimens(const char *path, const struct timespec ts[2]);
+ int example_utimens(const char *path, const struct timespec ts[2]);
 
 /*
  * @DESC
@@ -72,7 +62,7 @@ static int example_utimens(const char *path, const struct timespec ts[2]);
  * 	@RETURN
  * 		O archivo fue encontrado. -EACCES archivo no es accesible
  */
-static int example_open(const char *path, struct fuse_file_info *fi);
+ int example_open(const char *path, struct fuse_file_info *fi);
 
 /*
  * @DESC
@@ -92,7 +82,7 @@ static int example_open(const char *path, struct fuse_file_info *fi);
  * 		la cantidad de bytes leidos o -ENOENT si ocurrio un error. ( Este comportamiento es igual
  * 		para la funcion write )
  */
-static int hello_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi);
+ int hello_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi);
 
 
 #endif //TP_2019_2C_418_STATUS_CODE_OPERACIONES_H

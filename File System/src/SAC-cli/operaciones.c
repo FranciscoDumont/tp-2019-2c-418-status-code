@@ -1,8 +1,7 @@
-#include "operaciones.h"
 #include "fuse_example.h"
 
 
-static int hello_getattr(const char *path, struct stat *stbuf) {
+ int hello_getattr(const char *path, struct stat *stbuf) {
     int res = 0;
 
     memset(stbuf, 0, sizeof(struct stat));
@@ -23,12 +22,12 @@ static int hello_getattr(const char *path, struct stat *stbuf) {
     return res;
 }
 
-static int example_fopen(const char *path, struct stat *stbuf){
+ int example_fopen(const char *path, struct stat *stbuf){
     printf("example_fopen\n");
     return 0;
 }
 
-static int hello_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
+ int hello_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
     (void) offset;
     (void) fi;
 
@@ -44,7 +43,7 @@ static int hello_readdir(const char *path, void *buf, fuse_fill_dir_t filler, of
     return 0;
 }
 
-static int example_mknod(const char *path, mode_t mode, dev_t rdev)
+ int example_mknod(const char *path, mode_t mode, dev_t rdev)
 {
     int res;
 
@@ -56,7 +55,7 @@ static int example_mknod(const char *path, mode_t mode, dev_t rdev)
     return 0;
 }
 
-static int example_utimens(const char *path, const struct timespec ts[2])
+ int example_utimens(const char *path, const struct timespec ts[2])
 {
     int res;
 
@@ -67,7 +66,7 @@ static int example_utimens(const char *path, const struct timespec ts[2])
     return 0;
 }
 
-static int example_open(const char *path, struct fuse_file_info *fi) {
+ int example_open(const char *path, struct fuse_file_info *fi) {
     if (strcmp(path, DEFAULT_FILE_PATH) != 0)
         return -ENOENT;
 
@@ -78,7 +77,7 @@ static int example_open(const char *path, struct fuse_file_info *fi) {
     return 0;
 }
 
-static int hello_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
+ int hello_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
     size_t len;
     (void) fi;
     if (strcmp(path, DEFAULT_FILE_PATH) != 0)
