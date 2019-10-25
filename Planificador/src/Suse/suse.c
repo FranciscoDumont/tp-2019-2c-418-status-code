@@ -427,7 +427,8 @@ void suse_close(int fd, char * ip, int port, t_list* received){
         pthread_create(&end_thread_metrics_thread, NULL, generate_metrics, NULL);
         pthread_detach(end_thread_metrics_thread);
 
-        //TODO:agregar el/los hilo/s que esten en new hasta cumplir con el grado de multiprogramacion a sus respectivos programas
+        //Reparto los hilos que se encuentren en NEW a sus respectivas colas de ready segun el grado de multiprogramacion
+        distribute_new_threads();
 
         response = 1;
     } else {
@@ -446,6 +447,11 @@ void suse_close(int fd, char * ip, int port, t_list* received){
     free_list(received, element_destroyer);
 }
 
+//TODO:Implementar
+void distribute_new_threads(){
+
+}
+
 void* metrics_function(void* arg){
     pthread_mutex_lock(&mutex_logger);
     log_trace(logger, "Metrics thread initiated...");
@@ -462,9 +468,11 @@ void* generate_metrics(void* arg){
     char* separator = "\n";
     char* system_metrics = generate_system_metrics();
     string_append(&metric_to_log, system_metrics);
+    free(system_metrics);
     string_append(&metric_to_log, separator);
     char* program_metrics = generate_program_metrics();
     string_append(&metric_to_log, program_metrics);
+    free(program_metrics);
     string_append(&metric_to_log, separator);
     char* thread_metrics = generate_thread_metrics();
     string_append(&metric_to_log, thread_metrics);
@@ -489,21 +497,30 @@ char* generate_program_metrics(){
 
     void iterate(void* _program){
         t_program* program = (t_program*)_program;
+        char* separator = "\n";
         string_append(&metrics, "--Program: ");
         string_append(&metrics, program->pid);
-        string_append(&metrics, "\n");
+        string_append(&metrics, separator);
         string_append(&metrics, "----Threads in NEW: ");
-        string_append(&metrics, string_itoa(threads_in_new(program)));
-        string_append(&metrics, "\n");
+        char* new = string_itoa(threads_in_new(program));
+        string_append(&metrics, new);
+        free(new);
+        string_append(&metrics, separator);
         string_append(&metrics, "----Threads in READY: ");
-        string_append(&metrics, string_itoa(threads_in_ready(program)));
-        string_append(&metrics, "\n");
+        char* ready= string_itoa(threads_in_ready(program));
+        string_append(&metrics, ready);
+        free(ready);
+        string_append(&metrics, separator);
         string_append(&metrics, "----Threads in RUN: ");
-        string_append(&metrics, string_itoa(threads_in_exec(program)));
-        string_append(&metrics, "\n");
+        char* run = string_itoa(threads_in_exec(program));
+        string_append(&metrics, run);
+        free(run);
+        string_append(&metrics, separator);
         string_append(&metrics, "----Threads in BLOCKED: ");
-        string_append(&metrics, string_itoa(threads_in_blocked(program)));
-        string_append(&metrics, "\n");
+        char* blocked = string_itoa(threads_in_blocked(program));
+        string_append(&metrics, blocked);
+        free(blocked);
+        string_append(&metrics, separator);
     }
     list_iterate(programs, iterate);
 
@@ -512,12 +529,18 @@ char* generate_program_metrics(){
 
 char* generate_system_metrics(){
     char* metrics = string_new();
-    string_append(&metrics, "System metrics:\n");
-    string_append(&metrics, "--Multiprogramming grade: ");
-    string_append(&metrics, string_itoa(multiprogramming_grade()));
-    string_append(&metrics, "\n");
-    string_append(&metrics, "--Semaphores: ");
-    string_append(&metrics, "\n");
+    char* separator = "\n";
+    char* sml = "System metrics:\n";
+    string_append(&metrics, sml);
+    char* mgl = "--Multiprogramming grade: ";
+    string_append(&metrics, mgl);
+    char* mg = string_itoa(multiprogramming_grade());
+    string_append(&metrics, mg);
+    free(mg);
+    string_append(&metrics, separator);
+    char* sl = "--Semaphores: ";
+    string_append(&metrics, sl);
+    string_append(&metrics, separator);
     return metrics;
 }
 
@@ -535,36 +558,34 @@ char* generate_pid(char* ip, int port){
 }
 
 int multiprogramming_grade(){
-    //TODO:revisar esto
-    int blocked_grade = list_size(BLOCKED);
 
-    //--Readies
+    //Busco la cantidad de hilos en BLOCKED de cada programa y la sumo con fold
+    void* seedB = malloc(sizeof(int));
+    *((int*)seedB) = 0;
 
-    //--Mapeo un programa al tamaño de su lista de ready
-    void* program_to_ready_grade(void* program){
-        t_list* ready = ((t_program*)program)->ready;
-        void* grade = malloc(sizeof(int));
-        *((int*)grade) = list_size(ready);
-        return grade;
+    void* seedB_plus_grade(void* _seedB, void* program) {
+        *((int*) _seedB) += threads_in_blocked((t_program*)program);
+        return _seedB;
     }
 
-    t_list* ready_grades = list_map(programs, &program_to_ready_grade);
+    void* blocked_grade_ptr = list_fold(programs, seedB, &seedB_plus_grade);
+    int blocked_grade = *((int*)blocked_grade_ptr);
+    free(blocked_grade_ptr);
+
+    //Busco la cantidad de hilos en READY de cada programa y la sumo con fold
     void* seed = malloc(sizeof(int));
     *((int*)seed) = 0;
 
-    void* seed_plus_grade(void* seed, void* grade){
-        *((int*) seed) += *((int*) grade);
-        free(grade);
+    void* seed_plus_grade(void* seed, void* program){
+        *((int*) seed) += threads_in_ready((t_program*)program);
         return seed;
     }
 
-    //--Sumo la lista mapeada de arriba con una semilla inicial de 0
-    void* ready_grade_ptr = list_fold(ready_grades, seed, &seed_plus_grade);
+    void* ready_grade_ptr = list_fold(programs, seed, &seed_plus_grade);
     int ready_grade = *((int*)ready_grade_ptr);
     free(ready_grade_ptr);
-    list_destroy(ready_grades);
 
-    //--Execs
+    //Busco los programas con un hilo en ejecucion y cuento la lista resultante
     bool executing_program(void* program){
         return ((t_program*)program)->exec != NULL;
     }

@@ -86,7 +86,7 @@ int suse_schedule_next(void){
             return new_scheduled_thread;
         } else {
             //Si la respuesta es menor a 0 significa que todos sus hilos estan en NEW, por lo que se debe quedar
-            // esperando hasta que algun hilo de otro programa termine para que le habilite alguno a este
+            // esperando(bloqueado) hasta que algun hilo de otro programa termine para que le habilite alguno a este
             // segun el grado de multiprogramacion
             int new_scheduled_thread = confirm_action();
             if(new_scheduled_thread >= 0){

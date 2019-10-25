@@ -99,6 +99,14 @@ void suse_join(int fd, char * ip, int port, t_list* received);
  */
 void suse_close(int fd, char * ip, int port, t_list* received);
 
+/**
+ * Una vez que se ejecuta suse_close, se habilitan n posiciones de hilos segun el grado de multiprogramacion,
+ *  esta funcion se ocupa de distribuir los hilos que se encuentran en NEW a su correspondiente cola en ready
+ *  y de avisarle a los programas que habian solicitado un nuevo hilo de ejecucion mediante un suse_schedule que
+ *  ya tienen un nuevo hilo disponible
+ */
+void distribute_new_threads();
+
 //--Genera una operación de wait sobre el semáforo dado
 void* suse_wait(void* newComm);
 
