@@ -5,7 +5,9 @@ t_log* logger;
 t_list* programs;
 t_list* NEW;
 t_list* BLOCKED;
-t_list* EXIT; //Solo se elimina un hilo y su programa cuando todos los hilos del mismo son enviados a EXIT
+t_list* EXIT;
+t_list* asking_for_thread;
+t_list* blocked_programs;
 
 pthread_mutex_t mutex_logger;
 pthread_mutex_t mutex_programs;
@@ -44,6 +46,8 @@ void initialize_structures(){
     NEW = list_create();
     BLOCKED = list_create();
     EXIT = list_create();
+    asking_for_thread = list_create();
+    blocked_programs = list_create();
 
     pthread_mutex_lock(&mutex_logger);
     log_trace(logger, "Structures initialized...");
@@ -149,6 +153,22 @@ void create_new_program(char* ip, int port, int fd){
 }
 
 //--LISTO
+
+// Si el grado de multiprogramacion no permite agregar ningun hilo y el programa no posee ningun hilo(en ningun estado),
+// bloquearlo, ya que al admitir a un hilo, hilolay ya piensa que esta en ejecucion y agregar el programa a una lista
+// de bloqueados y que se quede esperando la planificacion de alguno de sus hilos cuando el nivel de multiprogramacion
+// lo permita. Se depreciaria el campo executing del programa? creo que si.
+
+// Cuando un programa solicita una replanificacion y no hay mas hilos disponibles devolver el mismo, si ese hilo muere,
+// y no hay mas disponibles, bloquear el programa(agregar el mismo a una lista que se llama asking_for_thread)
+// y que se quede a la espera de un nuevo hilo.
+
+// Al finalizar suse_close se volverian a habilitar las planificaciones. Primero darle hilos a los programas que esten
+// en asking_for_thread, ya que estos entraron realmente a la planificacion(EN EL ORDEN QUE APARECEN EN LA LISTA, la
+// estimacion no interesaria ya que como son todos hilos nuevos, todos tienen el mismo estimado, y cuando tienen el
+// mismo, se soluciona por FIFO), luego de esto empezar a repartir los hilos a los programas que estaban en la lista
+// de bloqueados(tambien por FIFO) y agregar el programa bloqueado a la lista de programs. Tener en cuenta que solo se
+// pueden repartir tantos hilos como lugares haya despejado el suse_close, para no romper el nivel de la multiprogramacion
 void suse_create(int fd, char * ip, int port, t_list* received){
     char* pid = generate_pid(ip, port);
     int tid = *((int*)list_get(received, 0));
@@ -292,6 +312,9 @@ int schedule_next(t_program* program){
         }
     } else {
         //TODO: si el programa no esta ejecutando(porque todos sus hilos estan en new, que retorno?, -1?)
+
+        //Agrego el programa a una lista de hilos solicitando programas
+        list_add(asking_for_thread, (void*)program);
         return_tid = -1;
     }
 
