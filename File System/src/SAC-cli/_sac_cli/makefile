@@ -3,7 +3,7 @@
 # Como por ejemplo, bibliotecas, flags, el compilador (el "CC")
 
 TARGET = fuse # Definimos la tarea que va a ejecutar make por defecto Y el nombre del binario final
-LIBS = -lfuse -lpthread -laltaLibreria # Incluimos las bibliotecas que necesitamos, las commons y readline
+LIBS = -lfuse -lpthread -laltaLibreria -lcommons# Incluimos las bibliotecas que necesitamos, las commons y readline
 CC = gcc # Vamos a usar gcc como compilador, porque nos encanta!
 CFLAGS = -g -Wall -D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=27 # Compilamos con los flags -g (con simbolos de debug) y -Wall (que nos muestre todos los warnings)
 

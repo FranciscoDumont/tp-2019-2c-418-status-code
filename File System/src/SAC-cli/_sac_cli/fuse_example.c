@@ -1,4 +1,5 @@
 #include "fuse_example.h"
+#define PORT 8003
 
 
 
@@ -7,6 +8,8 @@
 int main(int argc, char *argv[]) {
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 	int socketfd;
+	char* ip_server = "127.0.0.1";
+	char mensaje[]= "estoy probando enviar mensajes";
 
 	// Limpio la estructura que va a contener los parametros
 	memset(&runtime_options, 0, sizeof(struct t_runtime_options));
@@ -29,7 +32,18 @@ int main(int argc, char *argv[]) {
 	// de realizar el montaje, comuniscarse con el kernel, delegar todo
 	// en varios threads
 
-	socketfd = create_socket();
+	if((socket_servidor = create_socket()) == -1) {
+		printf("Error creating socket\n");
+		return;
+	}
+
+	if(connect_socket(socket_servidor, ip_server, config->talk_port) == -1){
+		printf("Error connecting to server\n");
+		return;
+	}
+
+	t_paquete *package = crear_paquete(ABC);
+	agregar_a_paquete(package, (void*) mensaje, strlen(mensaje) + 1);
 
 	return fuse_main(args.argc, args.argv, &hello_oper, NULL);
 }

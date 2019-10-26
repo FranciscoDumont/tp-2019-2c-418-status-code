@@ -4,6 +4,8 @@
 #include "operaciones.h"
 #include <altaLibreria/connections.h>
 #include <altaLibreria/structures.h>
+#include <commons/collections/list.h>
+
 /*
  * Esta es una estructura auxiliar utilizada para almacenar parametros
  * que nosotros le pasemos por linea de comando a la funcion principal
