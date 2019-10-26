@@ -105,7 +105,7 @@ void suse_close(int fd, char * ip, int port, t_list* received);
  *  y de avisarle a los programas que habian solicitado un nuevo hilo de ejecucion mediante un suse_schedule que
  *  ya tienen un nuevo hilo disponible
  */
-void distribute_new_threads();
+void distribute_new_thread();
 
 //--Genera una operación de wait sobre el semáforo dado
 void* suse_wait(void* newComm);

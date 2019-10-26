@@ -7,7 +7,6 @@ t_list* NEW;
 t_list* BLOCKED;
 t_list* EXIT;
 t_list* asking_for_thread;
-t_list* blocked_programs;
 
 pthread_mutex_t mutex_logger;
 pthread_mutex_t mutex_programs;
@@ -47,7 +46,6 @@ void initialize_structures(){
     BLOCKED = list_create();
     EXIT = list_create();
     asking_for_thread = list_create();
-    blocked_programs = list_create();
 
     pthread_mutex_lock(&mutex_logger);
     log_trace(logger, "Structures initialized...");
@@ -172,27 +170,48 @@ void create_new_program(char* ip, int port, int fd){
 void suse_create(int fd, char * ip, int port, t_list* received){
     char* pid = generate_pid(ip, port);
     int tid = *((int*)list_get(received, 0));
+    int return_code;
 
+    //Creo un nuevo hilo
     t_thread* new_thread = malloc(sizeof(t_thread));
     new_thread->tid = tid;
     new_thread->pid = pid;
     new_thread->exec_list = list_create();
     new_thread->ready_list = list_create();
     new_thread->start_time = malloc(sizeof(struct timespec));
-    *(new_thread->start_time) = get_time();
+    *(new_thread->start_time) = get_time(); //Esto esta bien? o tendria que ser desde que se empieza a ejecutar o desde
+    // que entra al programa?
 
+    //Verifico si el nivel actual de planificacion es mayor al limite predefinido
     if(multiprogramming_grade() >= config->max_multiprog){
+
+        //TODO:agregar el hilo a la lista de NEW
+        //TODO:verificar si el programa posee algun hilo en cualquier estado
+        //No posee ninguno
+        //TODO:retornar -1 para que libSuse se quede bloqueado esperando la confirmacion de que el hilo entro, de lo contrario pensara que ya se esta ejecutando
+        //Ya posee hilos en algun estado
+        //TODO:retornar 1 como veniamos haciendo hasta ahora
+
+
         list_add(NEW, (void*)new_thread);
         pthread_mutex_lock(&mutex_logger);
         log_trace(logger, "Program(%s)'s Thread(%d) added to NEW list", pid, tid);
         pthread_mutex_unlock(&mutex_logger);
+        return_code = 1;
     } else {
+
+        //Busco el programa al que va a pertenecer el hilo
         t_program* program = find_program(pid);
 
+        //Creo un nuevo intervalo
         t_interval* first_iteration = new_interval();
         *(first_iteration->start_time) = get_time();
 
+        //Verifico si el programa se esta ejecutando
         if(program->executing) {
+
+            //Agrego el hilo a la lista de listos del programa y agrego el intervalo a la lista de intervalos de
+            // listo del hilo
             t_list *ready = program->ready;
             list_add(ready, new_thread);
 
@@ -202,18 +221,22 @@ void suse_create(int fd, char * ip, int port, t_list* received){
             log_trace(logger, "Thread(%d), added to Program(%s)'s ready list", tid, pid);
             pthread_mutex_unlock(&mutex_logger);
         } else {
+
+            //Si no se esta ejecutando, agrego el intervalo creado a la lista de ejecucion del nuevo hilo, agrego el
+            // mismo al parametro exec del programa y lo marco como ejecutandose
             list_add(new_thread->exec_list, (void*)first_iteration);
             program->exec = new_thread;
             program->executing = true;
 
             pthread_mutex_lock(&mutex_logger);
-            log_trace(logger, "Program(%s)'s Thread(%d) now executing", pid, tid);
+            log_trace(logger, "Program(%s)'s Thread(%d) added and executing", pid, tid);
             pthread_mutex_unlock(&mutex_logger);
         }
+        return_code = 1;
     }
 
     //Confirmo la planificacion del hilo
-    create_response_thread(fd, 1, SUSE_CREATE);
+    create_response_thread(fd, return_code, SUSE_CREATE);
 
     void element_destroyer(void* element){
         free(element);
@@ -311,7 +334,6 @@ int schedule_next(t_program* program){
             return_tid = program->exec->tid;
         }
     } else {
-        //TODO: si el programa no esta ejecutando(porque todos sus hilos estan en new, que retorno?, -1?)
 
         //Agrego el programa a una lista de hilos solicitando programas
         list_add(asking_for_thread, (void*)program);
@@ -451,7 +473,10 @@ void suse_close(int fd, char * ip, int port, t_list* received){
         pthread_detach(end_thread_metrics_thread);
 
         //Reparto los hilos que se encuentren en NEW a sus respectivas colas de ready segun el grado de multiprogramacion
-        distribute_new_threads();
+        //SIEMPRE la cantidad de hilos a distribuir va a ser UNO, ya que se llama al close de a una vez por hilo, y los
+        // hilos de exit NO cuentan para el grado de multiprogramacion(no importa cuando este liberando las estructuras
+        // de los hilos)
+        distribute_new_thread();
 
         response = 1;
     } else {
@@ -471,8 +496,13 @@ void suse_close(int fd, char * ip, int port, t_list* received){
 }
 
 //TODO:Implementar
-void distribute_new_threads(){
+void distribute_new_thread(){
 
+    //TODO:verificar si la lista asking_for_threads posee algun hilo
+    //Posee
+    //TODO:si llegamos a este punto significa que no el programa pidio una replanificacion, pero sus hilos no estan disponibles por alguna razon(bloqueados o en new), y como son programas que ya estan ejecutando poseen mayor prioridad que los que aun no, por lo tanto, les busco algun hilo de new que les pertenezca y lo asigno a exec
+    //No posee:
+    //TODO:entrego el primer hilo que este en la lista de new esperando para entrar
 }
 
 void* metrics_function(void* arg){
