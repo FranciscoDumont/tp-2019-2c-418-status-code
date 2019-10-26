@@ -1,6 +1,6 @@
 #include <stdio.h>
+#define PUERTO_BIND 8003
 
-#define PUERTO_BIND 4445
 //Hay q agregarle los logs
 //Probarlo
 int main() {
@@ -35,7 +35,6 @@ void incoming_message (int fd, char * ip, int port, MessageHeader * headerStruct
     switch (headerStruct->type){
         case ABC:
         {
-            ;
             char *mensaje = (char*)list_get(cosas, 0);
             printf("Mensaje recibido:%s\n", mensaje);
             t_paquete *package = crear_paquete(ABC);
