@@ -2,7 +2,8 @@
 #ifndef TP_2019_2C_418_STATUS_CODE_FUSE_EXAMPLE_H_
 #define TP_2019_2C_418_STATUS_CODE_FUSE_EXAMPLE_H_
 #include "operaciones.h"
-
+#include <altaLibreria/connections.h>
+#include <altaLibreria/structures.h>
 /*
  * Esta es una estructura auxiliar utilizada para almacenar parametros
  * que nosotros le pasemos por linea de comando a la funcion principal
