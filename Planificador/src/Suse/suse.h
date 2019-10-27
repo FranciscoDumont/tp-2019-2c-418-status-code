@@ -45,22 +45,44 @@ void server_function();
 void create_new_program(char* ip, int port, int fd);
 
 /**
- * Creo las estructuras necesarias para representar al tid suministrado por hilolay
+ * Creo las estructuras necesarias para representar al tid suministrado por hilolay. En esta operacion hay varios casos
+ * posibles:
+ * * Grado de multiprogramacion >= limite:
+ * * * Si el programa ya estaba en ejecucion(exec = true), se agrega el hilo a NEW y se retorna 1.
+ * * * Si el programa no estaba en ejecucion, se agrega hilo a NEW y se retorna -1, de esta manera, el cliente se cuelga
+ * * * * y se queda esperando una nueva confirmacion, ya que la funcion init, coloca al primer hilo en ejecucion(cliente)
+ * * * * logrando una inconsistencia, estaria ejecutando en cliente pero en NEW en SUSE, si lo bloqueamos, logramos
+ * * * * que no se produzca tal incosistencia.
+ * * Grado de multiprogramacion < limite:
+ * * * Si el programa ya estaba en ejecucion, se verifica si  el estado exec es distinto de NULL, en cuyo caso, el hilo
+ * * * * se agregara a la lista de readys.
+ * * * Si el programa no estaba en ejecucion, se agrega el hilo directo al estado de ejecucion del programa
  * @param fd
  * @param ip
  * @param port
  * @param received(tid)
- * Retorna por socket un 0 en caso de exito o un -1 en caso de exito
  */
 void suse_create(int fd, char* ip, int port, t_list* received);
 
 /**
- * Retorna el proximo TID a ejecutar segun el algoritmo de planificacion de SUSE
+ * Retorna el proximo TID a ejecutar segun el algoritmo de planificacion de SUSE. En esta operacion hay varios casos
+ * posibles:
+ * * Lista de ready del programa > 0:
+ * * * exec != NULL, se debe llamar al planificador para que me diga el proximo hilo a ejecutar, actualizar los
+ * * * * intervalos de listo y de ejecucion, mover el proximo hilo a ejecutar a exec y al que estaba en exec a la lista
+ * * * * de listos, retorna el proximo tid a ejecutar.
+ * * * exec == NULL, se llama al planificador, se obtiene el proximo hilo a ejecutar, se actualizan los intervalos
+ * * * * correspondientes y se coloca el hilo a ejecutar en exec, retorna el proximo tid a ejecutar.
+ * * Lista de ready del programa = 0:
+ * * * exec != NULL, se actualizan los intervalos de ejecucion, y se retorna el mismo hilo, ya que no hay otros
+ * * * * disponibles, retorna el proximo tid a ejecutar.
+ * * * exec == NULL, se coloca al programa en una lista de espera y se bloquea al cliente hasta que haya algun hilo
+ * * * * disponible, retorna -1.
  * @param fd
  * @param ip
  * @param port
  * @param received
- * Retorno por socket el proximo tid a ejecutar
+ * @note el valor de los tids es siempre >= 0, de ahi que el codigo de error sea -1.
  */
 void suse_schedule_next(int fd, char * ip, int port, t_list* received);
 
@@ -100,10 +122,10 @@ void suse_join(int fd, char * ip, int port, t_list* received);
 void suse_close(int fd, char * ip, int port, t_list* received);
 
 /**
- * Una vez que se ejecuta suse_close, se habilitan n posiciones de hilos segun el grado de multiprogramacion,
- *  esta funcion se ocupa de distribuir los hilos que se encuentran en NEW a su correspondiente cola en ready
- *  y de avisarle a los programas que habian solicitado un nuevo hilo de ejecucion mediante un suse_schedule que
- *  ya tienen un nuevo hilo disponible
+ * Cada vez que se ejecuta suse_close, se libera una posicion de las limitadas por la multiprogramacion, esta funcion
+ * se ocupa de darle hilos a los programas que hayan solicitado uno(van a estar en la lista asking_for_thread), los
+ * mismos van a tener proridad con respecto a los programas que todavia no hayan entrado a la planificacion, una vez
+ * que se vacia la lista, se empiezan a repartir los hilos de la lista NEW.
  */
 void distribute_new_thread();
 

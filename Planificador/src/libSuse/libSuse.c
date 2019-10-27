@@ -56,8 +56,18 @@ int suse_create(int tid){
                 printf("Hilo en planificacion\n");
                 return 0;
             } else {
-                printf("Failed receiving closing new thread confirmation\n");
-                return -1;
+                //Si la respuesta es distinta de 1, significa que no hay mas lugar en el planificador para mas hilos
+                // por el nivel de multiprogramacion, y que el programa no estaba en ejecucion, por consiguiente, se
+                // debe bloquear al cliente para evitar que continue con la ejecucion del hilo main, hasta que se libere
+                // algun hilo de otro programa.
+                printf("No hay mas lugar en el planificador, debera esperar a que se libere algun hilo.\n");
+                if(confirm_action() == 1){
+                    printf("Hilo en planificacion\n");
+                    return 0;
+                } else {
+                    printf("Failed receiving closing new thread confirmation\n");
+                    return -1;
+                }
             }
         }
     }
