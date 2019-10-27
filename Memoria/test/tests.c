@@ -21,5 +21,7 @@ int main() {
     int respuesta = muse_init(114, "localhost", 5003);
 
     log_info(logger, "El resultado de muse_init es: %d", respuesta);
+
+    log_destroy(logger);
     return 0;
 }

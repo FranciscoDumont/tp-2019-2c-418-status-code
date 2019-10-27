@@ -5,6 +5,8 @@
 #include <commons/memory.h>
 #include "libmuse.h"
 
+char* MUSE_IP;
+int MUSE_PUERTO;
 
 /**
  * Inicializa la biblioteca de MUSE.
@@ -29,6 +31,12 @@ int muse_init(int id, char* ip, int puerto){
         return -1;
     }
 
+    //Setteo las variables globales
+    MUSE_IP = ip;
+    MUSE_PUERTO = puerto;
+    printf("Seteado MUSE_IP: %s\n", MUSE_IP);
+    printf("Seteado MUSE_PUERTO: %d\n", MUSE_PUERTO);
+
     //Procedo con esa tal comunicacion con el server
     t_paquete *package = create_package(MUSE_INIT);
     void* _id = malloc(sizeof(int));
@@ -44,12 +52,22 @@ int muse_init(int id, char* ip, int puerto){
 
         receive_header(server_socket, buffer_header);
 
-        t_list *cosas = receive_package(server_socket, buffer_header);
+        t_list *respuesta_list = receive_package(server_socket, buffer_header);
 
-        int rta = *((int*)list_get(cosas, 0));
-        return rta;
+        int respuesta = *((int*)list_get(respuesta_list, 0));
+
+        //Libero todo
+        free_package(package);
+        free(_id);
+        free(buffer_header);
+        void element_destroyer(void* element){
+            free(element);
+        }
+        list_destroy_and_destroy_elements(respuesta_list, element_destroyer);
+
+        //Devuelvo la respuesta
+        return respuesta;
     }
-
 }
 
 
@@ -59,8 +77,42 @@ int muse_init(int id, char* ip, int puerto){
      * @return La dirección de la memoria reservada.
      */
 uint32_t muse_alloc(uint32_t tam) {
-    uint32_t *reserved = malloc(sizeof(tam));
-    return *reserved;
+    // Creo socket
+    if((server_socket = create_socket()) == -1) {
+        printf("Error al crear el socket\n");
+        return -1;
+    }
+
+    // Conecto sockets
+    if(connect_socket(server_socket, MUSE_IP, MUSE_PUERTO) == -1){
+        printf("Error al conectarse al servidor\n");
+        return -1;
+    }
+
+    //Creo un paquete para el Alloc
+    t_paquete *package = create_package(MUSE_ALLOC);
+
+    //Agrego el uint32_t al paquete
+    void* tam_aux = malloc(sizeof(uint32_t));
+    *((uint32_t*)tam_aux) = tam;
+    add_to_package(package, tam_aux, sizeof(int));
+
+    //Envio el paquete
+    if(send_package(package, server_socket) == -1){
+        printf("Error al enviar paquete\n");
+        return -1;
+    } else {
+        // Espero la respuesta del server
+        MessageHeader* buffer_header = malloc(sizeof(MessageHeader));
+
+        receive_header(server_socket, buffer_header);
+
+        t_list *respuesta_list = receive_package(server_socket, buffer_header);
+
+        uint32_t rta = *((uint32_t*)list_get(respuesta_list, 0));
+        return rta;
+    }
+
 }
 
 /**

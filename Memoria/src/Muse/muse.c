@@ -223,18 +223,16 @@ void muse_close(void* newComm){
 
 //uint32_t muse_alloc(uint32_t tam){
 void muse_alloc(void* newComm){
-    log_error(logger, "Empieza el muse_alloc");
+    log_info(logger, "Empieza el muse_alloc");
     t_new_comm* newComm1 = (t_new_comm*)newComm;
     int fd = newComm1->fd;
-    char* ip = newComm1->ip;
-    int port = newComm1->port;
     t_list* received = newComm1->received;
 
     // Guardo el entero que recibo en una variable
-    int id = *((int*)list_get(received, 0));
+    uint32_t tam = *((uint32_t*)list_get(received, 0));
 
     // Loggeo el valor del id que recibi
-    log_info(logger, "El id que recibo de libMuse es: %d", id);
+    log_info(logger, "El id que recibo de libMuse es: %d", tam);
 
     // Le respondo a libMuse que esta todo bien
     t_paquete *package = create_package(MUSE_INIT);
