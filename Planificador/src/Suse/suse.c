@@ -716,21 +716,31 @@ t_thread* find_thread(t_program* program, TID tid){
     t_thread* thread = NULL;
     PID pid = program->pid;
 
-    //Busco el hilo en la lista de ready del programa al que pertenece
-    bool ready_thread_finder(void* _thread){
+    //Buscador de hilos solo por tid
+    bool tid_thread_finder(void* _thread){
         return ((t_thread*)_thread)->tid == tid;
     }
-    thread = (t_thread*)list_find(program->ready, ready_thread_finder);
+
+    //Buscador de hilos por tid y pid
+    bool tid_pid_thread_finder(void* _thread){
+        return ((t_thread*)_thread)->tid == tid && strcmp(((t_thread*)_thread)->pid, program->pid) == 0;
+    }
+
+    //Busco el hilo en la lista de ready del programa al que pertenece
+    thread = (t_thread*)list_find(program->ready, tid_thread_finder);
 
     //Si el hilo no se encuentra en la lista de readys del programa, busco en EXIT
     if(thread == NULL){
         //Busco el hilo en EXIT
-        bool exit_thread_finder(void* _thread){
-            return ((t_thread*)_thread)->tid == tid && strcmp(((t_thread*)_thread)->pid, program->pid) == 0;
-        }
-        thread = (t_thread*)list_find(program->ready, exit_thread_finder);
+        thread = (t_thread*)list_find(EXIT, tid_pid_thread_finder);
 
-        //TODO:verificar que no sea NULL y si lo es, buscar en la lista de BLOCKED
+        //Si el hilo no se encuentra en la lista de EXIT, busco en NEW
+        if(thread == NULL){
+            //Busco el hilo en NEW
+            thread = (t_thread*)list_find(NEW, tid_pid_thread_finder);
+
+            //TODO:verificar que no sea NULL y si lo es, buscar en la lista de BLOCKED
+        }
     }
 
     return thread;

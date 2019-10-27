@@ -203,7 +203,8 @@ void free_list(t_list* received, void(*element_destroyer)(void*));
 t_program* find_program(PID pid);
 
 /**
- * Retorno el hilo al que pertenece un tid y pid dados
+ * Retorno el hilo al que pertenece un tid y pid dados, ṕrimero busca en la lista de ready del programa, luego en la
+ * de EXIT, luego en la de NEW, y finalmente(proximamente) en la de BLOCKED(TODO:verificar que esta ultima sea necesaria)
  * @param program
  * @param tid
  * @return t_thread*
