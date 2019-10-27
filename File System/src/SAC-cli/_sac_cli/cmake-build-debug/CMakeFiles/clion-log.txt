@@ -1,0 +1,4 @@
+/usr/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" "/home/utnso/CLionProjects/tp-2019-2c-418-status-code/File System/src/SAC-cli/_sac_cli"
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/utnso/CLionProjects/tp-2019-2c-418-status-code/File System/src/SAC-cli/_sac_cli/cmake-build-debug
