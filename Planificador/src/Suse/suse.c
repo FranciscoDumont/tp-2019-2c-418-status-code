@@ -434,6 +434,8 @@ void suse_join(int fd, char * ip, int port, t_list* received){
         pthread_mutex_lock(&mutex_logger);
         log_trace(logger, "Blocking Thread(%d) was dead, blocked Thread(%d) sent to ready", tid, executing_tid);
         pthread_mutex_unlock(&mutex_logger);
+
+    //El hilo bloqueante no estaba en EXIT, paso a bloquear el que esta en exec
     } else {
 
         //Creo un nuevo blockeo y le asigno el tipo
@@ -545,11 +547,28 @@ void suse_close(int fd, char * ip, int port, t_list* received){
 //TODO:Implementar
 void distribute_new_thread(){
 
-    //TODO:verificar si la lista asking_for_threads posee algun hilo
-    //Posee
-    //TODO:si llegamos a este punto significa que no el programa pidio una replanificacion, pero sus hilos no estan disponibles por alguna razon(bloqueados o en new), y como son programas que ya estan ejecutando poseen mayor prioridad que los que aun no, por lo tanto, les busco algun hilo de new que les pertenezca y lo asigno a exec
-    //No posee:
-    //TODO:entrego el primer hilo que este en la lista de new esperando para entrar
+    //Obtengo el primer programa de la lista de programas pidiendo hilos
+    t_program* next_program = (t_program*)list_remove(asking_for_thread, 0);
+
+    //Verifico que el elemento obtenido anteriormente no sea nulo
+    if(next_program != NULL){
+
+        //TODO:Buscar si hay algun hilo en NEW para este programa y repartir
+
+    //La lista de programas solicitando hilos estaba vacia
+    } else {
+
+        //Obtengo el primer hilo de la lista de NEW para repartir
+        t_thread* next_thread = (t_thread*)list_remove(NEW, 0);
+
+        //Verifico que el hilo anterior no sea nulo
+        if(next_thread != NULL){
+
+            //TODO:repartir hilo en el programa correspondiente
+
+        }
+
+    }
 }
 
 void* metrics_function(void* arg){
