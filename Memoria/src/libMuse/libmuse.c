@@ -18,56 +18,68 @@ int MUSE_PUERTO;
  * @note Debido a la naturaleza centralizada de MUSE, esta función deberá definir
  *  el ID del proceso/hilo según "IP-ID".
  */
-int muse_init(int id, char* ip, int puerto){
-    // Creo socket
+
+int validate_create_sockets() {
     if((server_socket = create_socket()) == -1) {
         printf("Error al crear el socket\n");
         return -1;
-    }
+    } else return 0;
+}
 
-    // Conecto sockets
+int validate_connect_sockets(char* ip, int puerto) {
     if(connect_socket(server_socket, ip, puerto) == -1){
         printf("Error al conectarse al servidor\n");
         return -1;
-    }
+    } else return 0;
+}
 
-    //Setteo las variables globales
+void set_global_vars(char* ip, int puerto) {
     MUSE_IP = ip;
     MUSE_PUERTO = puerto;
     printf("Seteado MUSE_IP: %s\n", MUSE_IP);
     printf("Seteado MUSE_PUERTO: %d\n", MUSE_PUERTO);
+}
 
-    //Procedo con esa tal comunicacion con el server
-    t_paquete *package = create_package(MUSE_INIT);
-    void* _id = malloc(sizeof(int));
-    *((int*)_id) = id;
-    add_to_package(package, _id, sizeof(int));
+void element_destroyer(void* element){
+    free(element);
+}
 
+void free_after_send(void* _id, t_paquete *package, MessageHeader* buffer_header, t_list *respuesta_list){
+    free_package(package);
+    free(_id);
+    free(buffer_header);
+    list_destroy_and_destroy_elements(respuesta_list, element_destroyer);
+}
+
+int validate_send_package(void* _id, t_paquete *package) {
     if(send_package(package, server_socket) == -1){
         printf("Error al enviar paquete\n");
         return -1;
     } else {
         // Espero la respuesta del server diciendo que todo está ok
         MessageHeader* buffer_header = malloc(sizeof(MessageHeader));
-
         receive_header(server_socket, buffer_header);
-
         t_list *respuesta_list = receive_package(server_socket, buffer_header);
-
         int respuesta = *((int*)list_get(respuesta_list, 0));
-
-        //Libero todo
-        free_package(package);
-        free(_id);
-        free(buffer_header);
-        void element_destroyer(void* element){
-            free(element);
-        }
-        list_destroy_and_destroy_elements(respuesta_list, element_destroyer);
-
+        free_after_send(_id, package, buffer_header, respuesta_list);
         //Devuelvo la respuesta
         return respuesta;
     }
+}
+
+int muse_init(int id, char* ip, int puerto){
+    //Creo y conecto sockets
+    validate_create_sockets();
+    validate_connect_sockets(ip, puerto);
+    //Setteo las variables globales
+    set_global_vars(ip, puerto);
+    //Creo y aniado al paquete
+    t_paquete *package = create_package(MUSE_INIT);
+    void* _id = malloc(sizeof(int));
+    *((int*)_id) = id;
+    add_to_package(package, _id, sizeof(int));
+    //Envio paquete
+    validate_send_package(_id, package);
 }
 
 

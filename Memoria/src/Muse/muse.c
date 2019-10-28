@@ -76,6 +76,8 @@ void* server_function(void * arg){
             
             case MUSE_ALLOC:
             ;
+            //todo: hacer como aca y por cada case ejecutar la funcion correspondiente
+            //todo: lo que contiene cosas varía segun el orden de los parametros de cada funcion
             {
                 // Guardo el valor que recibo en una variable
                 uint32_t tam = *((uint32_t*)list_get(cosas, 0));
