@@ -59,14 +59,12 @@ void escribirNodeTabla (GBloque* puntero_disco);
 
 int formatear (char* nombre_particion);
 
-void mostrarHeader(GBloque* disco);
+void mostrarHeader(GBloque* disco );
 
 void mostrarBitMap(GBloque* disco, int bitmap_count_bloques);
 
 void mostrarTablaNodos(GBloque* disco);
 
 void mostrarParticion(char* nombre_particion);
-
-
 
 #endif //SERVIDOR_FILESYSTEM_H

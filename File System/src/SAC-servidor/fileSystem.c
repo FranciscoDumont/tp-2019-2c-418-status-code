@@ -1,16 +1,15 @@
 /* Tareas
- *
- *
- *
+ * 1.Crear un archivo
+ * 2.Eliminar un archivo
+ * 3.Listar los archivos
+ * 4.Leer archivo
+ * 5.
  *
  */
-
-
-
-
 #include "fileSystem.h"
 
 int obtenerTamanioArchivo (char* file ){
+    //Si devuelve null seguro esta en una carpeta arriba el archivo
     FILE* fd = fopen(file,"r");
 
     fseek(fd, 0L, SEEK_END);
@@ -22,7 +21,6 @@ int obtenerTamanioArchivo (char* file ){
 
 int obtenerNBloquesBitMap(int disco_size){
         return ((disco_size/BLOQUE_TAMANIO))/8;
-
 }
 
 void escribirHeader(GBloque* puntero_disco, int bitmap_size){
@@ -34,25 +32,31 @@ void escribirHeader(GBloque* puntero_disco, int bitmap_size){
 }
 
 char* crearBitMap(int bitmap_count_bloques){
-    char* bitarray = malloc(bitmap_count_bloques * BLOQUE_TAMANIO);// Tamanio en byte del bitarray
+
+    char* bitarray = malloc(bitmap_count_bloques * BLOQUE_TAMANIO);
     int cantidad_bits = bitmap_count_bloques * 8;
+
 
     t_bitarray* bitmap = bitarray_create_with_mode(bitarray, bitmap_count_bloques, MSB_FIRST);
 
+    //Inicializo todos los bits en 0
     for(int pos = 0; pos <= cantidad_bits; pos++){;
         bitarray_clean_bit(bitmap, pos);
     }
+    //Seteo los bloques usados en el bitarray
     for(int pos = 0; pos < 12; pos++){
-        bitarray_set_bit(bitmap, pos); // tiene un segmentation full cuando salgo
+        bitarray_set_bit(bitmap, pos);
     }
 
     return bitmap->bitarray;
 }
 
 void escribirBitMap(GBloque* puntero_disco, int  bitmap_count){
+
     GBloque* disco = (GBloque *)puntero_disco;
     char* bitmap = crearBitMap(bitmap_count);
 
+    //Voy copiando el bitmap por partes en los distintos bloques
     for(int bloque = 0; bloque < bitmap_count ;bloque++){
         memcpy(disco[bloque].bytes, bitmap + (bloque * BLOQUE_TAMANIO), BLOQUE_TAMANIO);
     }
@@ -61,29 +65,38 @@ void escribirBitMap(GBloque* puntero_disco, int  bitmap_count){
 void escribirNodeTabla (GBloque* puntero_disco){
     GFile* nodo = (GFile *) puntero_disco;
 
+    //Inicializo toda la tabal de nodos con estado vacio
     for(int numero_archivo = 0; numero_archivo < CANTIDAD_ARCHIVOS_MAX; numero_archivo++){
         nodo[numero_archivo].estado = 0;
     }
 
 }
 
-int formatear (char* nombre_particion){
+int formatear (char* nombre_particion, t_log* logger){
 
     int disco_size = obtenerTamanioArchivo(nombre_particion);
-    int bitmap_count_bloques = obtenerNBloquesBitMap(disco_size); //Tener en cuenta que vas a tener que aproximar al mas grande
+    int bitmap_count_bloques = obtenerNBloquesBitMap(disco_size);
+
+    //Uso open porque necesito la direccion de memoria para memcopy
     int disco_file = open(nombre_particion, O_RDWR, 0);
+    if(disco_file == null){
+        log_error(logger, "Error al abrir el archivo");
+    }
+    //Asigna archivos a memoria (Mapea el .bin a memoria ram)
     GBloque* disco = mmap(NULL, disco_size, PROT_READ|PROT_WRITE, MAP_FILE|MAP_SHARED,disco_file, 0);
 
-    printf("Se escribio el header en:%p\n",disco);
     escribirHeader(disco,bitmap_count_bloques);
+    log_trace(logger, "Se termino de escribir el header en la direccion:%p",disco );
 
-    printf("Se escribio el bitmap en:%p\n", disco + 1);
     escribirBitMap(disco + 1, bitmap_count_bloques);
+    log_trace(logger, "Se termino de escribir el BitMap en la direccion:%p",disco + 1 );
 
-    printf("Se escribio la tabla de nodos en:%p\n",disco + 1 + bitmap_count_bloques);
     escribirNodeTabla(disco + 1 + bitmap_count_bloques);
+    log_trace(logger, "Se termino de escribir la tabla de nodos en la direccion:%p",disco + 1 + bitmap_count_bloques );
 
     munmap(disco,disco_size);
+    log_trace(logger, "Se hizo un munmap de la memoria" );
+
     return 0;
 }
 
@@ -127,7 +140,7 @@ void mostrarTablaNodos(GBloque* disco){
 
 void mostrarParticion(char* nombre_particion){
     int disco_size = obtenerTamanioArchivo(nombre_particion);
-    int bitmap_count_bloques = obtenerNBloquesBitMap(disco_size); //Tener en cuenta que vas a tener que aproximar al mas grande
+    int bitmap_count_bloques = obtenerNBloquesBitMap(disco_size);
     int disco_file = open(nombre_particion, O_RDWR, 0);
     GBloque* disco = mmap(NULL, disco_size, PROT_READ|PROT_WRITE, MAP_FILE|MAP_SHARED,disco_file, 0);
 
@@ -141,7 +154,9 @@ void mostrarParticion(char* nombre_particion){
 }
 
 int main(){
-    formatear("../prueba.bin");
+    t_log* logger = log_create("sac-server.logger", "fileSystem", 1, LOG_LEVEL_ERROR);
+
+    formatear("../prueba.bin", logger);
     mostrarParticion("../prueba.bin");
     return 0;
 }
