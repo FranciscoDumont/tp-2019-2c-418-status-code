@@ -77,3 +77,7 @@ altaLibreria/build-dir/
 /Ejemplos/cliente/cmake-build-debug/
 /Ejemplos/servidor/cmake-build-debug/
 /File System/src/SAC-cli/_sac_cli/fuse
+
+/File System/src/SAC-servidor/prueba.bin
+/File System/src/SAC-servidor/cmake-build-debug
+/File System/src/SAC-cli/cmake-build-debug

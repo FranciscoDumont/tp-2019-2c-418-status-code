@@ -1,5 +1,0 @@
-1.  gcc -o fuse fuse_example.c -lpthread -lfuse -D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=27
-2. ./fuse ./punto -f -o direct_io
-3. Anda probando funciones de la consola (touch, nano, vim,less,more,cat)
-
-Vas a ver que en la consola donde montaste fuse las funciones con las que llaman con un printf
