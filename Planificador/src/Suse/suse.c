@@ -151,12 +151,6 @@ void create_new_program(char* ip, int port, int fd){
 }
 
 //--LISTO
-// Al finalizar suse_close se volverian a habilitar las planificaciones. Primero darle hilos a los programas que esten
-// en asking_for_thread, ya que estos entraron realmente a la planificacion(EN EL ORDEN QUE APARECEN EN LA LISTA, la
-// estimacion no interesaria ya que como son todos hilos nuevos, todos tienen el mismo estimado, y cuando tienen el
-// mismo, se soluciona por FIFO), luego de esto empezar a repartir los hilos a los programas que estaban en la lista
-// de bloqueados(tambien por FIFO) y agregar el programa bloqueado a la lista de programs. Tener en cuenta que solo se
-// pueden repartir tantos hilos como lugares haya despejado el suse_close, para no romper el nivel de la multiprogramacion
 void suse_create(int fd, char * ip, int port, t_list* received){
     char* pid = generate_pid(ip, port);
     int tid = *((int*)list_get(received, 0));
@@ -544,31 +538,110 @@ void suse_close(int fd, char * ip, int port, t_list* received){
     free_list(received, element_destroyer);
 }
 
-//TODO:Implementar
 void distribute_new_thread(){
 
-    //Obtengo el primer programa de la lista de programas pidiendo hilos
-    t_program* next_program = (t_program*)list_remove(asking_for_thread, 0);
+    //Busco algun hilo de algun programa que ya este en ejecucion
+    bool condition(void* _thread){
+        t_thread* thread = (t_thread*)_thread;
 
-    //Verifico que el elemento obtenido anteriormente no sea nulo
-    if(next_program != NULL){
+        //Verifico si hay algun programa que posea el mismo pid que el pid del hilo, como estos son los programas en
+        // ejecucion, esto significa que este hilo pertenece a un programa en ejecucion
+        bool second_condition(void* _program){
 
-        //TODO:Buscar si hay algun hilo en NEW para este programa y repartir
+            t_program* program = (t_program*)_program;
+            return strcmp(program->pid, thread->pid) == 0 && program->executing;
+        }
+        return list_any_satisfy(programs, second_condition);
+    }
+    t_thread* next_thread = (t_thread*)list_remove_by_condition(NEW, condition);
 
-    //La lista de programas solicitando hilos estaba vacia
+    //verifico que el hilo obtenido no sea nulo
+    if(next_thread != NULL){
+
+        //Hallo el programa correspondiente al hilo hallado
+        t_program* program = find_program(next_thread->pid);
+
+        //Verificar si el programa se encuentra en la lista de programas que estan bloqueados esperando por un hilo
+        if(is_in_asking_for_thread(program)){
+
+            //Remover el programa de la lista de esperando
+            remove_from_asking_for_thread(program);
+
+            //Asigno el programa al estado exec del programa correspondiente, creo los intervalos y retorno por socket
+            // el valor del tid
+            assign_thread(program, next_thread, SUSE_SCHEDULE_NEXT);
+
+        //El programa al que le voy a asignar el hilo, se encontraba en ejecucion, pero no estaba bloqueado esperando
+        // un hilo, solo debo actualizar los intervalos y agregarlo a la lista de ready del mismo
+        } else {
+
+            //Creo un nuevo intervalo y le asigno un momento de inicio
+            t_interval* new_ready = new_interval();
+            *(new_ready->start_time) = get_time();
+
+            //Agrego el intervalo a la lista de listos del hilo
+            list_add(next_thread->ready_list, new_ready);
+
+            pthread_mutex_lock(&mutex_logger);
+            log_trace(logger, "Thread(%d), added to Program(%s)'s ready list", next_thread->tid, program->pid);
+            pthread_mutex_unlock(&mutex_logger);
+        }
+
+    //No habia hilos para programas en ejecucion
     } else {
 
         //Obtengo el primer hilo de la lista de NEW para repartir
-        t_thread* next_thread = (t_thread*)list_remove(NEW, 0);
+        next_thread = (t_thread*)list_remove(NEW, 0);
 
         //Verifico que el hilo anterior no sea nulo
         if(next_thread != NULL){
 
-            //TODO:repartir hilo en el programa correspondiente
+            //Hallo el programa correspondiente al hilo hallado
+            t_program* program = find_program(next_thread->pid);
 
+            //En este caso el programa no pertenecia a la lista de programas pidiendo hilo, ni a la lista de programas
+            // en ejecucion(pero que no habian pedido un hilo), por lo que el programa esta bloqueado en create,
+            // ponerlo en ejecucion, asignarle el hilo en exec y actualizar los intervalos
+            assign_thread(program, next_thread, SUSE_CREATE);
         }
-
     }
+}
+
+void assign_thread(t_program* program, t_thread* thread, MessageType header){
+
+    int response;
+
+    //Creo un nuevo intervalo
+    t_interval* exec = new_interval();
+    *(exec->start_time) = get_time();
+
+    //Agrego el intervalo a la lista de ejecucion del hilo
+    list_add(thread->exec_list, (void*)exec);
+
+    //Agrego el hilo al estad exec del programa
+    program->exec = thread;
+
+    //Verifico el tipo de funcion que origino el envio
+    if(header == SUSE_SCHEDULE_NEXT){
+
+        //TID a retornar
+        response = thread->tid;
+
+        pthread_mutex_lock(&mutex_logger);
+        log_trace(logger, "Thread: %d, now executing on Program: %s", thread->tid, program->pid);
+        pthread_mutex_unlock(&mutex_logger);
+    } else {
+
+        //Codigo de verificacion para suse_create
+        response = 1;
+        program->executing = true;
+
+        pthread_mutex_lock(&mutex_logger);
+        log_trace(logger, "Program(%s)'s Thread(%d) added and executing", program->pid, thread->tid);
+        pthread_mutex_unlock(&mutex_logger);
+    }
+
+    create_response_thread(program->fd, response, header);
 }
 
 void* metrics_function(void* arg){
@@ -952,4 +1025,22 @@ void free_join_blocks(t_thread* thread, t_program* program){
             free(block);
         }
     }
+}
+
+bool is_in_asking_for_thread(t_program* program){
+
+    bool condition(void* _program){
+
+        return strcmp(((t_program*)_program)->pid, program->pid) == 0;
+    }
+    return list_any_satisfy(asking_for_thread, condition);
+}
+
+void remove_from_asking_for_thread(t_program* program){
+
+    bool condition(void* _program){
+
+        return strcmp(((t_program*)_program)->pid, program->pid) == 0;
+    }
+    list_remove_by_condition(asking_for_thread, condition);
 }

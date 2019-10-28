@@ -123,11 +123,23 @@ void suse_close(int fd, char * ip, int port, t_list* received);
 
 /**
  * Cada vez que se ejecuta suse_close, se libera una posicion de las limitadas por la multiprogramacion, esta funcion
- * se ocupa de darle hilos a los programas que hayan solicitado uno(van a estar en la lista asking_for_thread), los
- * mismos van a tener proridad con respecto a los programas que todavia no hayan entrado a la planificacion, una vez
- * que se vacia la lista, se empiezan a repartir los hilos de la lista NEW.
+ * se utiliza para repartir hilos segun los siguientes criterios:
+ * * Primero:me busca al primer hilo de la lista de NEW que pertenezca a algun programa en ejecucion, si hay, se
+ * * * consulta si el programa pertenece a la lista de los programas que solicitaron un hilo, si lo es, lo debe agregar
+ * * * al programa correspondiente y avisarle al cliente para que se desbloquee, si no lo es, deberia agregarlo
+ * * * solamente a la lista de ready de su programa.
+ * * Segundo:si no habia hilos pertenecientes a programas en ejecucion, se agrega el hilo al mismo y se habilita su
+ * * * ejecucion, desbloqueando al cliente.
  */
 void distribute_new_thread();
+
+/**
+ * Agrego un hilo a su programa correspondiente, inicializo los intervalos y le aviso al cliente correspondiente
+ * @param program
+ * @param thread
+ * @param header
+ */
+void assign_thread(t_program* program, t_thread* thread, MessageType header);
 
 //--Genera una operación de wait sobre el semáforo dado
 void* suse_wait(void* newComm);
@@ -335,5 +347,17 @@ bool blocking_thread_is_dead(t_thread* thread);
  * @param program
  */
 void free_join_blocks(t_thread* thread, t_program* program);
+
+/**
+ * Verifico si un programa dado esta en la lista de asking_for_thread
+ * @param program
+ * @return
+ */
+bool is_in_asking_for_thread(t_program* program);
+
+/**
+ * Remuevo un programa de la lista de asking_for_thread
+ */
+void remove_from_asking_for_thread(t_program* program);
 
 #endif //SUSE_SUSE_H
