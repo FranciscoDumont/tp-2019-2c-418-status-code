@@ -29,16 +29,19 @@
 //	// en varios threads
 //
 //	//return fuse_main(args.argc, args.argv, &hello_oper, NULL);
-int main(){
-	int socket_servidor = create_socket();
-	char* ip_server = "127.0.0.1";
-	char* mensaje = malloc(20);
-	int port = 4445;
 
+
+int main(){
+
+	sac_cli_config* config;
+	int socket_servidor = create_socket();
+	char* mensaje = malloc(20);
+
+	config = read_config();
 
 	//conecto el socket
-	if(-1 == connect_socket(socket_servidor, ip_server, PORT_SOCKET)){
-		printf("Error connect ::NOT FOUND %d \n", PORT_SOCKET);
+	if(-1 == connect_socket(socket_servidor, config->ip, config->talk_port)){
+		printf("Error connect ::NOT FOUND %d \n", config->talk_port);
 	}else {
 		printf("EL connect anda bien ::E \n");
 	}
@@ -85,8 +88,31 @@ int main(){
 	//Libero el socket
 	close_socket(socket_servidor);
 
-//    free(buffer_data);
+	//free(buffer_data);
 	//free(mensaje);
 
 	return 0;
+}
+
+sac_cli_config* read_config(){
+	sac_cli_config* config;
+	t_log* logger;
+
+	config = malloc(sizeof(sac_cli_config));
+
+	logger = log_create("../sac_cli.log", "sac-cli", 1, LOG_LEVEL_TRACE);
+
+
+	t_config* config_file = config_create("../sac_cli.config");
+	config->talk_port = config_get_int_value(config_file, "LISTEN_PORT");
+	config->ip = config_get_string_value(config_file, "IP");
+
+	log_trace(logger,
+			  "Config file read: LISTEN_PORT: %d, IP: %s",
+			  config->talk_port,
+			  config->ip
+	);
+	config_destroy(config_file);
+
+	return config;
 }

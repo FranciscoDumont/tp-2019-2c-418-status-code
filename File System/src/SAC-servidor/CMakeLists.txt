@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.5)
 project(fileSystem C)
 
 include_directories("/usr/include/altaLibreria" "/usr/include/commons")
