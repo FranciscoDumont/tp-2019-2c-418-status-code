@@ -56,15 +56,15 @@ void* server_function(void* arg);
 // Lee el archivo de configuracion y lo carga en una estructura
 void read_memory_config();
 
-void muse_init(void* newComm);
-void muse_close(void* newComm);
-void muse_alloc(void* newComm);
-void muse_free(void* newComm);
-void muse_get(void* newComm);
-void muse_cpy(void* newComm);
-void muse_map(void* newComm);
-void muse_sync(void* newComm);
-void muse_unmap(void* newComm);
+int muse_init(int id, char *ip, int puerto);
+void muse_close();
+uint32_t muse_alloc(uint32_t tam);
+void muse_free(uint32_t dir);
+int muse_get(void *dst, uint32_t src, size_t n);
+int muse_cpy(uint32_t dst, void *src, int n);
+uint32_t muse_map(char *path, size_t length, int flags);
+int muse_sync(uint32_t addr, size_t len);
+int muse_unmap(uint32_t dir);
 
 
 
