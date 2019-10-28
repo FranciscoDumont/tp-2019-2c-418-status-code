@@ -79,7 +79,7 @@ int muse_init(int id, char* ip, int puerto){
     *((int*)_id) = id;
     add_to_package(package, _id, sizeof(int));
     //Envio paquete
-    validate_send_package(_id, package);
+    return validate_send_package(_id, package);
 }
 
 
