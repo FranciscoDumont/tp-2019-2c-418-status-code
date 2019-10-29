@@ -113,13 +113,14 @@ void *server_function(void *arg) {
                     size_t length = *((size_t*) list_get(cosas, 1));
                     int flags = *((int*) list_get(cosas, 2));
                     muse_map(path,length,flags);
-
                     break;
                 }
 
             case MUSE_SYNC:;
                 {
-                    //muse_sync(addr,len);
+                    uint32_t addr = *((uint32_t *) list_get(cosas, 0));
+                    size_t len = *((size_t *) list_get(cosas, 1));
+                    muse_sync(addr,len);
                     break;
                 }
 
