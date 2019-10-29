@@ -54,7 +54,7 @@ void* server_function(void * arg){
             {
                 // Guardo el entero que recibo en una variable
                 int id = *((int*)list_get(cosas, 0));
-                
+
                 // Ejecuto muse_init
                 int resultado =  muse_init(id, ip, port);
 
@@ -73,7 +73,7 @@ void* server_function(void * arg){
                 muse_close();
                 break;
             }
-            
+
             case MUSE_ALLOC:
             ;
             //todo: hacer como aca y por cada case ejecutar la funcion correspondiente
@@ -84,7 +84,7 @@ void* server_function(void * arg){
                 muse_alloc(tam);
                 break;
             }
-            
+
             case MUSE_FREE:
             ;
             {
@@ -92,35 +92,38 @@ void* server_function(void * arg){
                 muse_free(dir);
                 break;
             }
-            
+
             case MUSE_GET:
             ;
             {
-                //muse_get(*dst,src,n);
+                void *dst = *((void**)list_get(cosas, 0));
+                uint32_t src = *((uint32_t*)list_get(cosas, 1));
+                size_t n = *((size_t*)list_get(cosas, 2));
+                muse_get(dst,src,n);
                 break;
             }
-            
+
             case MUSE_CPY:
             ;
             {
                 //muse_cpy(dst,*src,n);
                 break;
             }
-            
+
             case MUSE_MAP:
             ;
             {
                 //muse_map(*path,length,flags);
                 break;
             }
-            
+
             case MUSE_SYNC:
             ;
             {
                 //muse_sync(addr,len);
                 break;
             }
-            
+
             case MUSE_UNMAP:
             ;
             {
@@ -167,7 +170,7 @@ int muse_init(int id, char *ip, int puerto){
 
     // Loggeo el valor del id que recibi
     log_info(logger, "El id que recibo de libMuse es: %d", id);
-    
+
     return 1;
 }
 
