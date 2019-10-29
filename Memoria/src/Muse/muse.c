@@ -18,29 +18,42 @@ int main() {
     return 0;
 }
 
+int validate_create_sockets(int socket) {
+    if(socket == -1) {
+        printf("Error al crear el socket\n");
+        return -1;
+    }
+}
+
+int validate_bind_socket(int socket, int port){
+    if ((bind_socket(socket, port)) == -1) {
+        log_error(logger, "Error al bindear el socket");
+        return -2;
+    }
+}
 
 void *server_function(void *arg) {
 
     int port = config.listen_port;
-    int socket;
+    int socket = create_socket();
+    validate_create_sockets(socket);
+    validate_bind_socket(socket, port);
 
-    if ((socket = create_socket()) == -1) {
-        log_error(logger, "Error al crear el socket");
-        return (void *) -1;
-    }
-    if ((bind_socket(socket, port)) == -1) {
-        log_error(logger, "Error al bindear el socket");
-        return (void *) -2;
-    }
 
+    //TODO revisar si esta bien
     //--Funcion que se ejecuta cuando se conecta un nuevo programa
     void new(int fd, char *ip, int port) {
-        log_info(logger, "Nueva conexión");
+        if(fd != null && *ip != null && port != null) {
+            log_info(logger, "Nueva conexión");
+        }
     }
 
+    //TODO revisar si esta bien
     //--Funcion que se ejecuta cuando se pierde la conexion con un cliente
     void lost(int fd, char *ip, int port) {
-        log_info(logger, "Se perdió una conexión");
+        if(fd == null || *ip == null || port == null){
+            log_info(logger, "Se perdió una conexión");
+        }
     }
 
     //--funcion que se ejecuta cuando se recibe un nuevo mensaje de un cliente ya conectado
@@ -73,8 +86,6 @@ void *server_function(void *arg) {
                 }
 
             case MUSE_ALLOC:;
-                //todo: hacer como aca y por cada case ejecutar la funcion correspondiente
-                //todo: lo que contiene cosas varía segun el orden de los parametros de cada funcion
                 {
                     // Guardo el valor que recibo en una variable
                     uint32_t tam = *((uint32_t *) list_get(cosas, 0));
@@ -173,7 +184,7 @@ int muse_init(int id, char *ip, int puerto) {
     return 1;
 }
 
-
+//todo implementar funciones
 void muse_close() {
 }
 

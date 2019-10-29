@@ -23,14 +23,14 @@ int validate_create_sockets() {
     if((server_socket = create_socket()) == -1) {
         printf("Error al crear el socket\n");
         return -1;
-    } else return 0;
+    }
 }
 
 int validate_connect_sockets(char* ip, int puerto) {
     if(connect_socket(server_socket, ip, puerto) == -1){
         printf("Error al conectarse al servidor\n");
         return -1;
-    } else return 0;
+    }
 }
 
 void set_global_vars(char* ip, int puerto) {
