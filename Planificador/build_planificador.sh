@@ -20,10 +20,3 @@ cd cmake-build-debug
 cmake ..
 sudo make clean all
 cd ../../..
-
-cd test
-mkdir -p cmake-build-debug
-cd cmake-build-debug
-cmake ..
-sudo make clean all
-cd ../..
