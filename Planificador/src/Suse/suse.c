@@ -648,6 +648,18 @@ void assign_thread(t_program* program, t_thread* thread, MessageType header){
     create_response_thread(program->fd, response, header);
 }
 
+void suse_wait(int fd, char * ip, int port, t_list* received){
+    char* pid = generate_pid(ip, port);
+    int tid = *((int*)list_get(received, 0));
+    int response;
+}
+
+void suse_signal(int fd, char * ip, int port, t_list* received){
+    char* pid = generate_pid(ip, port);
+    int tid = *((int*)list_get(received, 0));
+    int response;
+}
+
 void* metrics_function(void* arg){
     pthread_mutex_lock(&mutex_logger);
     log_trace(logger, "Metrics thread initiated...");

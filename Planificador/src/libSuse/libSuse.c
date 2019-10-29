@@ -160,12 +160,40 @@ int suse_close(int tid){
 }
 
 int suse_wait(int tid, char *sem_name){
-    // Not supported
+
+    t_paquete *package = create_package(SUSE_WAIT);
+    void* _tid = malloc(sizeof(int));
+    *((int*)_tid) = tid;
+    add_to_package(package, _tid, sizeof(int));
+    add_to_package(package, (void*)sem_name, strlen(sem_name) + 1);
+    if(send_package(package, server_socket) == -1){
+        free(_tid);
+        free_package(package);
+        printf("Error sending thread: %d to block\n", tid_to_block);
+        return -1;
+    } else {
+        free(_tid);
+        free_package(package);
+        if(confirm_action() == 1){
+            printf("Blocked thread %i\n", tid_to_block);
+            return 0;
+        } else {
+            printf("Failed receiving blocking thread confirmation\n");
+            return -1;
+        }
+    }
+
     return 0;
 }
 
 int suse_signal(int tid, char *sem_name){
-    // Not supported
+
+    t_paquete *package = create_package(SUSE_SIGNAL);
+    void* _tid = malloc(sizeof(int));
+    *((int*)_tid) = tid;
+    add_to_package(package, _tid, sizeof(int));
+    add_to_package(package, (void*)sem_name, strlen(sem_name) + 1);
+
     return 0;
 }
 

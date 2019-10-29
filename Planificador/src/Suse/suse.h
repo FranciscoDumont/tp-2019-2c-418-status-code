@@ -141,11 +141,23 @@ void distribute_new_thread();
  */
 void assign_thread(t_program* program, t_thread* thread, MessageType header);
 
-//--Genera una operación de wait sobre el semáforo dado
-void* suse_wait(void* newComm);
+/**
+ * Genera una operación de wait sobre el semáforo dado
+ * @param fd
+ * @param ip
+ * @param port
+ * @param received
+ */
+void suse_wait(int fd, char * ip, int port, t_list* received);
 
-//--Genera una operación de signal sobre el semáforo dado
-void* suse_signal(void* newComm);
+/**
+ * Genera una operación de signal sobre el semáforo dado
+ * @param fd
+ * @param ip
+ * @param port
+ * @param received
+ */
+void suse_signal(int fd, char * ip, int port, t_list* received);
 
 /**
  * Funcion que ejecuta a la funcion que produce las metricas, corre en un hilo paralelo
