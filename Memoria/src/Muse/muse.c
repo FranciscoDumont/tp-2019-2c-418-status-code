@@ -126,7 +126,8 @@ void *server_function(void *arg) {
 
             case MUSE_UNMAP:;
                 {
-                    //muse_unmap(dir);
+                    uint32_t dir = *((uint32_t *) list_get(cosas, 0));
+                    muse_unmap(dir);
                     break;
                 }
 
