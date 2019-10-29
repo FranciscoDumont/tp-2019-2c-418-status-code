@@ -88,7 +88,8 @@ void* server_function(void * arg){
             case MUSE_FREE:
             ;
             {
-                //muse_free(dir);
+                uint32_t dir = *((uint32_t*)list_get(cosas, 0));
+                muse_free(dir);
                 break;
             }
             
