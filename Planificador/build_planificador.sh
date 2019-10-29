@@ -7,6 +7,8 @@ if [[ $UID != 0  ]]; then
 	exit 1
 fi
 
+sudo make install cmake
+
 cd src/Suse/
 mkdir -p cmake-build-debug
 cd cmake-build-debug

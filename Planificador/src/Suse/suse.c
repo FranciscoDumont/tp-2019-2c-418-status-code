@@ -57,6 +57,9 @@ void read_config_options(){
     config->listen_port = config_get_int_value(config_file, "LISTEN_PORT");
     config->metrics_timer = config_get_int_value(config_file, "METRICS_TIMER");
     config->max_multiprog = config_get_int_value(config_file, "MAX_MULTIPROG");
+    config->sem_ids = config_get_array_value(config_file, "SEM_IDS");
+    config->sem_init = config_get_array_value(config_file, "SEM_INIT");
+    config->sem_max = config_get_array_value(config_file, "SEM_MAX");
     config->alpha_sjf = config_get_double_value(config_file, "ALPHA_SJF");
     log_trace(logger,
               "Config file read: LISTEN_PORT: %d, METRICS_TIMER: %d, MAX_MULTIPROG: %d, ALPHA_SJF: %f.",
@@ -128,6 +131,7 @@ void server_function(){
     pthread_mutex_lock(&mutex_logger);
     log_trace(logger, "Server initiated...");
     pthread_mutex_unlock(&mutex_logger);
+
     start_server(socket, &new, &lost, &incoming);
 }
 
