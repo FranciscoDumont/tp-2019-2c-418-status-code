@@ -184,6 +184,7 @@ int suse_wait(int tid, char *sem_name){
     }
 
     return 0;
+
 }
 
 int suse_signal(int tid, char *sem_name){
