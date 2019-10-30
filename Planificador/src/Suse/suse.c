@@ -7,6 +7,7 @@ t_list* NEW;
 t_list* BLOCKED;
 t_list* EXIT;
 t_list* asking_for_thread;
+t_list* semaphores;
 
 pthread_mutex_t mutex_logger;
 pthread_mutex_t mutex_programs;
@@ -21,6 +22,8 @@ int main() {
     initialize_structures();
 
     read_config_options();
+
+    initialize_semaphores();
 
     pthread_create(&metrics_thread, NULL, metrics_function, NULL);
 
@@ -46,6 +49,7 @@ void initialize_structures(){
     BLOCKED = list_create();
     EXIT = list_create();
     asking_for_thread = list_create();
+    semaphores = list_create();
 
     pthread_mutex_lock(&mutex_logger);
     log_trace(logger, "Structures initialized...");
@@ -68,6 +72,38 @@ void read_config_options(){
               config->max_multiprog,
               config->alpha_sjf);
     config_destroy(config_file);
+}
+
+void initialize_semaphores(){
+
+    int pos = 0;
+    char** ptr = config->sem_ids;
+
+    //Itero el array de semaforos
+    for (char* id = *ptr; id; id=*++ptr) {
+
+        //Mientras que el id sea distinto de null sigo
+        if(id != NULL){
+
+            //Transformo los valores de configuracion a enteros
+            int max_value = atoi(config->sem_max[pos]);
+            int init_value = atoi(config->sem_init[pos]);
+
+            //Reservo memoria para un semaforo
+            t_semaphore* semaphore = malloc(sizeof(semaphore));
+
+            //Asigno valores al semaforo
+            semaphore->id = id;
+            semaphore->max_value = max_value;
+            semaphore->current_value = init_value;
+
+            //Agrego semaforos a su lista
+            list_add(semaphores, (void*)semaphore);
+
+            pos++;
+        }
+    }
+
 }
 
 void server_function(){
@@ -118,6 +154,16 @@ void server_function(){
             case SUSE_CLOSE:
             {
                 suse_close(fd, ip, port, cosas);
+                break;
+            }
+            case SUSE_WAIT:
+            {
+                suse_wait(fd, ip, port, cosas);
+                break;
+            }
+            case SUSE_SIGNAL:
+            {
+                suse_signal(fd, ip, port, cosas);
                 break;
             }
             default:
@@ -651,13 +697,38 @@ void assign_thread(t_program* program, t_thread* thread, MessageType header){
 void suse_wait(int fd, char * ip, int port, t_list* received){
     char* pid = generate_pid(ip, port);
     int tid = *((int*)list_get(received, 0));
-    int response;
+    char* semaphore = (char*)list_get(received, 1);
+    int response = 1;
+
+
+
+    free(pid);
+
+    //1 para exito, -1 en el caso de error
+    create_response_thread(fd, response, SUSE_WAIT);
+
+    void element_destroyer(void* element){
+        free(element);
+    }
+    free_list(received, element_destroyer);
 }
 
 void suse_signal(int fd, char * ip, int port, t_list* received){
     char* pid = generate_pid(ip, port);
     int tid = *((int*)list_get(received, 0));
-    int response;
+    char* semaphore = (char*)list_get(received, 1);
+    int response = 1;
+
+
+    free(pid);
+
+    //1 para exito, -1 en el caso de error
+    create_response_thread(fd, response, SUSE_WAIT);
+
+    void element_destroyer(void* element){
+        free(element);
+    }
+    free_list(received, element_destroyer);
 }
 
 void* metrics_function(void* arg){

@@ -54,6 +54,18 @@ typedef struct _t_program{
 } t_program;
 
 /**
+ * Estructura encargada de representar un semaforo
+ * Posee un identificador(char*), un valor maximo y un valor actual, los primeros dos se obtienen por archivo de
+ * configuracion, el ultimo se obtiene tambien por archivo de configuracion, pero se va modificando a medida que se
+ * realizan waits y signals sobre el mismo.
+ */
+typedef struct _t_semaphore{
+    char* id;
+    int max_value;
+    int current_value;
+} t_semaphore;
+
+/**
  * Estrucura encargada de representar una respuesta al cliente
  * Esta formada por el socket cliente al cual responder, un int que va a representar la respuesta y el cliente
  * se encargara de interpretar y un Header de respuesta

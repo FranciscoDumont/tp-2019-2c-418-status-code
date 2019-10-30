@@ -32,6 +32,11 @@ void initialize_structures();
 void read_config_options();
 
 /**
+ * Inicializo los semaforos pasados por archivo de configuracion
+ */
+void initialize_semaphores();
+
+/**
  * Funcion encargada de definir las tres funciones para el servidor(new, incoming y lost)
  */
 void server_function();
