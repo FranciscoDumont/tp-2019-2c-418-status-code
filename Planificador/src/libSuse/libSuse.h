@@ -36,14 +36,15 @@ int suse_create(int tid);
 int suse_schedule_next(void);
 
 /**
- * Joinea dos hilos
+ * Joinea dos hilos, el hilo en ejecucion es bloqueado
  * @param tid, hilo a joinear con el hilo en ejecucion
  * @return 0 en caso de exito o -1 en caso de error
  */
 int suse_join(int tid);
 
 /**
- * Da por finalizado el thread indicado en el parametro
+ * Da por finalizado el thread indicado en el parametro, libera todas las estructuras en el servidor, y los bloqueos
+ * por join
  * @param tid, thread a cerrar
  * @return 0 en caso de exito o -1 en caso de error
  */
