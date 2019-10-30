@@ -169,22 +169,19 @@ int suse_wait(int tid, char *sem_name){
     if(send_package(package, server_socket) == -1){
         free(_tid);
         free_package(package);
-        printf("Error sending thread: %d to block\n", tid_to_block);
+        printf("Error sending wait: %d to block\n", tid);
         return -1;
     } else {
         free(_tid);
         free_package(package);
         if(confirm_action() == 1){
-            printf("Blocked thread %i\n", tid_to_block);
+            printf("Thread: %i on wait\n", tid);
             return 0;
         } else {
-            printf("Failed receiving blocking thread confirmation\n");
+            printf("Failed receiving wait confirmation\n");
             return -1;
         }
     }
-
-    return 0;
-
 }
 
 int suse_signal(int tid, char *sem_name){
@@ -194,8 +191,22 @@ int suse_signal(int tid, char *sem_name){
     *((int*)_tid) = tid;
     add_to_package(package, _tid, sizeof(int));
     add_to_package(package, (void*)sem_name, strlen(sem_name) + 1);
-
-    return 0;
+    if(send_package(package, server_socket) == -1){
+        free(_tid);
+        free_package(package);
+        printf("Error sending signal: %d to block\n", tid);
+        return -1;
+    } else {
+        free(_tid);
+        free_package(package);
+        if(confirm_action() == 1){
+            printf("Thread: %i signaled\n", tid);
+            return 0;
+        } else {
+            printf("Failed receiving signal confirmation\n");
+            return -1;
+        }
+    }
 }
 
 static struct hilolay_operations hiloops = {
