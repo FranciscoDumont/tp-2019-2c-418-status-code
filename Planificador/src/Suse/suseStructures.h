@@ -106,9 +106,11 @@ typedef struct _t_join_block{
 } t_join_block;
 
 /**
- * Struct que representa un bloqueo generado por un wait
+ * Struct que representa un bloqueo generado por un wait, esta compuesto por un puntero al semaforo y una lista de los
+ * hilos bloqueados.
  */
 typedef struct _t_semaphore_block{
-    int a;
+    t_semaphore* semaphore;
+    t_list* blocked_threads;
 } t_semaphore_block;
 #endif //SUSE_SUSESTRUCTURES_H

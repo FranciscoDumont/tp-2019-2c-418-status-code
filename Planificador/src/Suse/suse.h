@@ -32,7 +32,8 @@ void initialize_structures();
 void read_config_options();
 
 /**
- * Inicializo los semaforos pasados por archivo de configuracion
+ * Inicializo los semaforos pasados por archivo de configuracion, los agrego a la lista de semaforos y tambien a la
+ * lista de bloqueos.
  */
 void initialize_semaphores();
 
@@ -239,6 +240,13 @@ t_program* find_program(PID pid);
  * @return t_thread*
  */
 t_thread* find_thread(t_program* program, TID tid);
+
+/**
+ * Retorno el semaforo al que le corresponde un id dado
+ * @param id, char*
+ * @return t_semaphore*
+ */
+t_semaphore* find_semaphore(char* id);
 
 /**
  * Creo un hilo para responderle al cliente

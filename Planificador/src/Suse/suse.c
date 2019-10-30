@@ -100,10 +100,28 @@ void initialize_semaphores(){
             //Agrego semaforos a su lista
             list_add(semaphores, (void*)semaphore);
 
+            //Creo una nueva estructura de bloqueo y le agrego el tipo semaforo
+            t_block* new_block = malloc(sizeof(t_block));
+            new_block->block_type = SEMAPHORE;
+
+            //Creo un nuevo bloqueo por semaforo, le asigno el semaforo e inicializo la lista de hilos bloqueados
+            t_semaphore_block* new_semaphore_block = malloc(sizeof(t_semaphore_block));
+            new_semaphore_block->semaphore;
+            new_semaphore_block->blocked_threads = list_create();
+
+            //Agrego el bloqueo por semaforo a la estructura del bloqueo
+            new_block->block_structure = (void*)new_semaphore_block;
+
+            //Agrego el bloqueo a la lista de bloqueos
+            list_add(BLOCKED, (void*)new_block);
+
+            pthread_mutex_lock(&mutex_logger);
+            log_trace(logger, "Semaphore: %s added, max_value: %d, init_value: %d", id, max_value, init_value);
+            pthread_mutex_unlock(&mutex_logger);
+
             pos++;
         }
     }
-
 }
 
 void server_function(){
@@ -697,8 +715,10 @@ void assign_thread(t_program* program, t_thread* thread, MessageType header){
 void suse_wait(int fd, char * ip, int port, t_list* received){
     char* pid = generate_pid(ip, port);
     int tid = *((int*)list_get(received, 0));
-    char* semaphore = (char*)list_get(received, 1);
+    char* id = (char*)list_get(received, 1);
+    t_semaphore* semaphore = find_semaphore(id);
     int response = 1;
+
 
 
 
@@ -923,6 +943,13 @@ t_thread* find_thread(t_program* program, TID tid){
     }
 
     return thread;
+}
+
+t_semaphore* find_semaphore(char* id){
+    bool semaphore_finder(void* semaphore){
+        return strcmp(((t_semaphore*)semaphore)->id, id) == 0;
+    }
+    return (t_semaphore*)list_find(semaphores, &semaphore_finder);
 }
 
 void create_response_thread(int fd, int response, MessageType header){
