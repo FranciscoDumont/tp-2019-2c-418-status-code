@@ -68,7 +68,7 @@ void *server_function(void *arg) {
                     int id = *((int *) list_get(cosas, 0));
 
                     // Ejecuto muse_init
-                    int resultado = muse_init(id, ip, port);
+                    int resultado = muse_init(fd, ip, port);
 
                     // Le respondo a libMuse
                     t_paquete *package = create_package(MUSE_INIT);
@@ -179,9 +179,9 @@ int muse_init(int id, char *ip, int puerto) {
     log_info(logger, "Empieza el muse_init");
 
     // Loggeo el valor del id que recibi
-    log_info(logger, "El id que recibo de libMuse es: %d", id);
+    log_info(logger, "El fd que recibo de libMuse es: %d", id);
 
-    return 1;
+    return crear_proceso(id);
 }
 
 //todo implementar funciones
@@ -215,4 +215,16 @@ int muse_sync(uint32_t addr, size_t len) {
 
 
 int muse_unmap(uint32_t dir) {
+}
+
+
+// Funciones Auxiliares
+
+int crear_proceso(int id){
+    process_t* nuevo_proceso = malloc(sizeof(process_t));
+    nuevo_proceso->pid = id;
+    t_list* nueva_lista = list_create();
+    nuevo_proceso->segments = nueva_lista;
+    list_add(process_table, nuevo_proceso);
+    log_info(logger, "Se crea un nuevo segmento");
 }
