@@ -25,27 +25,44 @@ void read_config_options();
 /**
  * Creo las estructuras correspondientes al hilo que me pasa por parametro hilolay en SUSE
  * @param tid
- * @return 0 en caso de exito, -1 en caso de error?
+ * @return 0 en caso de exito, -1 en caso de error
  */
 int suse_create(int tid);
 
 /**
  * Hilolay me pide que replanifique el proceso, le paso el siguiente hilo segun la planificacion de SUSE
- * @return el sgte hilo segun la planificacion de SUSE o -1 si no puedo?, TODO:hacer que se quede bloqueado en un recv hasta que algun close me libere lugar para el hilo
+ * @return el sgte hilo segun la planificacion de SUSE o -1 si sucede algun error
  */
 int suse_schedule_next(void);
 
+/**
+ * Joinea dos hilos
+ * @param tid, hilo a joinear con el hilo en ejecucion
+ * @return 0 en caso de exito o -1 en caso de error
+ */
 int suse_join(int tid);
 
 /**
  * Da por finalizado el thread indicado en el parametro
  * @param tid, thread a cerrar
- * @return
+ * @return 0 en caso de exito o -1 en caso de error
  */
 int suse_close(int tid);
 
+/**
+ * Realizo un wait en un semaforo, si el valor del mismo no alcanza, se manda el hilo a blocked
+ * @param tid
+ * @param sem_name
+ * @return 0 en caso de exito o -1 en caso de error
+ */
 int suse_wait(int tid, char *sem_name);
 
+/**
+ * Realizo un signal sobre un semaforo
+ * @param tid
+ * @param sem_name
+ * @return 0 en caso de exito o -1 en caso de error
+ */
 int suse_signal(int tid, char *sem_name);
 
 /**
