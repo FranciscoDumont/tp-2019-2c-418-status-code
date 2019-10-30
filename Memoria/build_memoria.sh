@@ -18,7 +18,7 @@ cd src/libMuse/
 mkdir -p cmake-build-debug
 cd cmake-build-debug
 cmake ..
-sudo make clean all
+sudo make clean install
 cd ../../..
 
 cd test

@@ -205,8 +205,8 @@ void muse_free(uint32_t dir) {
 int muse_get(void *dst, uint32_t src, size_t n) {
 }
 
-
-int muse_cpy(uint32_t dst, void *src, int n) {
+ThreadThread
+int muse_cpy(uiThreadThreadThreadThreadThreadnt32_t dst, void *src, int n) {
 }
 
 
