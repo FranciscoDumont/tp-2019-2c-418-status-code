@@ -39,6 +39,13 @@ typedef struct {
     int modified_bit; // Para el algoritmo de reemplazo
 } page_t;
 
+
+typedef struct {
+    uint32_t size;
+    bool isFree;
+} heap_metadata;
+
+
 // Configuraciones
 typedef struct MEMConfig{
     int listen_port;
@@ -66,6 +73,9 @@ uint32_t muse_map(char *path, size_t length, int flags);
 int muse_sync(uint32_t addr, size_t len);
 int muse_unmap(uint32_t dir);
 
+process_t* crear_proceso(int id);
+segment_t* crear_segmento(int is_shared);
+page_t* crear_pagina(int presence_bit, int modified_bit);
 
 
 #endif //TP_2019_2C_418_STATUS_CODE_MUSE_H
