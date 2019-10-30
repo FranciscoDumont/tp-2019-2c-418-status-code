@@ -181,7 +181,11 @@ int muse_init(int id, char *ip, int puerto) {
     // Loggeo el valor del id que recibi
     log_info(logger, "El fd que recibo de libMuse es: %d", id);
 
-    return crear_proceso(id);
+    process_t* nuevo_proceso = crear_proceso(id);
+    list_add(process_table, nuevo_proceso);
+    log_info(logger, "Se creo un nuevo proceso");
+
+    return 1;
 }
 
 //todo implementar funciones
@@ -217,14 +221,29 @@ int muse_sync(uint32_t addr, size_t len) {
 int muse_unmap(uint32_t dir) {
 }
 
-
 // Funciones Auxiliares
 
-int crear_proceso(int id){
+process_t* crear_proceso(int id){
     process_t* nuevo_proceso = malloc(sizeof(process_t));
     nuevo_proceso->pid = id;
     t_list* nueva_lista = list_create();
     nuevo_proceso->segments = nueva_lista;
-    list_add(process_table, nuevo_proceso);
-    log_info(logger, "Se crea un nuevo segmento");
+    return nuevo_proceso;
+}
+
+
+segment_t* crear_segmento(int is_shared){
+    segment_t* nuevo_segmento = malloc(sizeof(segment_t));
+    nuevo_segmento->is_shared = is_shared;
+    t_list* nueva_lista = list_create();
+    nuevo_segmento->pages = nueva_lista;
+    return nuevo_segmento;
+}
+
+
+page_t* crear_pagina(int presence_bit, int modified_bit){
+    page_t* nueva_pagina = malloc(sizeof(page_t));
+    nueva_pagina->presence_bit = presence_bit;
+    nueva_pagina->modified_bit = modified_bit;
+    return nueva_pagina;
 }
