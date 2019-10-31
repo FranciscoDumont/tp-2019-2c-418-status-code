@@ -165,25 +165,31 @@ int receive_data(int source, void *buffer, int data_size) {
     return rec;
 }
 
-
+//Funcion que va a correr el hilo del servidor cuando haya una nueva conexion
 void* server_client(void* _params){
+    //casteo los parametros porque a pthread hay que pasarle un puntero a void
     t_thread_client* params = (t_thread_client* ) _params;
      MessageHeader* header = malloc(sizeof(MessageHeader));
 
-     while (1) {
-         int recivido_amigo = recv(params->socket, header, sizeof(MessageHeader),0);
+    int datos_recividos  = recv(params->socket, header, sizeof(MessageHeader),0);
 
-         if (recivido_amigo != -1) {
-            if(recivido_amigo == 0){
+     while (datos_recividos != -1) {
+
+            if(datos_recividos == 0){
+                //si devuelve 0 es porque se corto la conexion
                 params->lost_connection(params->socket,params->client_ip, params->connection_port);
                 close(params->socket);
+                break;
+            }else {
+                params->incoming_message(params->socket, params->client_ip, params->connection_port, header);
             }
-             params->incoming_message(params->socket,params->client_ip, params->connection_port, header);
-            }
+
+         datos_recividos  = recv(params->socket, header, sizeof(MessageHeader),0);
      }
 
-    free(header);
-    free(params);
+     //Libero la memoria que pedi
+     free(header);
+     free(params);
 }
 
 int start_server(int socket,
@@ -204,10 +210,8 @@ int start_server(int socket,
     }
     addrlen = sizeof(address);
 
-//A sacar
     while (1) {
 
-//ACA empieza
         //Se fija si hay nuevas conexion
         if ((new_socket = accept(socket, (struct sockaddr *) &address, (socklen_t *) &addrlen)) > 0) {
 
@@ -231,15 +235,12 @@ int start_server(int socket,
 
             //Lo creo y pongo en ejecucion
             pthread_create(&thread_client, NULL, server_client, (void *) parametros_cliente);
-            pthread_detach(&thread_client);
+            pthread_detach(thread_client);
         }
-
 
     }
 }
 
-//
-//
 //int start_server(int socket,
 //                 void (*new_connection)(int fd, char *ip, int port),
 //                 void (*lost_connection)(int fd, char *ip, int port),
