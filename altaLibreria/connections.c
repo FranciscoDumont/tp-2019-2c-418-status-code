@@ -69,9 +69,7 @@ int connect_socket(int socket, char *IP, int port) {
 
     server.sin_family = AF_INET;
     server.sin_port = htons(port);
-
     server.sin_addr = *((struct in_addr *) he->h_addr);
-
     bzero(&(server.sin_zero), 8);
 
     if (connect(socket, (struct sockaddr *) &server, sizeof(struct sockaddr)) == -1) {
@@ -88,8 +86,10 @@ int connect_socket(int socket, char *IP, int port) {
 
 int close_socket(int socket) {
     close(socket);
+
     if (NETWORK_DEBUG_LEVEL >= NW_ALL_DISPLAY) {
         custom_print("[NETWORK_INFO][SOCKET_CLOSED_%d\n]", socket);
+
     }
     return 0;
 }
@@ -167,6 +167,7 @@ int receive_data(int source, void *buffer, int data_size) {
 
 //Funcion que va a correr el hilo del servidor cuando haya una nueva conexion
 void* server_client(void* _params){
+
     //casteo los parametros porque a pthread hay que pasarle un puntero a void
     t_thread_client* params = (t_thread_client* ) _params;
      MessageHeader* header = malloc(sizeof(MessageHeader));
@@ -180,8 +181,11 @@ void* server_client(void* _params){
                 params->lost_connection(params->socket,params->client_ip, params->connection_port);
                 close(params->socket);
                 break;
+
             }else {
+
                 params->incoming_message(params->socket, params->client_ip, params->connection_port, header);
+
             }
 
          datos_recividos  = recv(params->socket, header, sizeof(MessageHeader),0);
@@ -189,10 +193,12 @@ void* server_client(void* _params){
 
      //Libero la memoria que pedi
      free(header);
+     free(params->client_ip);
      free(params);
+
 }
 
-int start_server(int socket,
+int start_server_multithread(int socket,
                  void (*new_connection)(int fd, char *ip, int port),
                  void (*lost_connection)(int fd, char *ip, int port),
                  void (*incoming_message)(int fd, char *ip, int port, MessageHeader *header)) {
@@ -241,166 +247,117 @@ int start_server(int socket,
     }
 }
 
-//int start_server(int socket,
-//                 void (*new_connection)(int fd, char *ip, int port),
-//                 void (*lost_connection)(int fd, char *ip, int port),
-//                 void (*incoming_message)(int fd, char *ip, int port, MessageHeader *header)) {
-//
-//    int addrlen, new_socket, client_socket_array[MAX_CONN], activity, i, bytesread, sd;
-//    int max_sd;
-//    struct sockaddr_in address;
-//    fd_set readfds;
-//
-//    //Es header del mensaje del cliente
-//    MessageHeader *incoming;
-//
-//    //Inicializa el array de sockets en 0
-//    for (i = 0; i < MAX_CONN; i++) {
-//        client_socket_array[i] = 0;
-//    }
-//
-//    //Empieza a escuchar el socket y puede tener peticiones pendientes
-//    if (listen(socket, MAX_CONN) < 0) {
-//        if (NETWORK_DEBUG_LEVEL >= NW_NETWORK_ERRORS) {
-//            custom_print("[NETWORK_ERROR][ERROR_LISTENING_FD_%d]\n", socket);//Cambiarlo por un log
-//        }
-//        return -1;
-//    }
-//    if (NETWORK_DEBUG_LEVEL >= NW_ALL_DISPLAY) {
-//        custom_print("[NETWORK_INFO][SOCKET_NOW_LISTENING_%d]\n", socket);//Cambiarlo por un log
-//    }
-//
-//    addrlen = sizeof(address);
-//
-////A sacar
-//    while (1) {
-//        //Setea en 0 las bolsas de sockets del select
-//        FD_ZERO(&readfds);
-//
-//        //Setea en la bolsa de sockets el socket de escucha
-//        FD_SET(socket, &readfds);
-//        max_sd = socket;
-//
-//        for (i = 0; i < MAX_CONN; i++) {
-//            sd = client_socket_array[i];
-//            if (sd > 0) {
-//                FD_SET(sd, &readfds);
-//            }
-//            if (sd > max_sd) {
-//                max_sd = sd;
-//            }
-//        }
-//
-//        if (NETWORK_DEBUG_LEVEL >= NW_ALL_DISPLAY) {
-//            custom_print("[NETWORK_INFO][SOCKET_AWAITING_CONNECTION_%d]\n", socket);
-//        }
-//
-//        //Devuelve la cantidad de ficheros que estan listos para leer
-//        activity = select(max_sd + 1, &readfds, NULL, NULL, NULL);
-//
-//        if (activity < 0) {
-//            if (NETWORK_DEBUG_LEVEL >= NW_NETWORK_ERRORS) {
-//                custom_print("[NETWORK_ERROR][ERROR_SELECTING_FD_%d]\n", socket);
-//            }
-//        }
-//
-//        //Comprueba si el socket elegido esta en la bolsa para leer que devolvio el select
-//        if (FD_ISSET(socket, &readfds)) {
-//
-//            //Se fija si hay nuevas conexion
-//            if ((new_socket = accept(socket,
-//                                     (struct sockaddr *) &address, (socklen_t *) &addrlen)) < 0) {
-//                if (NETWORK_DEBUG_LEVEL >= NW_NETWORK_ERRORS) {
-//                    custom_print("[NETWORK_ERROR][ERROR_ACCEPTING_SOCKET_%d_%s:%d]\n",
-//                                 new_socket, inet_ntoa(address.sin_addr), ntohs(address.sin_port));
-//                }
-//            }
-//            if (NETWORK_DEBUG_LEVEL >= NW_ALL_DISPLAY) {
-//                custom_print("[NETWORK_INFO][NEW_CONNECTION_%d_%d_%s:%d]\n", socket, new_socket,
-//                             inet_ntoa(address.sin_addr), ntohs(address.sin_port));
-//            }
-//            //Acepta la nueva conexion
-//
-//            //
-//            new_connection(new_socket, inet_ntoa(address.sin_addr), ntohs(address.sin_port));
-//
-//            //Lo agrega a la lista de sockets cliente
-//            for (i = 0; i < MAX_CONN; i++) {
-//                if (client_socket_array[i] == 0) {
-//                    client_socket_array[i] = new_socket;
-//                    break;
-//                }
-//            }
-//        }
-//
-//        //Se fija si los clientes tuvieron alguna peticion
-//        for (i = 0; i < MAX_CONN; i++) {
-//            sd = client_socket_array[i];
-//
-//            //Ve si ese cliente esta en la bolsa para leer
-//            if (FD_ISSET(sd, &readfds)) {
-//                int client_socket = sd;
-//
-//                incoming = malloc(sizeof(MessageHeader));
-//
-//                //Intenta leer el socket y le pasa el resultado de lo leido al incoming
-//                if ((read(client_socket, incoming, sizeof(MessageHeader))) <= 0) {
-//                    //Si es menor a 0 es que se perdio la conexion
-//
-//                    //Esta funcion te dice quien es el cliente y usa otra funcion para imprimir(Segun beej)
-//                    getpeername(sd, (struct sockaddr *) &address, (socklen_t *) &addrlen);
-//
-//                    //Usa inet_ntoa() para imprimir y tener mas informacion
-//                    if (NETWORK_DEBUG_LEVEL >= NW_ALL_DISPLAY) {
-//                        custom_print("[NETWORK_INFO][LOST_CONNECTION_%d_%d_%s:%d]\n", socket,
-//                                     client_socket,
-//                                     inet_ntoa(address.sin_addr), ntohs(address.sin_port));
-//                    }
-//
-//                    lost_connection(client_socket, inet_ntoa(address.sin_addr),
-//                                    ntohs(address.sin_port));
-//                    close(sd);
-//                    client_socket_array[i] = 0;
-//                } else {
-//
-//                    //Si es mayor hay info
-//                    if (NETWORK_DEBUG_LEVEL >= NW_ALL_DISPLAY) {
-//                        custom_print("[NETWORK_INFO][INCOMING_MESSAGE_%d_%d]\n", socket,
-//                                     client_socket);
-//                    }
-//
-//                    //Creo el hilo para que se ejecute la peticion del socket cliente
-//                    pthread_t thread_operation;
-//
-//                    //pthread creat te pide que le pases un void* como funcion y como parametros
-//                    //Creo una estructura para los parametros y una funcion para parametros
-//                    t_incoming_params *thread_params = malloc(sizeof(t_incoming_params));
-//
-//                    thread_params->socket = client_socket;
-//                    thread_params->ip_cliente = inet_ntoa(address.sin_addr);
-//                    thread_params->port_conexion = ntohs(address.sin_port);
-//                    thread_params->header = incoming;
-//
-//                    void *function_thread(void *arg) {
-//                        t_incoming_params *params = (t_incoming_params *) arg;
-//                        incoming_message(params->socket, params->ip_cliente,
-//                                         params->port_conexion, params->header);
-//                        free(arg);
-//                    }
-//
-//                    pthread_create(&thread_operation, NULL, function_thread,
-//                                   (void *) thread_params);
-//
-//                    //Hago que el hilo se ejecute en paralelo
-//                    pthread_detach(thread_operation);
-//
-//                }
-//
-//                free(incoming);
-//            }
-//        }
-//    }
-//}
+int start_server(int socket,
+                 void (*new_connection)(int fd, char * ip, int port),
+                 void (*lost_connection)(int fd, char * ip, int port),
+                 void (*incoming_message)(int fd, char * ip, int port, MessageHeader * header)) {
+
+    int addrlen, new_socket ,client_socket_array[MAX_CONN], activity, i, bytesread, sd;
+    int max_sd;
+    struct sockaddr_in address;
+    fd_set readfds;
+
+    MessageHeader * incoming;
+
+    for (i = 0; i < MAX_CONN; i++) {
+        client_socket_array[i] = 0;
+    }
+
+    if (listen(socket, MAX_CONN) < 0) {
+        if(NETWORK_DEBUG_LEVEL >= NW_NETWORK_ERRORS) {
+            custom_print("[NETWORK_ERROR][ERROR_LISTENING_FD_%d]\n", socket);
+        }
+        return -1;
+    }
+    if(NETWORK_DEBUG_LEVEL >= NW_ALL_DISPLAY) {
+        custom_print("[NETWORK_INFO][SOCKET_NOW_LISTENING_%d]\n", socket);
+    }
+
+    addrlen = sizeof(address);
+
+    while(1) {
+        FD_ZERO(&readfds);
+
+        FD_SET(socket, &readfds);
+        max_sd = socket;
+
+        for (i = 0 ; i < MAX_CONN ; i++) {
+            sd = client_socket_array[i];
+            if (sd > 0){
+                FD_SET( sd , &readfds);
+            }
+            if (sd > max_sd){
+                max_sd = sd;
+            }
+        }
+
+        if(NETWORK_DEBUG_LEVEL >= NW_ALL_DISPLAY) {
+            custom_print("[NETWORK_INFO][SOCKET_AWAITING_CONNECTION_%d]\n", socket);
+        }
+        activity = select(max_sd + 1, &readfds, NULL, NULL, NULL);
+
+        if (activity < 0) {
+            if(NETWORK_DEBUG_LEVEL >= NW_NETWORK_ERRORS) {
+                custom_print("[NETWORK_ERROR][ERROR_SELECTING_FD_%d]\n", socket);
+            }
+        }
+
+        if (FD_ISSET(socket, &readfds)) {
+            if ((new_socket = accept(socket,
+                                     (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
+                if(NETWORK_DEBUG_LEVEL >= NW_NETWORK_ERRORS) {
+                    custom_print("[NETWORK_ERROR][ERROR_ACCEPTING_SOCKET_%d_%s:%d]\n",
+                                 new_socket, inet_ntoa(address.sin_addr), ntohs(address.sin_port));
+                }
+            }
+            if(NETWORK_DEBUG_LEVEL >= NW_ALL_DISPLAY) {
+                custom_print("[NETWORK_INFO][NEW_CONNECTION_%d_%d_%s:%d]\n", socket, new_socket,
+                             inet_ntoa(address.sin_addr), ntohs(address.sin_port));
+            }
+            new_connection(new_socket, inet_ntoa(address.sin_addr), ntohs(address.sin_port));
+
+            for (i = 0; i < MAX_CONN; i++) {
+                if (client_socket_array[i] == 0) {
+                    client_socket_array[i] = new_socket;
+                    break;
+                }
+            }
+        }
+
+        for (i = 0; i < MAX_CONN; i++) {
+            sd = client_socket_array[i];
+
+            if (FD_ISSET(sd, &readfds)) {
+                int client_socket = sd;
+
+                incoming = malloc(sizeof(MessageHeader));
+
+                if ((read(client_socket, incoming, sizeof(MessageHeader))) <= 0) {
+                    getpeername(sd , (struct sockaddr*)&address , (socklen_t*)&addrlen);
+
+                    if(NETWORK_DEBUG_LEVEL >= NW_ALL_DISPLAY) {
+                        custom_print("[NETWORK_INFO][LOST_CONNECTION_%d_%d_%s:%d]\n", socket, client_socket,
+                                     inet_ntoa(address.sin_addr), ntohs(address.sin_port));
+                    }
+                    lost_connection(client_socket, inet_ntoa(address.sin_addr) , ntohs(address.sin_port));
+
+                    close(sd);
+                    client_socket_array[i] = 0;
+                } else {
+
+                    if(NETWORK_DEBUG_LEVEL >= NW_ALL_DISPLAY) {
+                        custom_print("[NETWORK_INFO][INCOMING_MESSAGE_%d_%d]\n", socket, client_socket);
+                    }
+                    incoming_message(client_socket, inet_ntoa(address.sin_addr) , ntohs(address.sin_port), incoming);
+
+                }
+
+                free(incoming);
+            }
+        }
+    }
+}
+
 
 // Serializacion
 t_paquete *crear_paquete(MessageType tipo) {
@@ -471,6 +428,7 @@ t_list *receive_package(int socket_cliente, MessageHeader *header) {
     recv(socket_cliente, buffer, size, MSG_WAITALL);
     t_list *valores = list_create();
     int tamanio;
+
     while (desplazamiento < size) {
         memcpy(&tamanio, buffer + desplazamiento, sizeof(int));
         desplazamiento += sizeof(int);
@@ -479,6 +437,7 @@ t_list *receive_package(int socket_cliente, MessageHeader *header) {
         desplazamiento += tamanio;
         list_add(valores, valor);
     }
+
     free(buffer);
     return valores;
 }
