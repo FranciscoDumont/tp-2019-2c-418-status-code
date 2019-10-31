@@ -29,6 +29,19 @@
 #include <readline/history.h>
 #include "structures.h"
 
+int client_socket_array[MAX_CONN];
+
+typedef struct t_thread_client {
+
+    int socket;
+	char * client_ip;
+	int connection_port;
+    void (*lost_connection)(int, char*, int);
+    void (*incoming_message)(int, char*, int,MessageHeader*);
+
+}t_thread_client;
+
+
 void custom_print(const char* message_template, ...);
 int create_socket();
 int bind_socket(int socket, int port);
@@ -48,5 +61,6 @@ int send_package(t_paquete* paquete, int socket_cliente);
 void* serializar_paquete(t_paquete* paquete, int bytes);
 void eliminar_paquete(t_paquete* paquete);
 t_list* receive_package(int socket_cliente, MessageHeader *header);
+void* server_client(void* params);
 
 #endif
