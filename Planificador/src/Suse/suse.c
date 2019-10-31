@@ -96,6 +96,7 @@ void initialize_semaphores(){
             semaphore->id = id;
             semaphore->max_value = max_value;
             semaphore->current_value = init_value;
+            semaphore->lock = 0;
 
             //Agrego semaforos a su lista
             list_add(semaphores, (void*)semaphore);
@@ -713,12 +714,30 @@ void assign_thread(t_program* program, t_thread* thread, MessageType header){
 }
 
 void suse_wait(int fd, char * ip, int port, t_list* received){
-    char* pid = generate_pid(ip, port);
-    int tid = *((int*)list_get(received, 0));
+
     char* id = (char*)list_get(received, 1);
     t_semaphore* semaphore = find_semaphore(id);
-    int response = 1;
 
+    //Solicito un lock con test_and_set
+    lock(semaphore);//Inicio de seccion critica
+
+    //char* pid = generate_pid(ip, port);
+    int tid = *((int*)list_get(received, 0));
+
+    //Busco al hilo que me llamo a wait
+    t_thread* thread = find_thread(tid);
+
+    //Le resto al semaforo
+    semaphore->current_value--;
+
+    //Si el valor del semaforo es menor a 0, bloquear hilo
+    if(semaphore->current_value < 0){
+
+        t_semaphore_block* s_block = find_semaphore_block(semaphore);
+
+    }
+
+    int response = 1;
 
 
 
@@ -726,6 +745,8 @@ void suse_wait(int fd, char * ip, int port, t_list* received){
 
     //1 para exito, -1 en el caso de error
     create_response_thread(fd, response, SUSE_WAIT);
+
+    release(semaphore);//Fin de seccion critica
 
     void element_destroyer(void* element){
         free(element);
@@ -952,6 +973,16 @@ t_semaphore* find_semaphore(char* id){
     return (t_semaphore*)list_find(semaphores, &semaphore_finder);
 }
 
+t_semaphore_block* find_semaphore_block(t_semaphore* semaphore){
+
+    bool find_sem_block_list(void* block){
+        return ((t_block*)block)->block_type = SEMAPHORE;
+    }
+    t_block* sem_block = list_find(BLOCKED, find_sem_block_list);
+
+
+}
+
 void create_response_thread(int fd, int response, MessageType header){
     void* response_package = create_response_package(fd, response, header);
 
@@ -1157,4 +1188,22 @@ void remove_from_asking_for_thread(t_program* program){
         return strcmp(((t_program*)_program)->pid, program->pid) == 0;
     }
     list_remove_by_condition(asking_for_thread, condition);
+}
+
+int test_and_set(volatile int* addr, int newval){
+    int result = newval;
+    //No tengo idea
+    asm volatile("lock; xchg %0, %1"
+                : "+m" (*addr), "=r" (result)
+                : "1" (newval)
+                : "cc");
+    return result;
+}
+
+void lock(t_semaphore* semaphore){
+    while(test_and_set(&semaphore->lock, 1)){};
+}
+
+void release(t_semaphore* semaphore){
+    semaphore->lock = 0;
 }

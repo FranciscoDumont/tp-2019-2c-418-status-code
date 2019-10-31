@@ -385,4 +385,25 @@ bool is_in_asking_for_thread(t_program* program);
  */
 void remove_from_asking_for_thread(t_program* program);
 
+/**
+ * Implementacion de test_and_set
+ * No preguntes(magia sacada de internet https://compas.cs.stonybrook.edu/~nhonarmand/courses/fa17/cse306/slides/11-locks.pdf)
+ * @param addr
+ * @param newval
+ * @return
+ */
+int test_and_set(volatile int* addr, int newval);
+
+/**
+ * Genero un lock con la instruccion test_and_set
+ * @param semaphore
+ */
+void lock(t_semaphore* semaphore);
+
+/**
+ * Libero un lock de un semaforo
+ * @param semaphore
+ */
+void release(t_semaphore* semaphore);
+
 #endif //SUSE_SUSE_H

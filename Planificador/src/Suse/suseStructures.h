@@ -61,6 +61,7 @@ typedef struct _t_program{
  */
 typedef struct _t_semaphore{
     char* id;
+    int lock;
     int max_value;
     int current_value;
 } t_semaphore;
