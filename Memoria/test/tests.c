@@ -19,8 +19,10 @@ int main() {
     log_info(logger, "holaa");
 
     int respuesta = muse_init(114, "localhost", 5003);
+    log_info(logger, "El resultado de muse_init es: %d\n\n", respuesta);
 
-    log_info(logger, "El resultado de muse_init es: %d", respuesta);
+    uint32_t respuesta_alloc = muse_alloc(88);
+    log_info(logger, "El resultado de muse_alloc es: %d\n\n", respuesta_alloc);
 
     log_destroy(logger);
     return 0;

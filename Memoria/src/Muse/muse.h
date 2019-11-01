@@ -2,10 +2,11 @@
 // Created by utnso on 05/10/19.
 //
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include <pthread.h>
+#include <math.h>
 #include <commons/log.h>
 #include <commons/string.h>
 #include <commons/config.h>
@@ -18,11 +19,14 @@
 #define TP_2019_2C_418_STATUS_CODE_MUSE_H
 
 
+// Variables Globales
 t_log * logger;
-
-t_list* process_table;
-
-void* main_memory;
+void* MAIN_MEMORY;
+t_list* PROCESS_TABLE;
+int CANTIDAD_PAGINAS_ACTUALES;
+int LIMITE_PAGINAS;
+int MAPA_MEMORIA_SIZE;
+int* MAPA_MEMORIA;
 
 typedef struct {
     int pid;
@@ -30,6 +34,7 @@ typedef struct {
 } process_t;
 
 typedef struct {
+    void* memory_pointer; // Puntero a la direccion de memoria donde arranca el segmento
     int is_shared;
     t_list* pages;
 } segment_t;
@@ -65,7 +70,7 @@ void read_memory_config();
 
 int muse_init(int id, char *ip, int puerto);
 void muse_close();
-uint32_t muse_alloc(uint32_t tam);
+uint32_t muse_alloc(uint32_t tam, int id_proceso);
 void muse_free(uint32_t dir);
 int muse_get(void *dst, uint32_t src, size_t n);
 int muse_cpy(uint32_t dst, void *src, int n);
@@ -74,8 +79,14 @@ int muse_sync(uint32_t addr, size_t len);
 int muse_unmap(uint32_t dir);
 
 process_t* crear_proceso(int id);
-segment_t* crear_segmento(int is_shared);
+segment_t* crear_segmento(void* memory_pointer, int is_shared);
 page_t* crear_pagina(int presence_bit, int modified_bit);
 
+// Devuelve un puntero a donde termina la estructura
+void* mp_escribir_metadata(void* espacio_libre, uint32_t tam, int esta_libre);
 
+// Devuelve un puntero al primer espacio libre en MP que sea del tam suficiente
+void* mp_buscar_espacio_libre(int paginas_necesarias);
+
+process_t* buscar_proceso(int id_proceso);
 #endif //TP_2019_2C_418_STATUS_CODE_MUSE_H

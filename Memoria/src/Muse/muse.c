@@ -1,13 +1,19 @@
 #include "muse.h"
 
-
 int main() {
     logger = log_create("muse.log", "MUSE", 1, LOG_LEVEL_TRACE);
     read_memory_config();
 
-    process_table = list_create();
+    PROCESS_TABLE = list_create();
 
-    main_memory = malloc(config.memory_size);
+    CANTIDAD_PAGINAS_ACTUALES = 0;
+	LIMITE_PAGINAS = config.memory_size / config.page_size;
+	MAPA_MEMORIA_SIZE = LIMITE_PAGINAS;
+	MAPA_MEMORIA = calloc(LIMITE_PAGINAS, sizeof(int));
+
+    MAIN_MEMORY = malloc(config.memory_size);
+
+	log_info(logger, "Se pueden almacenar %d páginas", LIMITE_PAGINAS);
 
 
     pthread_t server_thread;
@@ -15,6 +21,8 @@ int main() {
     pthread_join(server_thread, NULL);
 
 
+    free(MAPA_MEMORIA);
+    free(MAIN_MEMORY);
     return 0;
 }
 
@@ -89,7 +97,14 @@ void *server_function(void *arg) {
                 {
                     // Guardo el valor que recibo en una variable
                     uint32_t tam = *((uint32_t *) list_get(cosas, 0));
-                    muse_alloc(tam);
+                    // Ejecuto el malloc
+                    uint32_t resultado = muse_alloc(tam, fd);
+                    // Le respondo a libMuse
+                    t_paquete *package = create_package(MUSE_INIT);
+                    void *respuesta = malloc(sizeof(int));
+                    *((int *) respuesta) = resultado;
+                    add_to_package(package, respuesta, sizeof(int));
+                    send_package(package, fd);
                     break;
                 }
 
@@ -182,7 +197,7 @@ int muse_init(int id, char *ip, int puerto) {
     log_info(logger, "El fd que recibo de libMuse es: %d", id);
 
     process_t* nuevo_proceso = crear_proceso(id);
-    list_add(process_table, nuevo_proceso);
+    list_add(PROCESS_TABLE, nuevo_proceso);
     log_info(logger, "Se creo un nuevo proceso");
 
     return 1;
@@ -193,9 +208,23 @@ void muse_close() {
 }
 
 
-uint32_t muse_alloc(uint32_t tam) {
-    // Loggeo el valor del id que recibi
-    log_info(logger, "El id que recibo de libMuse es: %d", tam);
+uint32_t muse_alloc(uint32_t tam, int id_proceso) {
+    // Veo cuantas paginas necesito
+    int paginas_necesarias = (int) ceil((double) tam/config.page_size);
+    log_info(logger, "Paginas necesarias: %d", paginas_necesarias);
+
+    process_t* el_proceso = buscar_proceso(id_proceso);
+
+    // Si el proceso ya tiene segmentos veo de asignarlo ahi
+    //  xd
+    // Si no tiene segmentos creo uno nuevo
+    void* espacio_libre = mp_buscar_espacio_libre(paginas_necesarias);
+    segment_t* nuevo_segmento = crear_segmento(espacio_libre, false);
+    list_add(el_proceso->segments, nuevo_segmento);
+    mp_escribir_metadata(espacio_libre, tam, false);
+    mp_escribir_metadata(espacio_libre + tam, (uint32_t)paginas_necesarias-tam, true);
+
+    return -1;
 }
 
 void muse_free(uint32_t dir) {
@@ -205,8 +234,7 @@ void muse_free(uint32_t dir) {
 int muse_get(void *dst, uint32_t src, size_t n) {
 }
 
-ThreadThread
-int muse_cpy(uiThreadThreadThreadThreadThreadnt32_t dst, void *src, int n) {
+int muse_cpy(uint32_t dst, void *src, int n) {
 }
 
 
@@ -232,9 +260,10 @@ process_t* crear_proceso(int id){
 }
 
 
-segment_t* crear_segmento(int is_shared){
+segment_t* crear_segmento(void* memory_pointer, int is_shared){
     segment_t* nuevo_segmento = malloc(sizeof(segment_t));
     nuevo_segmento->is_shared = is_shared;
+    nuevo_segmento->memory_pointer = memory_pointer;
     t_list* nueva_lista = list_create();
     nuevo_segmento->pages = nueva_lista;
     return nuevo_segmento;
@@ -247,3 +276,72 @@ page_t* crear_pagina(int presence_bit, int modified_bit){
     nueva_pagina->modified_bit = modified_bit;
     return nueva_pagina;
 }
+
+
+void* mp_escribir_metadata(void* espacio_libre, uint32_t tam, int esta_libre){
+    heap_metadata* nueva_metadata = malloc(sizeof(heap_metadata));
+    nueva_metadata->size = tam;
+    nueva_metadata->isFree = esta_libre;
+    memcpy(espacio_libre, nueva_metadata, sizeof(heap_metadata));
+    return espacio_libre + sizeof(heap_metadata);
+}
+
+
+void* mp_buscar_espacio_libre(int paginas_necesarias){
+	// esta funcion no setea los espacios como ocupados cuando los encuentra
+	// asi que debera hacer eso cada vez que es llamada
+	int i;
+	bool esta_todo_ok = false;
+	for (i = 0; i<MAPA_MEMORIA_SIZE; ++i){
+	    if (MAPA_MEMORIA[i] != 0){
+            continue; //si el lugar está ocupado paso al siguiente
+	    }
+        int ii = 0;
+        int sumatoria = 0;
+        // me fijo si los proximos n lugares estan vacios
+        while (ii < paginas_necesarias){
+            sumatoria += MAPA_MEMORIA[i];
+            ii++;
+        }
+        if (sumatoria == 0){
+            esta_todo_ok = true;
+            break; //salgo del for
+        }
+	}
+
+	void* resultado;
+	if (esta_todo_ok){
+        log_info(logger, "Mapa memoria consigue el indice: %d", i);
+        resultado = MAIN_MEMORY + (i * config.page_size);
+    }else {
+        log_warning(logger, "No se pudo encontrar el espacio solicitado");
+        resultado = null;
+    }
+    return resultado;
+}
+
+
+char* mapa_memoria_to_string(){
+	char* resultado = string_new();
+	string_append(&resultado, string_itoa(MAPA_MEMORIA_SIZE));
+	string_append(&resultado, " [");
+	int i;
+	for(i=0; i<MAPA_MEMORIA_SIZE; i++){
+		string_append(&resultado, string_itoa(MAPA_MEMORIA[i]));
+		string_append(&resultado, "|");
+	}
+	string_append(&resultado, "]");
+	return resultado;
+}
+
+
+process_t* buscar_proceso(int id_proceso){
+    // esta funcion esta bien aca xd
+    int key_search(process_t* un_proceso){
+        return un_proceso->pid == id_proceso;
+    }
+
+    process_t* proceso_encontrado = list_find(PROCESS_TABLE, (void*)key_search);
+    return proceso_encontrado;
+}
+
