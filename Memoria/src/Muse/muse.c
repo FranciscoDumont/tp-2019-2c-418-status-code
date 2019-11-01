@@ -51,7 +51,7 @@ void *server_function(void *arg) {
     //TODO revisar si esta bien
     //--Funcion que se ejecuta cuando se conecta un nuevo programa
     void new(int fd, char *ip, int port) {
-        if(fd != null && *ip != null && port != null) {
+        if(&fd != null && ip != null && &port != null) {
             log_info(logger, "Nueva conexión");
         }
     }
@@ -59,7 +59,7 @@ void *server_function(void *arg) {
     //TODO revisar si esta bien
     //--Funcion que se ejecuta cuando se pierde la conexion con un cliente
     void lost(int fd, char *ip, int port) {
-        if(fd == null || *ip == null || port == null){
+        if(&fd == null && ip == null && &port == null){
             log_info(logger, "Se perdió una conexión");
         }
     }

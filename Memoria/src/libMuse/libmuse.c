@@ -182,7 +182,7 @@ int muse_get(void *dst, uint32_t src, size_t n) {
      */
 int muse_cpy(uint32_t dst, void *src, int n) {
     //Creo un paquete para el Alloc
-    t_paquete *package = create_package(MUSE_GET);
+    t_paquete *package = create_package(MUSE_CPY);
     //Agrego el uint32_t al paquete
     void *dst_aux = malloc(sizeof(uint32_t));
     *((uint32_t *) dst_aux) = dst;
