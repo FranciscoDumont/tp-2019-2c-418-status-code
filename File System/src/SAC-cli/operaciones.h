@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <altaLibreria/structures.h>
 //#include <fcntl.h>
 //#include <unistd.h>
 

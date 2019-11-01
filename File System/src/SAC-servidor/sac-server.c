@@ -54,7 +54,7 @@ void serverFunction(){
             }
             default:
             {
-                printf("Operacion desconocida. No quieras meter la pata");l
+                printf("Operacion desconocida. No quieras meter la pata");
                 break;
             }
         }

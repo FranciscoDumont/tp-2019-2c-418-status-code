@@ -60,5 +60,6 @@ typedef struct _sac_cli_config {
 
 sac_cli_config* read_config();
 
+void sac_init();
 
 #endif //TP_2019_2C_418_STATUS_CODE_FUSE_EXAMPLE_H
