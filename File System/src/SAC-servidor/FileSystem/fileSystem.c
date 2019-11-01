@@ -8,6 +8,8 @@
  */
 #include "fileSystem.h"
 
+GBloque* particion = NULL;
+
 int obtenerTamanioArchivo (char* file ){
     //Si devuelve null seguro esta en una carpeta arriba el archivo
     FILE* fd = fopen(file,"r");
@@ -58,6 +60,7 @@ char* crearBitMap(int bitmap_count_bloques){
 void escribirBitMap(GBloque* puntero_disco, int  bitmap_count){
 
     GBloque* disco = (GBloque *)puntero_disco;
+    bitMapPosition= disco;
     char* bitmap = crearBitMap(bitmap_count);
 
     //Voy copiando el bitmap por partes en los distintos bloques
@@ -68,7 +71,7 @@ void escribirBitMap(GBloque* puntero_disco, int  bitmap_count){
 
 void escribirNodeTabla (GBloque* puntero_disco){
     GFile* nodo = (GFile *) puntero_disco;
-
+    tablaNodosPosition =nodo;
     //Inicializo toda la tabal de nodos con estado vacio
     for(int numero_archivo = 0; numero_archivo < CANTIDAD_ARCHIVOS_MAX; numero_archivo++){
         nodo[numero_archivo].estado = 0;
@@ -101,7 +104,6 @@ int formatear (char* nombre_particion, t_log* logger){
     escribirNodeTabla(disco + 1 + bitmap_count_bloques);
     log_trace(logger, "Se termino de escribir la tabla de nodos en la direccion:%p",disco + 1 + bitmap_count_bloques );
 
-    munmap(disco,disco_size);
     log_trace(logger, "Se hizo un munmap de la memoria" );
 
     return 0;
@@ -160,10 +162,89 @@ void mostrarParticion(char* nombre_particion){
     munmap(disco,disco_size);
 }
 
-int main(){
-    t_log* logger = log_create("sac-server.logger", "fileSystem", 1, LOG_LEVEL_TRACE);
 
-    formatear("rueba.bin", logger);
-    //mostrarParticion("../prueba.bin");
+GHeader* obtenerHeader(){
+    return (GHeader *) particion;
+}
+
+//Acordate de liberar esta funcion
+t_bitarray* obtenerBitMap(){
+    t_bitarray* bitmap = bitarray_create_with_mode(bitArray, bitmap_count_bloques, MSB_FIRST);
+    memcpy(bitArray, disco, bitmap_count_bloques*BLOQUE_TAMANIO);
+
+    return bitmap;
+}
+
+GFile* obtenerTablaNodos(){
+    GHeader* header = obtenerHeader();
+
+}
+
+int buscarBloque(char * ruta){
+
+
+}
+
+int obtenerPunteroArchivo(GBloque* bloque,char* nombre){
+
+}
+
+int buscarPadre(char* padre){
+
+}
+
+int buscarBloqueMemoriaLibre(){
+
+}
+
+int sac_getattr (const char *, struct stat *, struct fuse_file_info *fi){
+
+}
+
+// No se que es mode_t
+int sac_mkdir (const char* ruta, mode_t){
+
+}
+
+//  La funcion real toma estos dos parametros tambien mode_t, dev_t
+int sac_mknod (const char * ruta){
+
+}
+
+int sac_unlink ) ( const  char *){
+
+}
+
+int rmdir ( const  char *){
+
+
+}
+
+int open (const char *, struct fuse_file_info *){
+
+
+}
+
+int read (const char *, char *, size_t, off_t, struct fuse_file_info *){
+
+
+}
+
+int write (const char *, const char *, size_t, off_t, struct fuse_file_info *){
+
+
+}
+
+
+
+
+
+int main(){
+  t_log* logger = log_create("sac-server.logger", "fileSystem", 1, LOG_LEVEL_TRACE);
+
+    formatear("pueba.bin", logger);
+    mostrarParticion("../prueba.bin");
+
+
     return 0;
 }

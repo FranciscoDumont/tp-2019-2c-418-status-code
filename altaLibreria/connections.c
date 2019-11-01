@@ -235,7 +235,6 @@ int start_server_multithread(int socket,
             parametros_cliente->incoming_message = incoming_message;
             parametros_cliente->lost_connection = lost_connection;
 
-            parametros_cliente->lost_connection(parametros_cliente->socket,parametros_cliente->client_ip, parametros_cliente->connection_port);
             //Inicializo el hilo
             pthread_t thread_client;
 
