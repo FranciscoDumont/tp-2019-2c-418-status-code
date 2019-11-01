@@ -255,7 +255,7 @@ void suse_create(int fd, char * ip, int port, t_list* received){
         pthread_mutex_lock(&mutex_logger);
         log_trace(logger, "Program(%s)'s Thread(%d) added to NEW list", pid, tid);
         pthread_mutex_unlock(&mutex_logger);
-        return_code = 1;
+
     } else {
 
         //Creo un nuevo intervalo
@@ -718,9 +718,6 @@ void suse_wait(int fd, char * ip, int port, t_list* received){
     char* id = (char*)list_get(received, 1);
     t_semaphore* semaphore = find_semaphore(id);
 
-    //Solicito un lock con test_and_set
-    lock(semaphore);//Inicio de seccion critica
-
     //char* pid = generate_pid(ip, port);
     int tid = *((int*)list_get(received, 0));
 
@@ -739,14 +736,10 @@ void suse_wait(int fd, char * ip, int port, t_list* received){
 
     int response = 1;
 
-
-
     free(pid);
 
     //1 para exito, -1 en el caso de error
     create_response_thread(fd, response, SUSE_WAIT);
-
-    release(semaphore);//Fin de seccion critica
 
     void element_destroyer(void* element){
         free(element);
@@ -1188,22 +1181,4 @@ void remove_from_asking_for_thread(t_program* program){
         return strcmp(((t_program*)_program)->pid, program->pid) == 0;
     }
     list_remove_by_condition(asking_for_thread, condition);
-}
-
-int test_and_set(volatile int* addr, int newval){
-    int result = newval;
-    //No tengo idea
-    asm volatile("lock; xchg %0, %1"
-                : "+m" (*addr), "=r" (result)
-                : "1" (newval)
-                : "cc");
-    return result;
-}
-
-void lock(t_semaphore* semaphore){
-    while(test_and_set(&semaphore->lock, 1)){};
-}
-
-void release(t_semaphore* semaphore){
-    semaphore->lock = 0;
 }

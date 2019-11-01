@@ -1,6 +1,5 @@
 #include "libSuse.h"
 
-int max_tid = 0;
 bool server_socket_initialized = false;
 int server_socket = 0;
 libSUSEConfig* config;
