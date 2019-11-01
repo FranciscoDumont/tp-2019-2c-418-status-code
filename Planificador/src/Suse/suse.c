@@ -713,6 +713,7 @@ void assign_thread(t_program* program, t_thread* thread, MessageType header){
 
 void suse_wait(int fd, char * ip, int port, t_list* received){
 
+    int response;
     char* id = (char*)list_get(received, 1);
     t_semaphore* semaphore = find_semaphore(id);
 
@@ -723,6 +724,10 @@ void suse_wait(int fd, char * ip, int port, t_list* received){
     t_program* program = find_program(pid);
     t_thread* thread = find_thread(program, tid);
 
+    pthread_mutex_lock(&mutex_logger);
+    log_trace(logger, "Thread: %d of program: %s asking for a wait on semaphore: %s", tid, pid, id);
+    pthread_mutex_unlock(&mutex_logger);
+
     //Le resto al semaforo
     semaphore->current_value--;
 
@@ -732,10 +737,20 @@ void suse_wait(int fd, char * ip, int port, t_list* received){
         //Agrego el hilo a la lista de hilos bloqueados
         list_add(semaphore->blocked_threads, (void*)thread);
 
+        //Obtengo el ultimo intervalo de ejecucion y le asigno su tiempo de finalizacion
+        t_interval* last_execd = last_exec(thread);
+        *(last_execd->end_time) = get_time();
+
+        //Pongo el estado exec del programa en null
+        program->exec = NULL;
+
+        pthread_mutex_lock(&mutex_logger);
+        log_trace(logger, "Thread: %d of program: %s blocked by a wait on semaphore: %s", tid, pid, id);
+        pthread_mutex_unlock(&mutex_logger);
     }
 
     //Existe alguna posibilidad de error?
-    int response = 1;
+    response = 1;
 
     free(pid);
 

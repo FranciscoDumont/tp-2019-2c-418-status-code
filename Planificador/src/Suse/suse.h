@@ -148,7 +148,8 @@ void distribute_new_thread();
 void assign_thread(t_program* program, t_thread* thread, MessageType header);
 
 /**
- * Genera una operación de wait sobre el semáforo dado
+ * Genera una operación de wait sobre el semáforo dado, si el valor del semaforo es menor a 0, el hilo se agrega a la
+ * lista de bloqueados.
  * @param fd
  * @param ip
  * @param port
