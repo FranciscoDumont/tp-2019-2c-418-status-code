@@ -1114,8 +1114,35 @@ int threads_in_join_block(t_program* program){
     return list_count_satisfying(BLOCKED, condition);
 }
 
-//TODO:Implementar
 int threads_in_semaphore_block(t_program* program){
+
+    void* seedB = malloc(sizeof(int));
+    *((int*)seedB) = 0;
+
+    void* seedB_plus_grade(void* _seedB, void* _block) {
+        t_block* block = (t_block*)_block;
+        if(block->block_type == SEMAPHORE){
+
+            t_semaphore_block* s_block = (t_semaphore_block*)block->block_structure;
+            t_semaphore* semaphore = s_block->semaphore;
+
+            bool condition(void* _thread){
+                t_thread* thread = (t_thread*)_thread;
+                return strcmp(thread->pid, program->pid) == 0;
+            }
+            *((int*) _seedB) = list_count_satisfying(semaphore->blocked_threads, condition);
+
+        } else {
+            *((int*) _seedB) = 0;
+        }
+
+        return _seedB;
+    }
+
+    void* blocked_grade_ptr = list_fold(BLOCKED, seedB, &seedB_plus_grade);
+    int blocked_grade = *((int*)blocked_grade_ptr);
+    free(blocked_grade_ptr);
+
     return 0;
 }
 
