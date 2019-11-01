@@ -1,5 +1,7 @@
 #include "fuse_example.h"
 
+bool server_socket_initialized = false;
+int server_socket = 0;
 
 // Dentro de los argumentos que recibe nuestro programa obligatoriamente
 // debe estar el path al directorio donde vamos a montar nuestro FS
@@ -33,42 +35,18 @@
 
 int main(){
 
-	sac_cli_config* config;
-	int socket_servidor = create_socket();
-	char* mensaje = malloc(20);
-
-	config = read_config();
-
-	//conecto el socket
-	if(-1 == connect_socket(socket_servidor, config->ip, config->talk_port)){
-		printf("Error connect ::NOT FOUND %d \n", config->talk_port);
-	}else {
-		printf("EL connect anda bien ::E \n");
-	}
-
-	printf("Escriba un mensaje a enviar: ");
-	//Ingreso el mensaje a enviar
-	scanf("%s",mensaje);
-
-	t_paquete *package = crear_paquete(ABC);
-	agregar_a_paquete(package, (void*) mensaje, strlen(mensaje) + 1);
-
-	if(send_package(package, socket_servidor) == -1){
-		printf("Error en el envio...\n");
-	} else {
-		printf("Mensaje enviado\n");
-	}
+	sac_init();
 
 	//Recibo datos del servidor
 	//Primero recibo el encabezado y el tamanio ya que son datos de tamaño fijo
 	MessageHeader* buffer_header = malloc(sizeof(MessageHeader));
-	if(-1 == receive_header(socket_servidor, buffer_header)){
+	if(-1 == receive_header(server_socket, buffer_header)){
 		printf("Error al recibir header ::NOT FOUND\n");
 	}else {
 		printf("Header recibido:\n type: %d\n size : %d ::E\n", buffer_header->type,buffer_header->data_size);
 	}
 
-	t_list *cosas = receive_package(socket_servidor, buffer_header);
+	t_list *cosas = receive_package(server_socket, buffer_header);
 
 	switch (buffer_header->type){
 		case ABC:
@@ -86,7 +64,7 @@ int main(){
 	}
 
 	//Libero el socket
-	close_socket(socket_servidor);
+	close_socket(server_socket);
 
 	//free(buffer_data);
 	//free(mensaje);
@@ -115,4 +93,23 @@ sac_cli_config* read_config(){
 	config_destroy(config_file);
 
 	return config;
+}
+
+void sac_init(){
+
+	sac_cli_config* _config = read_config();
+
+    if((server_socket = create_socket()) == -1) {
+        printf("Error creating socket\n");
+        return;
+    }
+
+    //conecto el socket
+	if(-1 == connect_socket(server_socket, _config->ip, _config->talk_port)){
+		printf("Error connect ::NOT FOUND %d \n", _config->talk_port);
+	}else {
+		printf("EL connect anda bien ::E \n");
+	}
+
+	server_socket_initialized = true;
 }

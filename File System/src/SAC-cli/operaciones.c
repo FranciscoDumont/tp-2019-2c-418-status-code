@@ -2,95 +2,43 @@
 
 
  int hello_getattr(const char *path, struct stat *stbuf) {
-    int res = 0;
 
-    memset(stbuf, 0, sizeof(struct stat));
+}
+    t_paquete *package = crear_paquete(GETATTR);
+    agregar_a_paquete(package,(void*) path, strlen(path) + 1);
+    agregar_a_paquete(package,(void*) stbuf, sizeof(stat));
 
-    //Si path es igual a "/" nos estan pidiendo los atributos del punto de montaje
-
-    if (strcmp(path, "/") == 0) {
-        stbuf->st_mode = S_IFDIR | 0755;
-        stbuf->st_nlink = 2;
-    } else if (strcmp(path, DEFAULT_FILE_PATH) == 0) {
-        stbuf->st_mode = S_IFREG | 0444;
-        stbuf->st_nlink = 1;
-        stbuf->st_size = strlen(DEFAULT_FILE_CONTENT);
-    } else {
-        res = -ENOENT;
+    if(send_package(package, server_socket) == -1){
+        free_package(package);
+        printf("Error sending: %s\n", path);
+        return -1;
+    }else {
+        free_package(package);
+        return 0;
     }
-    printf("hello_getattr\n");
-    return res;
+
 }
 
  int example_fopen(const char *path, struct stat *stbuf){
-    printf("example_fopen\n");
     return 0;
 }
 
  int hello_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi) {
-    (void) offset;
-    (void) fi;
+     return 0;
+}
 
-    if (strcmp(path, "/") != 0)
-        return -ENOENT;
-
-    // "." y ".." son entradas validas, la primera es una referencia al directorio donde estamos parados
-    // y la segunda indica el directorio padre
-    filler(buf, ".", NULL, 0);
-    filler(buf, "..", NULL, 0);
-    filler(buf, DEFAULT_FILE_NAME, NULL, 0);
-    printf("hello_readdir\n");
+ int example_mknod(const char *path, mode_t mode, dev_t rdev){
     return 0;
 }
 
- int example_mknod(const char *path, mode_t mode, dev_t rdev)
-{
-    int res;
-
-    res = mknod(path, mode, rdev);
-    if(res == -1)
-        return -errno;
-
-    printf("mknod\n");
-    return 0;
-}
-
- int example_utimens(const char *path, const struct timespec ts[2])
-{
-    int res;
-
-    res = utimensat(0, path, ts, AT_SYMLINK_NOFOLLOW);
-    if (res == -1)
-        return -errno;
-
+ int example_utimens(const char *path, const struct timespec ts[2]){
     return 0;
 }
 
  int example_open(const char *path, struct fuse_file_info *fi) {
-    if (strcmp(path, DEFAULT_FILE_PATH) != 0)
-        return -ENOENT;
-
-    if ((fi->flags & 3) != O_RDONLY)
-        return -EACCES;
-
-    printf("example_open\n");
-    return 0;
+     return 0;
 }
 
  int hello_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-    size_t len;
-    (void) fi;
-    if (strcmp(path, DEFAULT_FILE_PATH) != 0)
-        return -ENOENT;
-
-    len = strlen(DEFAULT_FILE_CONTENT);
-    if (offset < len) {
-        if (offset + size > len)
-            size = len - offset;
-        memcpy(buf, DEFAULT_FILE_CONTENT + offset, size);
-    } else
-        size = 0;
-
-    printf("hello_read\n");
-    return 17;
+     return 0;
 }
