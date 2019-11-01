@@ -29,6 +29,19 @@
 #include <readline/history.h>
 #include "structures.h"
 
+int client_socket_array[MAX_CONN];
+
+typedef struct t_thread_client {
+
+    int socket;
+	char * client_ip;
+	int connection_port;
+    void (*lost_connection)(int, char*, int);
+    void (*incoming_message)(int, char*, int,MessageHeader*);
+
+}t_thread_client;
+
+
 void custom_print(const char* message_template, ...);
 int create_socket();
 int bind_socket(int socket, int port);
@@ -42,11 +55,17 @@ int start_server(int socket,
 		void (*lost_connection)(int fd, char * ip, int port),
 		void (*incoming_message)(int fd, char * ip, int port, MessageHeader * header));
 
-t_paquete* create_package(MessageType tipo);
-void add_to_package(t_paquete* paquete, void* valor, int tamanio);
+t_paquete* crear_paquete(MessageType tipo);
+void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio);
 int send_package(t_paquete* paquete, int socket_cliente);
-static void* serialize_package(t_paquete* paquete, int bytes);
-void free_package(t_paquete* paquete);
+void* serializar_paquete(t_paquete* paquete, int bytes);
+void eliminar_paquete(t_paquete* paquete);
 t_list* receive_package(int socket_cliente, MessageHeader *header);
+void* server_client(void* params);
+int start_server_multithread(int socket,
+							 void (*new_connection)(int fd, char *ip, int port),
+							 void (*lost_connection)(int fd, char *ip, int port),
+							 void (*incoming_message)(int fd, char *ip, int port, MessageHeader *header));
+
 
 #endif
