@@ -25,6 +25,18 @@ int main() {
     free(MAIN_MEMORY);
     return 0;
 }
+//agrego la implementacion de memcpy porque no reconoce la original
+void * memcpy(void* dst, const void* src, unsigned long tam)
+{
+    char *toBeCopied = (char *)dst;
+    const char *original =( const char*)src;
+    while(tam)
+    {
+        *(toBeCopied++)= *(original++);
+        --tam;
+    }
+    return dst;
+}
 
 int validate_create_sockets(int socket) {
     if(socket == -1) {
@@ -277,12 +289,12 @@ page_t* crear_pagina(int presence_bit, int modified_bit){
     return nueva_pagina;
 }
 
-
 void* mp_escribir_metadata(void* espacio_libre, uint32_t tam, int esta_libre){
     heap_metadata* nueva_metadata = malloc(sizeof(heap_metadata));
     nueva_metadata->size = tam;
     nueva_metadata->isFree = esta_libre;
-    memcpy(espacio_libre, nueva_metadata, sizeof(heap_metadata));
+    const void * metadata = nueva_metadata;
+    memcpy(espacio_libre, metadata, sizeof(heap_metadata));
     return espacio_libre + sizeof(heap_metadata);
 }
 
@@ -337,11 +349,13 @@ char* mapa_memoria_to_string(){
 
 process_t* buscar_proceso(int id_proceso){
     // esta funcion esta bien aca xd
-    int key_search(process_t* un_proceso){
-        return un_proceso->pid == id_proceso;
+    bool key_search(void * un_proceso){
+        process_t * process = (process_t *) un_proceso;
+        return process->pid == id_proceso;
     }
 
-    process_t* proceso_encontrado = list_find(PROCESS_TABLE, (void*)key_search);
+    process_t* proceso_encontrado = list_find(PROCESS_TABLE, key_search);
     return proceso_encontrado;
+    // esta funcion esta bien aca xd
 }
 
