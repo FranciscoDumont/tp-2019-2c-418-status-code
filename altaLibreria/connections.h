@@ -33,11 +33,11 @@ int client_socket_array[MAX_CONN];
 
 typedef struct t_thread_client {
 
-    int socket;
+	int socket;
 	char * client_ip;
 	int connection_port;
-    void (*lost_connection)(int, char*, int);
-    void (*incoming_message)(int, char*, int,MessageHeader*);
+	void (*lost_connection)(int, char*, int);
+	void (*incoming_message)(int, char*, int,MessageHeader*);
 
 }t_thread_client;
 
@@ -51,18 +51,18 @@ int send_data(int destination, MessageType type, int data_size, void * data_stre
 int receive_header(int source, MessageHeader * buffer);
 int receive_data(int source, void * buffer, int data_size);
 int start_server(int socket,
-		void (*new_connection)(int fd, char * ip, int port),
-		void (*lost_connection)(int fd, char * ip, int port),
-		void (*incoming_message)(int fd, char * ip, int port, MessageHeader * header));
+				 void (*new_connection)(int fd, char * ip, int port),
+				 void (*lost_connection)(int fd, char * ip, int port),
+				 void (*incoming_message)(int fd, char * ip, int port, MessageHeader * header));
 
-t_paquete* crear_paquete(MessageType tipo);
-void agregar_a_paquete(t_paquete* paquete, void* valor, int tamanio);
+t_paquete* create_package(MessageType tipo);
+void add_to_package(t_paquete* paquete, void* valor, int tamanio);
 int send_package(t_paquete* paquete, int socket_cliente);
-void* serializar_paquete(t_paquete* paquete, int bytes);
-void eliminar_paquete(t_paquete* paquete);
+void* serialize_package(t_paquete* paquete, int bytes);
+void free_package(t_paquete* paquete);
 t_list* receive_package(int socket_cliente, MessageHeader *header);
 void* server_client(void* params);
-int start_server_multithread(int socket,
+int start_multithread_server(int socket,
 							 void (*new_connection)(int fd, char *ip, int port),
 							 void (*lost_connection)(int fd, char *ip, int port),
 							 void (*incoming_message)(int fd, char *ip, int port, MessageHeader *header));
