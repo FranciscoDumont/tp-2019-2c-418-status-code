@@ -96,7 +96,7 @@ void initialize_semaphores(){
             semaphore->id = id;
             semaphore->max_value = max_value;
             semaphore->current_value = init_value;
-            semaphore->lock = 0;
+            semaphore->blocked_threads = list_create();
 
             //Agrego semaforos a su lista
             list_add(semaphores, (void*)semaphore);
@@ -105,10 +105,9 @@ void initialize_semaphores(){
             t_block* new_block = malloc(sizeof(t_block));
             new_block->block_type = SEMAPHORE;
 
-            //Creo un nuevo bloqueo por semaforo, le asigno el semaforo e inicializo la lista de hilos bloqueados
+            //Creo un nuevo bloqueo por semaforo y le asigno el semaforo
             t_semaphore_block* new_semaphore_block = malloc(sizeof(t_semaphore_block));
             new_semaphore_block->semaphore;
-            new_semaphore_block->blocked_threads = list_create();
 
             //Agrego el bloqueo por semaforo a la estructura del bloqueo
             new_block->block_structure = (void*)new_semaphore_block;
@@ -465,7 +464,6 @@ void suse_join(int fd, char * ip, int port, t_list* received){
     char* pid = generate_pid(ip, port);
     int tid = *((int*)list_get(received, 0));
     t_program* program = find_program(pid);
-    int response;
 
     //Obtengo el hilo en ejecucion
     t_thread* executing_thread = program->exec;
@@ -620,7 +618,7 @@ void distribute_new_thread(){
             t_program* program = (t_program*)_program;
             return strcmp(program->pid, thread->pid) == 0 && program->executing;
         }
-        return list_any_satisfy(programs, second_condition);
+        return list_any_satisfy(programs, &second_condition);
     }
     t_thread* next_thread = (t_thread*)list_remove_by_condition(NEW, condition);
 
@@ -718,11 +716,12 @@ void suse_wait(int fd, char * ip, int port, t_list* received){
     char* id = (char*)list_get(received, 1);
     t_semaphore* semaphore = find_semaphore(id);
 
-    //char* pid = generate_pid(ip, port);
+    PID pid = generate_pid(ip, port);
     int tid = *((int*)list_get(received, 0));
 
-    //Busco al hilo que me llamo a wait
-    t_thread* thread = find_thread(tid);
+    //Busco al hilo y al programa del mismo que me llamaron a wait
+    t_program* program = find_program(pid);
+    t_thread* thread = find_thread(program, tid);
 
     //Le resto al semaforo
     semaphore->current_value--;
@@ -730,15 +729,16 @@ void suse_wait(int fd, char * ip, int port, t_list* received){
     //Si el valor del semaforo es menor a 0, bloquear hilo
     if(semaphore->current_value < 0){
 
-        t_semaphore_block* s_block = find_semaphore_block(semaphore);
+        //Agrego el hilo a la lista de hilos bloqueados
+        list_add(semaphore->blocked_threads, (void*)thread);
 
     }
 
+    //Existe alguna posibilidad de error?
     int response = 1;
 
     free(pid);
 
-    //1 para exito, -1 en el caso de error
     create_response_thread(fd, response, SUSE_WAIT);
 
     void element_destroyer(void* element){
@@ -964,16 +964,6 @@ t_semaphore* find_semaphore(char* id){
         return strcmp(((t_semaphore*)semaphore)->id, id) == 0;
     }
     return (t_semaphore*)list_find(semaphores, &semaphore_finder);
-}
-
-t_semaphore_block* find_semaphore_block(t_semaphore* semaphore){
-
-    bool find_sem_block_list(void* block){
-        return ((t_block*)block)->block_type = SEMAPHORE;
-    }
-    t_block* sem_block = list_find(BLOCKED, find_sem_block_list);
-
-
 }
 
 void create_response_thread(int fd, int response, MessageType header){
