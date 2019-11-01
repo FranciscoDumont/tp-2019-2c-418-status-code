@@ -763,16 +763,53 @@ void suse_wait(int fd, char * ip, int port, t_list* received){
 }
 
 void suse_signal(int fd, char * ip, int port, t_list* received){
-    char* pid = generate_pid(ip, port);
-    int tid = *((int*)list_get(received, 0));
-    char* semaphore = (char*)list_get(received, 1);
-    int response = 1;
 
+    int response;
+    char* id = (char*)list_get(received, 1);
+    t_semaphore* semaphore = find_semaphore(id);
+
+    PID pid = generate_pid(ip, port);
+    int tid = *((int*)list_get(received, 0));
+
+    //Busco al hilo y al programa del mismo que me llamaron a signal
+    t_program* program = find_program(pid);
+    t_thread* thread = find_thread(program, tid);
+
+    pthread_mutex_lock(&mutex_logger);
+    log_trace(logger, "Thread: %d of program: %s asking for a signal on semaphore: %s", tid, pid, id);
+    pthread_mutex_unlock(&mutex_logger);
+
+    //TODO:Verificar si tendria que pasar algo en caso de que el current_value exceda al max_value
+    semaphore->current_value++;
+
+    //Si el avalor actual es menor o igual a 0, libero a uno de los hilos bloqueados
+    if(semaphore->current_value <= 0){
+
+        //Traigo el primer elemento de la lista para desbloquear
+        t_thread* thread_to_unblock = (t_thread*)list_remove(semaphore->blocked_threads, 0);
+
+        //Creo un nuevo intervalo para agregar a la lista de ready
+        t_interval* new_ready = new_interval();
+        *(new_ready->start_time) = get_time();
+        list_add(thread_to_unblock->ready_list, (void*)new_ready);
+
+        //Busco el programa al que pertenece el hilo
+        t_program* _program = find_program(thread_to_unblock->pid);
+
+        //Agrego el hilo a la lista de listos del programa padre
+        list_add(_program->ready, (void*)thread_to_unblock);
+
+        pthread_mutex_lock(&mutex_logger);
+        log_trace(logger, "Thread: %d of program: %s asking unblocked by signal on semaphore: %s", thread_to_unblock->tid, thread_to_unblock->pid, id);
+        pthread_mutex_unlock(&mutex_logger);
+    }
+
+    response = 1;
 
     free(pid);
 
-    //1 para exito, -1 en el caso de error
-    create_response_thread(fd, response, SUSE_WAIT);
+    //Existe algun caso de error?
+    create_response_thread(fd, response, SUSE_SIGNAL);
 
     void element_destroyer(void* element){
         free(element);
