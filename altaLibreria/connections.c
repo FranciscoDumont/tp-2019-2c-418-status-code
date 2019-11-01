@@ -198,7 +198,7 @@ void* server_client(void* _params){
 
 }
 
-int start_server_multithread(int socket,
+int start_multithread_server(int socket,
                  void (*new_connection)(int fd, char *ip, int port),
                  void (*lost_connection)(int fd, char *ip, int port),
                  void (*incoming_message)(int fd, char *ip, int port, MessageHeader *header)) {
@@ -359,7 +359,7 @@ int start_server(int socket,
 
 
 // Serializacion
-t_paquete *crear_paquete(MessageType tipo) {
+t_paquete * create_package(MessageType tipo) {
     t_paquete *paquete = malloc(sizeof(t_paquete));
     paquete->header = (MessageHeader *) malloc(sizeof(MessageHeader));
     paquete->header->type = tipo;
@@ -368,7 +368,7 @@ t_paquete *crear_paquete(MessageType tipo) {
     return paquete;
 }
 
-void agregar_a_paquete(t_paquete *paquete, void *valor, int tamanio) {
+void add_to_package(t_paquete *paquete, void *valor, int tamanio) {
     //valor = "hola"
     //tamanio = 5(4 del "hola" mas caracter terminador)
     //paquete->stream == NULL
@@ -400,7 +400,7 @@ int send_package(t_paquete *paquete, int socket_cliente) {
     return sent;
 }
 
-void *serializar_paquete(t_paquete *paquete, int bytes) {
+void *serialize_package(t_paquete *paquete, int bytes) {
     void *serialized = malloc(bytes);
     int desplazamiento = 0;
 
@@ -413,7 +413,7 @@ void *serializar_paquete(t_paquete *paquete, int bytes) {
     return serialized;
 }
 
-void eliminar_paquete(t_paquete *paquete) {
+void free_package(t_paquete *paquete) {
 //	free(paquete->header->type);
     free(paquete->header);
     free(paquete->stream);
