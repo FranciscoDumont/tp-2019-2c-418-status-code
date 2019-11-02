@@ -90,7 +90,7 @@ void initialize_semaphores(){
             int init_value = atoi(config->sem_init[pos]);
 
             //Reservo memoria para un semaforo
-            t_semaphore* semaphore = malloc(sizeof(semaphore));
+            t_semaphore* semaphore = malloc(sizeof(t_semaphore));
 
             //Asigno valores al semaforo
             semaphore->id = id;
@@ -107,7 +107,7 @@ void initialize_semaphores(){
 
             //Creo un nuevo bloqueo por semaforo y le asigno el semaforo
             t_semaphore_block* new_semaphore_block = malloc(sizeof(t_semaphore_block));
-            new_semaphore_block->semaphore;
+            new_semaphore_block->semaphore = semaphore;
 
             //Agrego el bloqueo por semaforo a la estructura del bloqueo
             new_block->block_structure = (void*)new_semaphore_block;
@@ -1107,9 +1107,15 @@ int threads_in_blocked(t_program* program){
 int threads_in_join_block(t_program* program){
     bool condition(void* _block){
         t_block* block = (t_block*)_block;
-        t_join_block* join_block = (t_join_block*)(block->block_structure);
-        t_thread* blocked_thread = join_block->blocked_thread;
-        return block->block_type == JOIN && strcmp(blocked_thread->pid, program->pid) == 0;
+
+        if(block->block_type == JOIN){
+            t_join_block* join_block = (t_join_block*)(block->block_structure);
+            t_thread* blocked_thread = join_block->blocked_thread;
+            return strcmp(blocked_thread->pid, program->pid) == 0;
+        } else {
+            return false;
+        }
+
     }
     return list_count_satisfying(BLOCKED, condition);
 }
@@ -1143,7 +1149,7 @@ int threads_in_semaphore_block(t_program* program){
     int blocked_grade = *((int*)blocked_grade_ptr);
     free(blocked_grade_ptr);
 
-    return 0;
+    return blocked_grade;
 }
 
 int threads_in_exec(t_program* program){
@@ -1199,13 +1205,17 @@ void free_join_blocks(t_thread* thread, t_program* program){
     while(execute){
         bool condition(void* _block){
             t_block* block = (t_block*)_block;
-            t_join_block* join_block = (t_join_block*)block->block_structure;
-            PID pid = join_block->blocking_thread->pid;
-            TID tid = join_block->blocking_thread->tid;
+            if(block->block_type == JOIN){
+                t_join_block* join_block = (t_join_block*)block->block_structure;
+                PID pid = join_block->blocking_thread->pid;
+                TID tid = join_block->blocking_thread->tid;
 
-            //Si el tipo de bloqueo es JOIN, y si el tid y el pid del hilo bloqueante coincide con el tid y
-            // el pid del hilo pasado(hilo a liberar), lo retorno.
-            return block->block_type == JOIN && thread->tid == tid && strcmp(thread->pid, pid) == 0;
+                //Si el tid y el pid del hilo bloqueante coincide con el tid y
+                // el pid del hilo pasado(hilo a liberar), lo retorno.
+                return thread->tid == tid && strcmp(thread->pid, pid) == 0;
+            } else {
+                return false;
+            }
         }
         t_block* block = (t_block*)list_remove_by_condition(BLOCKED, condition);
 
