@@ -32,6 +32,12 @@ void initialize_structures();
 void read_config_options();
 
 /**
+ * Inicializo los semaforos pasados por archivo de configuracion, los agrego a la lista de semaforos y tambien a la
+ * lista de bloqueos.
+ */
+void initialize_semaphores();
+
+/**
  * Funcion encargada de definir las tres funciones para el servidor(new, incoming y lost)
  */
 void server_function();
@@ -141,11 +147,24 @@ void distribute_new_thread();
  */
 void assign_thread(t_program* program, t_thread* thread, MessageType header);
 
-//--Genera una operación de wait sobre el semáforo dado
-void* suse_wait(void* newComm);
+/**
+ * Genera una operación de wait sobre el semáforo dado, reduzco el valor del mismo, si es menor a 0, el hilo se agrega
+ * a la lista de bloqueados.
+ * @param fd
+ * @param ip
+ * @param port
+ * @param received
+ */
+void suse_wait(int fd, char * ip, int port, t_list* received);
 
-//--Genera una operación de signal sobre el semáforo dado
-void* suse_signal(void* newComm);
+/**
+ * Genera una operación de signal sobre el semáforo dado
+ * @param fd
+ * @param ip
+ * @param port
+ * @param received
+ */
+void suse_signal(int fd, char * ip, int port, t_list* received);
 
 /**
  * Funcion que ejecuta a la funcion que produce las metricas, corre en un hilo paralelo
@@ -178,15 +197,13 @@ char* generate_program_metrics();
  */
 char* generate_system_metrics();
 
-//--HELPERS
-
 /**
- * Genero un identificador de proceso en base a la ip y al puerto desde los que se conecta el cliente
- * @param ip
- * @param port
- * @return PID pid
+ * Genero las metricas para cada semaforo
+ * @return
  */
-PID generate_pid(char* ip, int port);
+char* generate_semaphore_metrics();
+
+//--HELPERS
 
 /**
  * Hallo el grado de multiprogramacion total del sistema(cant de hilos que no estan en new)
@@ -222,6 +239,13 @@ t_program* find_program(PID pid);
  * @return t_thread*
  */
 t_thread* find_thread(t_program* program, TID tid);
+
+/**
+ * Retorno el semaforo al que le corresponde un id dado
+ * @param id, char*
+ * @return t_semaphore*
+ */
+t_semaphore* find_semaphore(char* id);
 
 /**
  * Creo un hilo para responderle al cliente

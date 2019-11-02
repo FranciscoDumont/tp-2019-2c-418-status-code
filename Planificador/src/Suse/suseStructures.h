@@ -2,7 +2,7 @@
 #define SUSE_SUSESTRUCTURES_H
 
 typedef int TID;
-typedef char* PID;
+typedef int PID;
 
 /**
  * Enum para diferenciar los tipos de block, join o semaphore
@@ -41,17 +41,29 @@ typedef struct _t_thread{
 
 /**
  * Estructura encargada de representar un programa
- * Posee un identificador de programa formado de la sgte manera: IP::PORT, el socket del cliente que lo origino
+ * Posee un identificador de programa formado por el socket del cliente que lo origino
  * ademas de una lista de hilos en estado de listo
  * y un hilo en estado de ejecucion, finalmente un campo booleano indicando si alguno de sus hilos se comenzo a ejecutar
  */
 typedef struct _t_program{
     PID pid;
-    int fd;
     t_list* ready;
     t_thread* exec;
     bool executing;
 } t_program;
+
+/**
+ * Estructura encargada de representar un semaforo
+ * Posee un identificador(char*), un valor maximo y un valor actual, los primeros dos se obtienen por archivo de
+ * configuracion, el ultimo se obtiene tambien por archivo de configuracion, pero se va modificando a medida que se
+ * realizan waits y signals sobre el mismo, y por ultimo una lista de threads bloqueados
+ */
+typedef struct _t_semaphore{
+    char* id;
+    int max_value;
+    int current_value;
+    t_list* blocked_threads;
+} t_semaphore;
 
 /**
  * Estrucura encargada de representar una respuesta al cliente
@@ -94,9 +106,11 @@ typedef struct _t_join_block{
 } t_join_block;
 
 /**
- * Struct que representa un bloqueo generado por un wait
+ * Struct que representa un bloqueo generado por un wait, esta compuesto por un puntero al semaforo. Esta estructura es
+ * solamente un wrapper(para mantener cierta logica) ya que la lista de procesos bloqueados eesta en el semaforo en si
+ * mismo.
  */
 typedef struct _t_semaphore_block{
-    int a;
+    t_semaphore* semaphore;
 } t_semaphore_block;
 #endif //SUSE_SUSESTRUCTURES_H
