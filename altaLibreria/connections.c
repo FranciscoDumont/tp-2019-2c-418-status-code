@@ -388,7 +388,7 @@ void add_to_package(t_paquete *paquete, void *valor, int tamanio) {
 
 int send_package(t_paquete *paquete, int socket_cliente) {
     int bytes = paquete->header->data_size + 2 * sizeof(int);
-    void *a_enviar = serializar_paquete(paquete, bytes);
+    void *a_enviar = serialize_package(paquete, bytes);
 
     int sent;
 

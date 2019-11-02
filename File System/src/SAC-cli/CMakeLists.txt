@@ -10,6 +10,6 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_FLAGS "-D_FILE_OFFSET_BITS=64 -DFUSE_USE_VERSION=27")
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-add_executable(SAC-cli fuse_example.c operaciones.c fuse_example.h operaciones.h)
+add_executable(SAC-cli fuse_example.c  fuse_example.h)
 
 target_link_libraries(SAC-cli "/usr/lib/libaltaLibreria.so" "/usr/lib/libcommons.so" "-lfuse" "-pthread")

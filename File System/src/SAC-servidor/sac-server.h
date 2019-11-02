@@ -8,7 +8,7 @@
 #include <altaLibreria/connections.h>
 #include <altaLibreria/structures.h>
 #include <commons/collections/list.h>
-#include <string.h>
+//#include <string.h>
 
 typedef struct _sac_server_config {
     char* ip;
