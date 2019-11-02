@@ -20,5 +20,5 @@ cd src/libSuse/
 mkdir -p cmake-build-debug
 cd cmake-build-debug
 cmake ..
-sudo make clean all
+sudo make install
 cd ../../..
