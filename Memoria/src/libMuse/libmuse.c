@@ -212,7 +212,7 @@ void muse_close() {
     //Envio el paquete
     if(send_package(package, server_socket) == -1) {
         printf("Error al enviar paquete\n");
-    } else printf("Paquete enviado\n");
+    } else printf("Paquete enviado. Cerrando conexion\n");
     //cerrar conexion
     close_socket(server_socket);
 }

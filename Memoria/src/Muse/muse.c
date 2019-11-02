@@ -87,14 +87,8 @@ void *server_function(void *arg) {
         switch (headerStruct->type) {
             case MUSE_INIT:;
                 {
-                    //TODO borrar el valor id porque es innecesario
-
-                    // Guardo el entero que recibo en una variable
-//                    int id = *((int *) list_get(cosas, 0));
-
                     // Ejecuto muse_init
                     int resultado = muse_init(fd, ip, port);
-
                     // Le respondo a libMuse
                     t_paquete *package = create_package(MUSE_INIT);
                     void *respuesta = malloc(sizeof(int));
