@@ -73,6 +73,9 @@ void *server_function(void *arg) {
     void lost(int fd, char *ip, int port) {
         if(&fd == null && ip == null && &port == null){
             log_info(logger, "Se perdió una conexión");
+            //Cierro la conexión fallida
+            log_info(logger, "Cerrando conexión");
+            close(fd);
         }
     }
 
@@ -84,8 +87,10 @@ void *server_function(void *arg) {
         switch (headerStruct->type) {
             case MUSE_INIT:;
                 {
+                    //TODO borrar el valor id porque es innecesario
+
                     // Guardo el entero que recibo en una variable
-                    int id = *((int *) list_get(cosas, 0));
+//                    int id = *((int *) list_get(cosas, 0));
 
                     // Ejecuto muse_init
                     int resultado = muse_init(fd, ip, port);
@@ -207,6 +212,8 @@ int muse_init(int id, char *ip, int puerto) {
 
     // Loggeo el valor del id que recibi
     log_info(logger, "El fd que recibo de libMuse es: %d", id);
+    log_info(logger, "El ip que recibo de libMuse es: %d", ip);
+    log_info(logger, "El puerto que recibo de libMuse es: %d", puerto);
 
     process_t* nuevo_proceso = crear_proceso(id);
     list_add(PROCESS_TABLE, nuevo_proceso);
