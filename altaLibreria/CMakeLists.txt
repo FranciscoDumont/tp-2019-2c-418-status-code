@@ -7,7 +7,7 @@ include_directories("/usr/include/commons")
 
 add_library(altaLibreria SHARED connections.c connections.h structures.h)
 
-target_link_libraries(altaLibreria "/usr/lib/libcommons.so")
+target_link_libraries(altaLibreria "/usr/lib/libcommons.so" pthread)
 
 install(TARGETS altaLibreria DESTINATION /usr/lib)
 install(FILES connections.h structures.h DESTINATION /usr/include/altaLibreria)

@@ -1,6 +1,10 @@
-cmake_minimum_required(VERSION 3.15)
-project(Suse C)
+cmake_minimum_required(VERSION 3.5)
+project(suse C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(Suse main.c)
+include_directories("/usr/include/altaLibreria" "/usr/include/commons")
+
+add_executable(suse suse.c suse.h suseStructures.h)
+
+target_link_libraries(suse "/usr/lib/libaltaLibreria.so" "/usr/lib/libcommons.so" pthread)

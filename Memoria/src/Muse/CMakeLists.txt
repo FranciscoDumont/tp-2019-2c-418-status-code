@@ -3,4 +3,8 @@ project(Muse C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(Muse main.c ../libMuse/libmuse.c)
+include_directories("/usr/include/altaLibreria" "/usr/include/commons")
+
+add_executable(Muse muse.c)
+
+target_link_libraries(Muse "/usr/lib/libaltaLibreria.so" "/usr/lib/libcommons.so")
