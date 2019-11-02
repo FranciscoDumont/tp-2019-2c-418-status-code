@@ -860,34 +860,39 @@ char* generate_program_metrics(){
     char* metrics = string_new();
     string_append(&metrics, "Program metrics:\n");
 
-    void iterate(void* _program){
-        t_program* program = (t_program*)_program;
-        char* separator = "\n";
-        string_append(&metrics, "--Program: ");
-        string_append(&metrics, program->pid);
-        string_append(&metrics, separator);
-        string_append(&metrics, "----Threads in NEW: ");
-        char* new = string_itoa(threads_in_new(program));
-        string_append(&metrics, new);
-        free(new);
-        string_append(&metrics, separator);
-        string_append(&metrics, "----Threads in READY: ");
-        char* ready= string_itoa(threads_in_ready(program));
-        string_append(&metrics, ready);
-        free(ready);
-        string_append(&metrics, separator);
-        string_append(&metrics, "----Threads in RUN: ");
-        char* run = string_itoa(threads_in_exec(program));
-        string_append(&metrics, run);
-        free(run);
-        string_append(&metrics, separator);
-        string_append(&metrics, "----Threads in BLOCKED: ");
-        char* blocked = string_itoa(threads_in_blocked(program));
-        string_append(&metrics, blocked);
-        free(blocked);
-        string_append(&metrics, separator);
+    if(list_size(programs) != 0){
+        void iterate(void* _program){
+            t_program* program = (t_program*)_program;
+            char* separator = "\n";
+            string_append(&metrics, "--Program: ");
+            string_append(&metrics, program->pid);
+            string_append(&metrics, separator);
+            string_append(&metrics, "----Threads in NEW: ");
+            char* new = string_itoa(threads_in_new(program));
+            string_append(&metrics, new);
+            free(new);
+            string_append(&metrics, separator);
+            string_append(&metrics, "----Threads in READY: ");
+            char* ready= string_itoa(threads_in_ready(program));
+            string_append(&metrics, ready);
+            free(ready);
+            string_append(&metrics, separator);
+            string_append(&metrics, "----Threads in RUN: ");
+            char* run = string_itoa(threads_in_exec(program));
+            string_append(&metrics, run);
+            free(run);
+            string_append(&metrics, separator);
+            string_append(&metrics, "----Threads in BLOCKED: ");
+            char* blocked = string_itoa(threads_in_blocked(program));
+            string_append(&metrics, blocked);
+            free(blocked);
+            string_append(&metrics, separator);
+        }
+        list_iterate(programs, iterate);
+    } else {
+        string_append(&metrics, "No more programs in scheduler\n");
     }
-    list_iterate(programs, iterate);
+
 
     return metrics;
 }
@@ -903,9 +908,30 @@ char* generate_system_metrics(){
     string_append(&metrics, mg);
     free(mg);
     string_append(&metrics, separator);
-    char* sl = "--Semaphores: ";
-    string_append(&metrics, sl);
+    char* sm = generate_semaphore_metrics();
+    string_append(&metrics, sm);
     string_append(&metrics, separator);
+    return metrics;
+}
+
+char* generate_semaphore_metrics(){
+    char* metrics = string_new();
+    string_append(&metrics, "--Semaphores:\n");
+
+    void iterate(void* _semaphore){
+        t_semaphore* semaphore = (t_semaphore*)_semaphore;
+        char* separator = "\n";
+        string_append(&metrics, "----Semaphore: ");
+        string_append(&metrics, semaphore->id);
+        string_append(&metrics, separator);
+        string_append(&metrics, "------Current value: ");
+        char* new = string_itoa(semaphore->current_value);
+        string_append(&metrics, new);
+        free(new);
+        string_append(&metrics, separator);
+    }
+    list_iterate(semaphores, iterate);
+
     return metrics;
 }
 

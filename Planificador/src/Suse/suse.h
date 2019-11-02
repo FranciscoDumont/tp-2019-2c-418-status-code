@@ -197,6 +197,12 @@ char* generate_program_metrics();
  */
 char* generate_system_metrics();
 
+/**
+ * Genero las metricas para cada semaforo
+ * @return
+ */
+char* generate_semaphore_metrics();
+
 //--HELPERS
 
 /**
