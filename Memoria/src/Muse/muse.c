@@ -230,11 +230,15 @@ uint32_t muse_alloc(uint32_t tam, int id_proceso) {
     // Si el proceso ya tiene segmentos veo de asignarlo ahi
     //  xd
     // Si no tiene segmentos creo uno nuevo
-    void* espacio_libre = mp_buscar_espacio_libre(paginas_necesarias);
-    segment_t* nuevo_segmento = crear_segmento(espacio_libre, false);
+    int frame_libre = mp_buscar_frame_libre();
+    page_t* nueva_pagina = crear_pagina(frame_libre, true, false, false); //todo ver si estan bien los bits esos
+    segment_t* nuevo_segmento = crear_segmento(false);
+    list_add(nuevo_segmento->pages, nueva_pagina);
     list_add(el_proceso->segments, nuevo_segmento);
+    void* espacio_libre = MAIN_MEMORY + config.page_size * frame_libre;
     mp_escribir_metadata(espacio_libre, tam, false);
     mp_escribir_metadata(espacio_libre + tam, (uint32_t)paginas_necesarias-tam, true);
+    MAPA_MEMORIA[frame_libre] = 1;
 
     return -1;
 }
@@ -272,20 +276,21 @@ process_t* crear_proceso(int id){
 }
 
 
-segment_t* crear_segmento(void* memory_pointer, int is_shared){
+segment_t* crear_segmento(bool is_shared){
     segment_t* nuevo_segmento = malloc(sizeof(segment_t));
     nuevo_segmento->is_shared = is_shared;
-    nuevo_segmento->memory_pointer = memory_pointer;
     t_list* nueva_lista = list_create();
     nuevo_segmento->pages = nueva_lista;
     return nuevo_segmento;
 }
 
 
-page_t* crear_pagina(int presence_bit, int modified_bit){
+page_t* crear_pagina(int frame, int presence_bit, int modified_bit, int use_bit){
     page_t* nueva_pagina = malloc(sizeof(page_t));
+    nueva_pagina->frame = frame;
     nueva_pagina->presence_bit = presence_bit;
     nueva_pagina->modified_bit = modified_bit;
+    nueva_pagina->use_bit = use_bit;
     return nueva_pagina;
 }
 
@@ -299,37 +304,17 @@ void* mp_escribir_metadata(void* espacio_libre, uint32_t tam, int esta_libre){
 }
 
 
-void* mp_buscar_espacio_libre(int paginas_necesarias){
-	// esta funcion no setea los espacios como ocupados cuando los encuentra
-	// asi que debera hacer eso cada vez que es llamada
+int mp_buscar_frame_libre(){
 	int i;
+	int nro_frame = -1; // Si no encuentra un frame libre va a devolver -1
 	bool esta_todo_ok = false;
 	for (i = 0; i<MAPA_MEMORIA_SIZE; ++i){
-	    if (MAPA_MEMORIA[i] != 0){
-            continue; //si el lugar está ocupado paso al siguiente
+	    if (MAPA_MEMORIA[i] == 0){
+	        nro_frame = i;
+            break; //si el lugar está libre salgo del for
 	    }
-        int ii = 0;
-        int sumatoria = 0;
-        // me fijo si los proximos n lugares estan vacios
-        while (ii < paginas_necesarias){
-            sumatoria += MAPA_MEMORIA[i];
-            ii++;
-        }
-        if (sumatoria == 0){
-            esta_todo_ok = true;
-            break; //salgo del for
-        }
 	}
-
-	void* resultado;
-	if (esta_todo_ok){
-        log_info(logger, "Mapa memoria consigue el indice: %d", i);
-        resultado = MAIN_MEMORY + (i * config.page_size);
-    }else {
-        log_warning(logger, "No se pudo encontrar el espacio solicitado");
-        resultado = null;
-    }
-    return resultado;
+    return nro_frame;
 }
 
 

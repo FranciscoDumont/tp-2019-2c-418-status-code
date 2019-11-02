@@ -34,14 +34,15 @@ typedef struct {
 } process_t;
 
 typedef struct {
-    void* memory_pointer; // Puntero a la direccion de memoria donde arranca el segmento
-    int is_shared;
+    bool is_shared;
     t_list* pages;
 } segment_t;
 
 typedef struct {
-    int presence_bit; // Para saber si esta en memoria principal
-    int modified_bit; // Para el algoritmo de reemplazo
+    int frame;
+    bool presence_bit; // Para saber si esta en memoria principal
+    bool modified_bit; // Para el algoritmo de reemplazo
+    bool use_bit;
 } page_t;
 
 
@@ -79,14 +80,14 @@ int muse_sync(uint32_t addr, size_t len);
 int muse_unmap(uint32_t dir);
 
 process_t* crear_proceso(int id);
-segment_t* crear_segmento(void* memory_pointer, int is_shared);
-page_t* crear_pagina(int presence_bit, int modified_bit);
+segment_t* crear_segmento(bool is_shared);
+page_t* crear_pagina(int frame, int presence_bit, int modified_bit, int use);
 
 // Devuelve un puntero a donde termina la estructura
 void* mp_escribir_metadata(void* espacio_libre, uint32_t tam, int esta_libre);
 
 // Devuelve un puntero al primer espacio libre en MP que sea del tam suficiente
-void* mp_buscar_espacio_libre(int paginas_necesarias);
+int mp_buscar_frame_libre();
 
 process_t* buscar_proceso(int id_proceso);
 #endif //TP_2019_2C_418_STATUS_CODE_MUSE_H
