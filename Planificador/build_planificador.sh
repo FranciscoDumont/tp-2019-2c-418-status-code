@@ -16,6 +16,7 @@ cmake ..
 sudo make clean all
 cd ../../..
 
+
 cd src/libSuse/
 mkdir -p cmake-build-debug
 cd cmake-build-debug
