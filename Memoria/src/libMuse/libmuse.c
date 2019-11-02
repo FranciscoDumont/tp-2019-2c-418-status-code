@@ -198,3 +198,21 @@ int muse_cpy(uint32_t dst, void *src, int n) {
         return -1;
     } else return 0;
 }
+
+/**
+ * Cierra la biblioteca de MUSE.
+ */
+void muse_close() {
+    //Envio paquete avisando que cierra la conexion
+    t_paquete *package = create_package(MUSE_CLOSE);
+    //Agrego el socket al paquete
+    void *socket = malloc(sizeof(int));
+    *((int *) socket) = server_socket;
+    add_to_package(package, socket, sizeof(int));
+    //Envio el paquete
+    if(send_package(package, server_socket) == -1) {
+        printf("Error al enviar paquete\n");
+    } else printf("Paquete enviado\n");
+    //cerrar conexion
+    close_socket(server_socket);
+}
