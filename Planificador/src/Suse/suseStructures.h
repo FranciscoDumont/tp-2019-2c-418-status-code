@@ -2,7 +2,7 @@
 #define SUSE_SUSESTRUCTURES_H
 
 typedef int TID;
-typedef char* PID;
+typedef int PID;
 
 /**
  * Enum para diferenciar los tipos de block, join o semaphore
@@ -41,13 +41,12 @@ typedef struct _t_thread{
 
 /**
  * Estructura encargada de representar un programa
- * Posee un identificador de programa formado de la sgte manera: IP::PORT, el socket del cliente que lo origino
+ * Posee un identificador de programa formado por el socket del cliente que lo origino
  * ademas de una lista de hilos en estado de listo
  * y un hilo en estado de ejecucion, finalmente un campo booleano indicando si alguno de sus hilos se comenzo a ejecutar
  */
 typedef struct _t_program{
     PID pid;
-    int fd;
     t_list* ready;
     t_thread* exec;
     bool executing;

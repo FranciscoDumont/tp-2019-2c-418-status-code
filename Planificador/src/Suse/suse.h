@@ -206,14 +206,6 @@ char* generate_semaphore_metrics();
 //--HELPERS
 
 /**
- * Genero un identificador de proceso en base a la ip y al puerto desde los que se conecta el cliente
- * @param ip
- * @param port
- * @return PID pid
- */
-PID generate_pid(char* ip, int port);
-
-/**
  * Hallo el grado de multiprogramacion total del sistema(cant de hilos que no estan en new)
  * @return int grado
  */

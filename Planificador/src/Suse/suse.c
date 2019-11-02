@@ -144,7 +144,7 @@ void server_function(){
     //--Funcion que se ejecuta cuando se pierde la conexion con un cliente
     void lost(int fd, char * ip, int port){
         pthread_mutex_lock(&mutex_logger);
-        log_trace(logger, "Program on IP:%s, PORT:%d has disconnected", ip, port);
+        log_trace(logger, "Program: %d has disconnected", fd);
         pthread_mutex_unlock(&mutex_logger);
     }
 
@@ -201,10 +201,10 @@ void server_function(){
 
 //--LISTO
 void create_new_program(char* ip, int port, int fd){
-    PID pid = generate_pid(ip, port);
+    PID pid = fd;
     t_program* new_program = (t_program*)malloc(sizeof(t_program));
-    new_program->pid = pid;
-    new_program->fd = fd;
+    new_program->pid = fd;
+    //new_program->fd = fd;
     new_program->ready = list_create();
     new_program->exec = NULL;
     new_program->executing = false;
@@ -214,13 +214,13 @@ void create_new_program(char* ip, int port, int fd){
     pthread_mutex_unlock(&mutex_programs);
 
     pthread_mutex_lock(&mutex_logger);
-    log_trace(logger, "New program added, PID:%s", pid);
+    log_trace(logger, "New program added, PID:%d", pid);
     pthread_mutex_unlock(&mutex_logger);
 }
 
 //--LISTO
 void suse_create(int fd, char * ip, int port, t_list* received){
-    char* pid = generate_pid(ip, port);
+    PID pid = fd;
     int tid = *((int*)list_get(received, 0));
     int return_code;
 
@@ -252,7 +252,7 @@ void suse_create(int fd, char * ip, int port, t_list* received){
             return_code = -1;
         }
         pthread_mutex_lock(&mutex_logger);
-        log_trace(logger, "Program(%s)'s Thread(%d) added to NEW list", pid, tid);
+        log_trace(logger, "Program(%d)'s Thread(%d) added to NEW list", pid, tid);
         pthread_mutex_unlock(&mutex_logger);
 
     } else {
@@ -275,7 +275,7 @@ void suse_create(int fd, char * ip, int port, t_list* received){
                 list_add(new_thread->ready_list, (void*)first_iteration);
 
                 pthread_mutex_lock(&mutex_logger);
-                log_trace(logger, "Thread(%d), added to Program(%s)'s ready list", tid, pid);
+                log_trace(logger, "Thread(%d), added to Program(%d)'s ready list", tid, pid);
                 pthread_mutex_unlock(&mutex_logger);
 
             //En este caso, el programa esta en planificacion, pero no hay ningun hilo en exec, puede ocurrir si se
@@ -287,7 +287,7 @@ void suse_create(int fd, char * ip, int port, t_list* received){
                 program->exec = new_thread;
 
                 pthread_mutex_lock(&mutex_logger);
-                log_trace(logger, "Program(%s)'s Thread(%d) added and executing", pid, tid);
+                log_trace(logger, "Program(%d)'s Thread(%d) added and executing", pid, tid);
                 pthread_mutex_unlock(&mutex_logger);
             }
 
@@ -302,7 +302,7 @@ void suse_create(int fd, char * ip, int port, t_list* received){
             program->executing = true;
 
             pthread_mutex_lock(&mutex_logger);
-            log_trace(logger, "Program(%s)'s Thread(%d) added and executing", pid, tid);
+            log_trace(logger, "Program(%d)'s Thread(%d) added and executing", pid, tid);
             pthread_mutex_unlock(&mutex_logger);
         }
         return_code = 1;
@@ -318,7 +318,7 @@ void suse_create(int fd, char * ip, int port, t_list* received){
 }
 
 void suse_schedule_next(int fd, char * ip, int port, t_list* received){
-    char* pid = generate_pid(ip, port);
+    PID pid = fd;
     t_program* program = find_program(pid);
     int return_tid;
 
@@ -326,7 +326,7 @@ void suse_schedule_next(int fd, char * ip, int port, t_list* received){
     if(program != NULL) {
 
         pthread_mutex_lock(&mutex_logger);
-        log_trace(logger, "Program: %s, asking to schedule a new thread", pid);
+        log_trace(logger, "Program: %d, asking to schedule a new thread", pid);
         pthread_mutex_unlock(&mutex_logger);
 
         return_tid = schedule_next(program);
@@ -341,7 +341,7 @@ void suse_schedule_next(int fd, char * ip, int port, t_list* received){
         free(element);
     }
     free_list(received, element_destroyer);
-    free((void*)pid);
+    //free((void*)pid);
 }
 
 int schedule_next(t_program* program){
@@ -386,7 +386,7 @@ int schedule_next(t_program* program){
             TID new_tid = program->exec->tid;
 
             pthread_mutex_lock(&mutex_logger);
-            log_trace(logger, "Thread: %d, exchanged for Thread: %d on Program: %s", old_tid, new_tid, program->pid);
+            log_trace(logger, "Thread: %d, exchanged for Thread: %d on Program: %d", old_tid, new_tid, program->pid);
             pthread_mutex_unlock(&mutex_logger);
         } else {
 
@@ -401,7 +401,7 @@ int schedule_next(t_program* program){
         }
 
         pthread_mutex_lock(&mutex_logger);
-        log_trace(logger, "Thread: %d, now executing on Program: %s", return_tid, program->pid);
+        log_trace(logger, "Thread: %d, now executing on Program: %d", return_tid, program->pid);
         pthread_mutex_unlock(&mutex_logger);
 
     //La lista de ready esta vacia, debo devolver el mismo hilo o bloquear
@@ -430,7 +430,7 @@ int schedule_next(t_program* program){
             return_tid = program->exec->tid;
 
             pthread_mutex_lock(&mutex_logger);
-            log_trace(logger, "Thread: %d, now executing on Program: %s", return_tid, program->pid);
+            log_trace(logger, "Thread: %d, now executing on Program: %d", return_tid, program->pid);
             pthread_mutex_unlock(&mutex_logger);
 
             //Por que creo otro intervalo de ejecucion en vez de usar el mismo? Porque de esta manera es evidente que
@@ -446,7 +446,7 @@ int schedule_next(t_program* program){
             return_tid = -1;
 
             pthread_mutex_lock(&mutex_logger);
-            log_trace(logger, "Program: %s had no Ready or Exec threads, blocked until a new one is available", program->pid);
+            log_trace(logger, "Program: %d had no Ready or Exec threads, blocked until a new one is available", program->pid);
             pthread_mutex_unlock(&mutex_logger);
         }
 
@@ -461,7 +461,7 @@ t_thread* schedule_new_thread(t_program* program){
 }
 
 void suse_join(int fd, char * ip, int port, t_list* received){
-    char* pid = generate_pid(ip, port);
+    PID pid = fd;
     int tid = *((int*)list_get(received, 0));
     t_program* program = find_program(pid);
 
@@ -470,7 +470,7 @@ void suse_join(int fd, char * ip, int port, t_list* received){
     int executing_tid = executing_thread->tid;
 
     pthread_mutex_lock(&mutex_logger);
-    log_trace(logger, "Program: %s, asking to join Thread: %d with Thread: %d", pid, executing_tid, tid);
+    log_trace(logger, "Program: %d, asking to join Thread: %d with Thread: %d", pid, executing_tid, tid);
     pthread_mutex_unlock(&mutex_logger);
 
     //Obtengo el ultimo intervalo de ejecucion y le asigno su tiempo de finalizacion
@@ -529,17 +529,17 @@ void suse_join(int fd, char * ip, int port, t_list* received){
         free(element);
     }
     free_list(received, element_destroyer);
-    free((void*)pid);
+    //free((void*)pid);
 }
 
 void suse_close(int fd, char * ip, int port, t_list* received){
-    char* pid = generate_pid(ip, port);
+    PID pid = fd;
     int tid = *((int*)list_get(received, 0));
     t_program* program = find_program(pid);
     int response;
 
     pthread_mutex_lock(&mutex_logger);
-    log_trace(logger, "Program: %s, asking to finish thread: %d", pid, tid);
+    log_trace(logger, "Program: %d, asking to finish thread: %d", pid, tid);
     pthread_mutex_unlock(&mutex_logger);
 
     t_thread* exec_thread = program->exec;
@@ -558,11 +558,8 @@ void suse_close(int fd, char * ip, int port, t_list* received){
         //Libero los bloqueos que haya generado el hilo
         free_join_blocks(exec_thread, program);
 
-        //Mato al thread
-        //destroy_thread(exec_thread);
-
         pthread_mutex_lock(&mutex_logger);
-        log_trace(logger, "Thread: %d, from Program: %s, sent to EXIT", tid, pid);
+        log_trace(logger, "Thread: %d, from Program: %d, sent to EXIT", tid, pid);
         pthread_mutex_unlock(&mutex_logger);
 
         //Verifico si no quedan mas hilos en ready o exec
@@ -573,7 +570,7 @@ void suse_close(int fd, char * ip, int port, t_list* received){
             //Destruyo el programa
             destroy_program(pid);
             pthread_mutex_lock(&mutex_logger);
-            log_trace(logger, "Program: %s, exited SUSE", pid);
+            log_trace(logger, "Program: %d, exited SUSE", pid);
             pthread_mutex_unlock(&mutex_logger);
         }
 
@@ -594,7 +591,7 @@ void suse_close(int fd, char * ip, int port, t_list* received){
         response = -1;
     }
 
-    free(pid);
+    //free(pid);
 
     //1 para exito, -1 en el caso de error
     create_response_thread(fd, response, SUSE_CLOSE);
@@ -616,7 +613,7 @@ void distribute_new_thread(){
         bool second_condition(void* _program){
 
             t_program* program = (t_program*)_program;
-            return strcmp(program->pid, thread->pid) == 0 && program->executing;
+            return program->pid == thread->pid && program->executing;
         }
         return list_any_satisfy(programs, &second_condition);
     }
@@ -650,7 +647,7 @@ void distribute_new_thread(){
             list_add(next_thread->ready_list, new_ready);
 
             pthread_mutex_lock(&mutex_logger);
-            log_trace(logger, "Thread(%d), added to Program(%s)'s ready list", next_thread->tid, program->pid);
+            log_trace(logger, "Thread(%d), added to Program(%d)'s ready list", next_thread->tid, program->pid);
             pthread_mutex_unlock(&mutex_logger);
         }
 
@@ -695,7 +692,7 @@ void assign_thread(t_program* program, t_thread* thread, MessageType header){
         response = thread->tid;
 
         pthread_mutex_lock(&mutex_logger);
-        log_trace(logger, "Thread: %d, now executing on Program: %s", thread->tid, program->pid);
+        log_trace(logger, "Thread: %d, now executing on Program: %d", thread->tid, program->pid);
         pthread_mutex_unlock(&mutex_logger);
     } else {
 
@@ -704,11 +701,11 @@ void assign_thread(t_program* program, t_thread* thread, MessageType header){
         program->executing = true;
 
         pthread_mutex_lock(&mutex_logger);
-        log_trace(logger, "Program(%s)'s Thread(%d) added and executing", program->pid, thread->tid);
+        log_trace(logger, "Program(%d)'s Thread(%d) added and executing", program->pid, thread->tid);
         pthread_mutex_unlock(&mutex_logger);
     }
 
-    create_response_thread(program->fd, response, header);
+    create_response_thread(program->pid, response, header);
 }
 
 void suse_wait(int fd, char * ip, int port, t_list* received){
@@ -717,7 +714,7 @@ void suse_wait(int fd, char * ip, int port, t_list* received){
     char* id = (char*)list_get(received, 1);
     t_semaphore* semaphore = find_semaphore(id);
 
-    PID pid = generate_pid(ip, port);
+    PID pid = fd;
     int tid = *((int*)list_get(received, 0));
 
     //Busco al hilo y al programa del mismo que me llamaron a wait
@@ -725,7 +722,7 @@ void suse_wait(int fd, char * ip, int port, t_list* received){
     t_thread* thread = find_thread(program, tid);
 
     pthread_mutex_lock(&mutex_logger);
-    log_trace(logger, "Thread: %d of program: %s asking for a wait on semaphore: %s", tid, pid, id);
+    log_trace(logger, "Thread: %d of program: %d asking for a wait on semaphore: %s", tid, pid, id);
     pthread_mutex_unlock(&mutex_logger);
 
     //Le resto al semaforo
@@ -745,14 +742,14 @@ void suse_wait(int fd, char * ip, int port, t_list* received){
         program->exec = NULL;
 
         pthread_mutex_lock(&mutex_logger);
-        log_trace(logger, "Thread: %d of program: %s blocked by a wait on semaphore: %s", tid, pid, id);
+        log_trace(logger, "Thread: %d of program: %d blocked by a wait on semaphore: %s", tid, pid, id);
         pthread_mutex_unlock(&mutex_logger);
     }
 
     //Existe alguna posibilidad de error?
     response = 1;
 
-    free(pid);
+    //free(pid);
 
     create_response_thread(fd, response, SUSE_WAIT);
 
@@ -768,7 +765,7 @@ void suse_signal(int fd, char * ip, int port, t_list* received){
     char* id = (char*)list_get(received, 1);
     t_semaphore* semaphore = find_semaphore(id);
 
-    PID pid = generate_pid(ip, port);
+    PID pid = fd;
     int tid = *((int*)list_get(received, 0));
 
     //Busco al hilo y al programa del mismo que me llamaron a signal
@@ -776,11 +773,16 @@ void suse_signal(int fd, char * ip, int port, t_list* received){
     t_thread* thread = find_thread(program, tid);
 
     pthread_mutex_lock(&mutex_logger);
-    log_trace(logger, "Thread: %d of program: %s asking for a signal on semaphore: %s", tid, pid, id);
+    log_trace(logger, "Thread: %d of program: %d asking for a signal on semaphore: %s", tid, pid, id);
     pthread_mutex_unlock(&mutex_logger);
 
     //TODO:Verificar si tendria que pasar algo en caso de que el current_value exceda al max_value
     semaphore->current_value++;
+
+    //Si el valor actual es mayor al maximo, lo reduzco hasta el valor maximo
+    if(semaphore->current_value > semaphore->max_value){
+        semaphore->current_value = semaphore->max_value;
+    }
 
     //Si el avalor actual es menor o igual a 0, libero a uno de los hilos bloqueados
     if(semaphore->current_value <= 0){
@@ -806,7 +808,7 @@ void suse_signal(int fd, char * ip, int port, t_list* received){
 
     response = 1;
 
-    free(pid);
+    //free(pid);
 
     //Existe algun caso de error?
     create_response_thread(fd, response, SUSE_SIGNAL);
@@ -865,7 +867,9 @@ char* generate_program_metrics(){
             t_program* program = (t_program*)_program;
             char* separator = "\n";
             string_append(&metrics, "--Program: ");
-            string_append(&metrics, program->pid);
+            char* pid = string_itoa(program->pid);
+            string_append(&metrics, pid);
+            free(pid);
             string_append(&metrics, separator);
             string_append(&metrics, "----Threads in NEW: ");
             char* new = string_itoa(threads_in_new(program));
@@ -890,7 +894,7 @@ char* generate_program_metrics(){
         }
         list_iterate(programs, iterate);
     } else {
-        string_append(&metrics, "No more programs in scheduler\n");
+        string_append(&metrics, "--No more programs in scheduler\n");
     }
 
 
@@ -900,7 +904,7 @@ char* generate_program_metrics(){
 char* generate_system_metrics(){
     char* metrics = string_new();
     char* separator = "\n";
-    char* sml = "System metrics:\n";
+    char* sml = "\nSystem metrics:\n";
     string_append(&metrics, sml);
     char* mgl = "--Multiprogramming grade: ";
     string_append(&metrics, mgl);
@@ -910,7 +914,6 @@ char* generate_system_metrics(){
     string_append(&metrics, separator);
     char* sm = generate_semaphore_metrics();
     string_append(&metrics, sm);
-    string_append(&metrics, separator);
     return metrics;
 }
 
@@ -936,17 +939,6 @@ char* generate_semaphore_metrics(){
 }
 
 //--Helpers
-
-char* generate_pid(char* ip, int port){
-    char* new_pid = string_new();
-    char* separator = "::";
-    char* string_port = string_itoa(port);
-    string_append(&new_pid, ip);
-    string_append(&new_pid, separator);
-    string_append(&new_pid, string_port);
-    free(string_port);
-    return new_pid;
-}
 
 int multiprogramming_grade(){
 
@@ -998,7 +990,7 @@ void free_list(t_list* received, void(*element_destroyer)(void*)){
 
 t_program* find_program(PID pid){
     bool program_finder(void* program){
-        return strcmp(((t_program*)program)->pid, pid) == 0;
+        return ((t_program*)program)->pid == pid;
     }
     return (t_program*)list_find(programs, &program_finder);
 }
@@ -1014,7 +1006,7 @@ t_thread* find_thread(t_program* program, TID tid){
 
     //Buscador de hilos por tid y pid
     bool tid_pid_thread_finder(void* _thread){
-        return ((t_thread*)_thread)->tid == tid && strcmp(((t_thread*)_thread)->pid, program->pid) == 0;
+        return ((t_thread*)_thread)->tid == tid && ((t_thread*)_thread)->pid == program->pid;
     }
 
     //Busco el hilo en la lista de ready del programa al que pertenece
@@ -1106,7 +1098,7 @@ void destroy_thread(t_thread* thread){
     free_list(thread->ready_list, interval_destroyer);
     free_list(thread->exec_list, interval_destroyer);
     free(thread->start_time);
-    free(thread->pid);
+    //free(thread->pid);
     free(thread);
 }
 
@@ -1117,7 +1109,7 @@ bool no_more_threads(t_program* program){
 int threads_in_new(t_program* program){
     bool condition(void* _thread){
         t_thread* thread = (t_thread*)_thread;
-        return strcmp(program->pid, thread->pid) == 0;
+        return program->pid == thread->pid;
     }
     return list_count_satisfying(NEW, condition);
 }
@@ -1137,7 +1129,7 @@ int threads_in_join_block(t_program* program){
         if(block->block_type == JOIN){
             t_join_block* join_block = (t_join_block*)(block->block_structure);
             t_thread* blocked_thread = join_block->blocked_thread;
-            return strcmp(blocked_thread->pid, program->pid) == 0;
+            return blocked_thread->pid == program->pid;
         } else {
             return false;
         }
@@ -1160,7 +1152,7 @@ int threads_in_semaphore_block(t_program* program){
 
             bool condition(void* _thread){
                 t_thread* thread = (t_thread*)_thread;
-                return strcmp(thread->pid, program->pid) == 0;
+                return thread->pid == program->pid;
             }
             *((int*) _seedB) = list_count_satisfying(semaphore->blocked_threads, condition);
 
@@ -1189,11 +1181,11 @@ void destroy_program(PID pid){
 
     bool condition(void* _program){
         t_program* program = (t_program*)_program;
-        return strcmp(pid, program->pid) == 0;
+        return pid == program->pid;
     }
     void element_destroyer(void* _program){
         t_program* program = (t_program*)_program;
-        free(program->pid);
+        //free(program->pid);
         list_destroy(program->ready);
         free(program);
     }
@@ -1205,7 +1197,7 @@ void destroy_exit_threads(PID pid){
     while(execute){
         bool condition(void* _thread){
             t_thread* thread1 = (t_thread*)_thread;
-            return strcmp(thread1->pid, pid) == 0;
+            return thread1->pid == pid;
         }
         t_thread* thread = (t_thread*)list_remove_by_condition(EXIT, condition);
         if(thread == NULL){
@@ -1219,7 +1211,7 @@ void destroy_exit_threads(PID pid){
 bool blocking_thread_is_dead(t_thread* thread){
     bool condition(void* _thread){
         t_thread* thread_to_compare = (t_thread*)_thread;
-        return thread_to_compare->tid == thread->tid && strcmp(thread_to_compare->pid, thread->pid) == 0;
+        return thread_to_compare->tid == thread->tid && thread_to_compare->pid == thread->pid;
     }
     return list_any_satisfy(EXIT, condition);
 }
@@ -1238,7 +1230,7 @@ void free_join_blocks(t_thread* thread, t_program* program){
 
                 //Si el tid y el pid del hilo bloqueante coincide con el tid y
                 // el pid del hilo pasado(hilo a liberar), lo retorno.
-                return thread->tid == tid && strcmp(thread->pid, pid) == 0;
+                return thread->tid == tid && thread->pid == pid;
             } else {
                 return false;
             }
@@ -1274,7 +1266,7 @@ bool is_in_asking_for_thread(t_program* program){
 
     bool condition(void* _program){
 
-        return strcmp(((t_program*)_program)->pid, program->pid) == 0;
+        return ((t_program*)_program)->pid == program->pid;
     }
     return list_any_satisfy(asking_for_thread, condition);
 }
@@ -1283,7 +1275,7 @@ void remove_from_asking_for_thread(t_program* program){
 
     bool condition(void* _program){
 
-        return strcmp(((t_program*)_program)->pid, program->pid) == 0;
+        return ((t_program*)_program)->pid == program->pid;
     }
     list_remove_by_condition(asking_for_thread, condition);
 }
