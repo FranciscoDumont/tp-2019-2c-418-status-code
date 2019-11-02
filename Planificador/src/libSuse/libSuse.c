@@ -59,7 +59,7 @@ int suse_create(int tid){
                 // por el nivel de multiprogramacion, y que el programa no estaba en ejecucion, por consiguiente, se
                 // debe bloquear al cliente para evitar que continue con la ejecucion del hilo main, hasta que se libere
                 // algun hilo de otro programa.
-                printf("No hay mas lugar en el planificador, debera esperar a que se libere algun hilo.\n");
+                printf("No hay mas lugar en el planificador, debera esperar a que se libere algun hilo SC.\n");
                 if(confirm_action() == 1){
                     printf("Hilo en planificacion\n");
                     return 0;
@@ -72,7 +72,6 @@ int suse_create(int tid){
     }
 }
 
-//--TODO:Agregar un recv bloqueante si no hay mas hilos en SUSE?
 int suse_schedule_next(void){
     t_paquete *package = create_package(SUSE_SCHEDULE_NEXT);
     //Para hacer el servidor lo mas generico posible, todas las peticiones deben enviar algun dato,
@@ -97,8 +96,10 @@ int suse_schedule_next(void){
             //Si la respuesta es menor a 0 significa que todos sus hilos estan en NEW, por lo que se debe quedar
             // esperando(bloqueado) hasta que algun hilo de otro programa termine para que le habilite alguno a este
             // segun el grado de multiprogramacion
+            printf("No hay mas lugar en el planificador, debera esperar a que se libere algun hilo SSN.\n");
             int new_scheduled_thread = confirm_action();
             if(new_scheduled_thread >= 0){
+                printf("Volvimos del bloqueo de SSN.\n");
                 printf("Scheduling next thread %i...\n", new_scheduled_thread);
                 return new_scheduled_thread;
             } else {

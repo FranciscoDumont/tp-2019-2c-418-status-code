@@ -350,6 +350,7 @@ int schedule_next(t_program* program){
     t_list* ready = program->ready;
     if(list_size(ready) > 0){
 
+        //Obtengo el proximo hilo a ejecutar
         t_thread* thread_to_execute = schedule_new_thread(program);
 
         return_tid = thread_to_execute->tid;
@@ -388,6 +389,8 @@ int schedule_next(t_program* program){
             pthread_mutex_lock(&mutex_logger);
             log_trace(logger, "Thread: %d, exchanged for Thread: %d on Program: %d", old_tid, new_tid, program->pid);
             pthread_mutex_unlock(&mutex_logger);
+
+        //El campo exec estaba vacio, lo ocupo directamente
         } else {
 
             //Obtengo el ultimo elemento(interval) de la lista de readys del proximo hilo a ejecutar y le agrego el tiempo final
@@ -397,7 +400,6 @@ int schedule_next(t_program* program){
 
             //Le asigno a exec el nuevo hilo a ejecutar
             program->exec = thread_to_execute;
-            TID new_tid = program->exec->tid;
         }
 
         pthread_mutex_lock(&mutex_logger);
@@ -604,7 +606,7 @@ void suse_close(int fd, char * ip, int port, t_list* received){
 
 void distribute_new_thread(){
 
-    //Busco algun hilo de algun programa que ya este en ejecucion
+    //Busco algun hilo de algun programa(en NEW) que ya este en ejecucion
     bool condition(void* _thread){
         t_thread* thread = (t_thread*)_thread;
 
@@ -645,6 +647,11 @@ void distribute_new_thread(){
 
             //Agrego el intervalo a la lista de listos del hilo
             list_add(next_thread->ready_list, new_ready);
+
+            //Agrego el hilo a la lista de listos del programa y agrego el intervalo a la lista de intervalos de
+            // listo del hilo
+            t_list *ready = program->ready;
+            list_add(ready, next_thread);
 
             pthread_mutex_lock(&mutex_logger);
             log_trace(logger, "Thread(%d), added to Program(%d)'s ready list", next_thread->tid, program->pid);
@@ -853,7 +860,10 @@ void* generate_metrics(void* arg){
 }
 
 char* generate_thread_metrics(){
-    char* metrics = "Thread metrics:\n";
+    char* metrics = string_new();
+    string_append(&metrics, "Thread metrics:\n");
+    char* pid = string_itoa(list_size(asking_for_thread));
+    string_append(&metrics, pid);
     return metrics;
 }
 
@@ -1225,6 +1235,8 @@ void free_join_blocks(t_thread* thread, t_program* program){
             t_block* block = (t_block*)_block;
             if(block->block_type == JOIN){
                 t_join_block* join_block = (t_join_block*)block->block_structure;
+
+                //TID y PID del hilo bloqueante
                 PID pid = join_block->blocking_thread->pid;
                 TID tid = join_block->blocking_thread->tid;
 
