@@ -25,7 +25,7 @@ void suse_init(){
 }
 
 void start_log(){
-    logger = log_create("../libSuse.log", "libSuse", 1, LOG_LEVEL_TRACE);
+    logger = log_create("../libSuse.log", "libSuse", 1, LOG_LEVEL_INFO);
 }
 
 //--LISTO

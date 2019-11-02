@@ -36,7 +36,7 @@ int main() {
 
 //--LISTO
 void start_log(){
-    logger = log_create("../suse.log", "suse", 1, LOG_LEVEL_TRACE);
+    logger = log_create("../suse.log", "suse", 1, LOG_LEVEL_INFO);
 }
 
 void initialize_structures(){
