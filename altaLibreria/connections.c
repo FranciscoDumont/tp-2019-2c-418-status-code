@@ -170,38 +170,38 @@ void* server_client(void* _params){
 
     //casteo los parametros porque a pthread hay que pasarle un puntero a void
     t_thread_client* params = (t_thread_client* ) _params;
-     MessageHeader* header = malloc(sizeof(MessageHeader));
+    MessageHeader* header = malloc(sizeof(MessageHeader));
 
     int datos_recividos  = recv(params->socket, header, sizeof(MessageHeader),0);
 
-     while (datos_recividos != -1) {
+    while (datos_recividos != -1) {
 
-            if(datos_recividos == 0){
-                //si devuelve 0 es porque se corto la conexion
-                params->lost_connection(params->socket,params->client_ip, params->connection_port);
-                close(params->socket);
-                break;
+        if(datos_recividos == 0){
+            //si devuelve 0 es porque se corto la conexion
+            params->lost_connection(params->socket,params->client_ip, params->connection_port);
+            close(params->socket);
+            break;
 
-            }else {
+        }else {
 
-                params->incoming_message(params->socket, params->client_ip, params->connection_port, header);
+            params->incoming_message(params->socket, params->client_ip, params->connection_port, header);
 
-            }
+        }
 
-         datos_recividos  = recv(params->socket, header, sizeof(MessageHeader),0);
-     }
+        datos_recividos  = recv(params->socket, header, sizeof(MessageHeader),0);
+    }
 
-     //Libero la memoria que pedi
-     free(header);
-     free(params->client_ip);
-     free(params);
+    //Libero la memoria que pedi
+    free(header);
+    free(params->client_ip);
+    free(params);
 
 }
 
 int start_multithread_server(int socket,
-                 void (*new_connection)(int fd, char *ip, int port),
-                 void (*lost_connection)(int fd, char *ip, int port),
-                 void (*incoming_message)(int fd, char *ip, int port, MessageHeader *header)) {
+                             void (*new_connection)(int fd, char *ip, int port),
+                             void (*lost_connection)(int fd, char *ip, int port),
+                             void (*incoming_message)(int fd, char *ip, int port, MessageHeader *header)) {
 
     int addrlen, new_socket, i, bytesread, sd;
     struct sockaddr_in address;
@@ -388,7 +388,7 @@ void add_to_package(t_paquete *paquete, void *valor, int tamanio) {
 
 int send_package(t_paquete *paquete, int socket_cliente) {
     int bytes = paquete->header->data_size + 2 * sizeof(int);
-    void *a_enviar = serializar_paquete(paquete, bytes);
+    void *a_enviar = serialize_package(paquete, bytes);
 
     int sent;
 
