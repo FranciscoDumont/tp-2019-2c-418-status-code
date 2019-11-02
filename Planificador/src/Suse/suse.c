@@ -204,7 +204,6 @@ void create_new_program(char* ip, int port, int fd){
     PID pid = fd;
     t_program* new_program = (t_program*)malloc(sizeof(t_program));
     new_program->pid = fd;
-    //new_program->fd = fd;
     new_program->ready = list_create();
     new_program->exec = NULL;
     new_program->executing = false;
@@ -341,7 +340,6 @@ void suse_schedule_next(int fd, char * ip, int port, t_list* received){
         free(element);
     }
     free_list(received, element_destroyer);
-    //free((void*)pid);
 }
 
 int schedule_next(t_program* program){
@@ -531,7 +529,7 @@ void suse_join(int fd, char * ip, int port, t_list* received){
         free(element);
     }
     free_list(received, element_destroyer);
-    //free((void*)pid);
+
 }
 
 void suse_close(int fd, char * ip, int port, t_list* received){
@@ -589,11 +587,10 @@ void suse_close(int fd, char * ip, int port, t_list* received){
 
         response = 1;
     } else {
+
         //El hilo a cerrar no era el que estaba en ejecucion
         response = -1;
     }
-
-    //free(pid);
 
     //1 para exito, -1 en el caso de error
     create_response_thread(fd, response, SUSE_CLOSE);
@@ -756,8 +753,6 @@ void suse_wait(int fd, char * ip, int port, t_list* received){
     //Existe alguna posibilidad de error?
     response = 1;
 
-    //free(pid);
-
     create_response_thread(fd, response, SUSE_WAIT);
 
     void element_destroyer(void* element){
@@ -815,8 +810,6 @@ void suse_signal(int fd, char * ip, int port, t_list* received){
 
     response = 1;
 
-    //free(pid);
-
     //Existe algun caso de error?
     create_response_thread(fd, response, SUSE_SIGNAL);
 
@@ -850,6 +843,7 @@ void* generate_metrics(void* arg){
     string_append(&metric_to_log, separator);
     char* thread_metrics = generate_thread_metrics();
     string_append(&metric_to_log, thread_metrics);
+    free(thread_metrics);
     string_append(&metric_to_log, separator);
 
     pthread_mutex_lock(&mutex_logger);
@@ -862,8 +856,6 @@ void* generate_metrics(void* arg){
 char* generate_thread_metrics(){
     char* metrics = string_new();
     string_append(&metrics, "Thread metrics:\n");
-    char* pid = string_itoa(list_size(asking_for_thread));
-    string_append(&metrics, pid);
     return metrics;
 }
 
@@ -924,6 +916,7 @@ char* generate_system_metrics(){
     string_append(&metrics, separator);
     char* sm = generate_semaphore_metrics();
     string_append(&metrics, sm);
+    free(sm);
     return metrics;
 }
 
@@ -1108,7 +1101,6 @@ void destroy_thread(t_thread* thread){
     free_list(thread->ready_list, interval_destroyer);
     free_list(thread->exec_list, interval_destroyer);
     free(thread->start_time);
-    //free(thread->pid);
     free(thread);
 }
 
@@ -1195,7 +1187,6 @@ void destroy_program(PID pid){
     }
     void element_destroyer(void* _program){
         t_program* program = (t_program*)_program;
-        //free(program->pid);
         list_destroy(program->ready);
         free(program);
     }
