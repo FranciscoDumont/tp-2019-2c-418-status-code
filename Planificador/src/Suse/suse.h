@@ -192,6 +192,34 @@ char* generate_thread_metrics();
 char* generate_program_metrics();
 
 /**
+ * Genero las metricas de los hilos en NEW de un programa dado
+ * @param program
+ * @return
+ */
+char* new_threads_metrics(t_program* program);
+
+/**
+ * Genero las metricas de los hilos en READY de un programa dado
+ * @param program
+ * @return
+ */
+char* ready_threads_metrics(t_program* program);
+
+/**
+ * Genero las metricas de los hilos en RUN de un programa dado
+ * @param program
+ * @return
+ */
+char* run_threads_metrics(t_program* program);
+
+/**
+ * Genero las metricas de los hilos en BLOCKED de un programa dado
+ * @param program
+ * @return
+ */
+char* blocked_threads_metrics(t_program* program);
+
+/**
  * Genero las metricas del sistema
  * @return char* metricas
  */

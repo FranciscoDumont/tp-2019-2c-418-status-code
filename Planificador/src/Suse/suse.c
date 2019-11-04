@@ -876,22 +876,34 @@ char* generate_program_metrics(){
             string_append(&metrics, "----Threads in NEW: ");
             char* new = string_itoa(threads_in_new(program));
             string_append(&metrics, new);
+            char* new_threads = new_threads_metrics(program);
+            string_append(&metrics, new_threads);
             free(new);
+            free(new_threads);
             string_append(&metrics, separator);
             string_append(&metrics, "----Threads in READY: ");
             char* ready= string_itoa(threads_in_ready(program));
             string_append(&metrics, ready);
+            char* ready_threads = ready_threads_metrics(program);
+            string_append(&metrics, ready_threads);
             free(ready);
+            free(ready_threads);
             string_append(&metrics, separator);
             string_append(&metrics, "----Threads in RUN: ");
             char* run = string_itoa(threads_in_exec(program));
             string_append(&metrics, run);
+            char* run_threads = run_threads_metrics(program);
+            string_append(&metrics, run_threads);
             free(run);
+            free(run_threads);
             string_append(&metrics, separator);
             string_append(&metrics, "----Threads in BLOCKED: ");
             char* blocked = string_itoa(threads_in_blocked(program));
             string_append(&metrics, blocked);
+            char* blocked_threads = blocked_threads_metrics(program);
+            string_append(&metrics, blocked_threads);
             free(blocked);
+            free(blocked_threads);
             string_append(&metrics, separator);
         }
         list_iterate(programs, iterate);
@@ -899,6 +911,53 @@ char* generate_program_metrics(){
         string_append(&metrics, "--No more programs in scheduler\n");
     }
 
+    return metrics;
+}
+
+char* new_threads_metrics(t_program* program){
+
+    char* metrics = string_new();
+    int cant = 0;
+
+    if(list_size(programs) != 0){
+
+        void iterate(void* _thread){
+            t_thread* thread = (t_thread*)_thread;
+            if(thread->pid == program->pid){
+                cant++;
+
+            }
+        }
+        list_iterate(NEW, iterate);
+
+        if(cant == 0){
+            string_append(&metrics, "\n--------No threads in NEW for this program");
+        }
+
+    } else {
+        string_append(&metrics, "\n--------No threads in NEW");
+    }
+
+    return metrics;
+}
+
+char* ready_threads_metrics(t_program* program){
+
+    char* metrics = string_new();
+
+    return metrics;
+}
+
+char* run_threads_metrics(t_program* program){
+
+    char* metrics = string_new();
+
+    return metrics;
+}
+
+char* blocked_threads_metrics(t_program* program){
+
+    char* metrics = string_new();
 
     return metrics;
 }
