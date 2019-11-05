@@ -36,8 +36,18 @@ typedef enum _MessageType {
 	SUSE_WAIT,
 	SUSE_SIGNAL,
 	SUSE_JOIN,
-	SUSE_CLOSE
-	//TODO: Agregar nuestros headers(tipos de mensajes a enviar)
+	SUSE_CLOSE,
+	
+   	//Headers de MUSE
+	MUSE_INIT,
+	MUSE_CLOSE,
+	MUSE_ALLOC,
+	MUSE_FREE,
+	MUSE_GET,
+	MUSE_CPY,
+	MUSE_MAP,
+    	MUSE_SYNC,
+    	MUSE_UNMAP
 
 } MessageType;
 
