@@ -193,10 +193,10 @@ char* generate_program_metrics();
 
 /**
  * Genero las metricas de los hilos en NEW de un programa dado
- * @param program
+ * @param news
  * @return
  */
-char* new_threads_metrics(t_program* program);
+char* new_threads_metrics(t_list* news);
 
 /**
  * Genero las metricas de los hilos en READY de un programa dado
@@ -218,6 +218,13 @@ char* run_threads_metrics(t_program* program);
  * @return
  */
 char* blocked_threads_metrics(t_program* program);
+
+/**
+ * Genero las metricas de los hilos en EXIT de un programa dado
+ * @param exited
+ * @return
+ */
+char* exited_threads_metrics(t_list* exited);
 
 /**
  * Genero las metricas del sistema
@@ -396,6 +403,12 @@ t_list* threads_in_semaphore_block_list(t_program* program);
 int threads_in_exec(t_program* program);
 
 /**
+ * Retorna una lista con los hilos en EXIT de un programa dado
+ * @return
+ */
+t_list* threads_in_exit_list(t_program* program);
+
+/**
  * Destruyo el programa dado junto a todas sus estructuras asociadas
  * @param pid, pid del programa a destruir
  */
@@ -435,12 +448,48 @@ void remove_from_asking_for_thread(t_program* program);
 
 /**
  * Hallo el tiempo de ejecucion total(hasta el momento) para un programa dado
- * @param news
+ * @param exits
  * @param readys
  * @param semaphores
  * @param joins
  * @param exec
  */
-void total_exec_time(t_list* news, t_list* readys, t_list* semaphores, t_list* joins, t_thread* exec);
+struct timespec* total_exec_time(t_list* news, t_list* exits, t_list* readys, t_list* semaphores, t_list* joins, t_thread* exec);
+
+/**
+ * Hallo el tiempo de ejecucion(desde la creacion) de una lista de hilos de un programa dado
+ * @param list
+ * @param elapsed_time
+ */
+void find_exec_time_on_list(t_list* list, struct timespec* elapsed_time);
+
+/**
+ * Hallo el tiempo de ejecucion(desde la creacion) para un hilo dado
+ * @param thread
+ * @param timestamp
+ */
+void find_exec_time(t_thread* thread, struct timespec* timestamp);
+
+/**
+ * Hallo el tiempo de ejecucion(en EXEC) de una lista de hilos de un programa dado
+ * @param list
+ * @param elapsed_time
+ */
+void find_runtime_on_list(t_list* list, struct timespec* elapsed_time);
+
+/**
+ * Hallo el tiempo de ejecucion(en EXEC) para la lista de ejecucion de un programa dado
+ * @param exec_list
+ * @param timestamp
+ */
+void find_runtime(t_list* exec_list, struct timespec* timestamp);
+
+/**
+ * Hallo la diferencia de tiempo entre dos timespecs
+ * @param start
+ * @param end
+ * @param diff
+ */
+void time_diff(struct timespec* start, struct timespec* end, struct timespec* diff);
 
 #endif //SUSE_SUSE_H

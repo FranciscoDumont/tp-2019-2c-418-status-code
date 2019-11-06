@@ -872,9 +872,9 @@ char* generate_program_metrics(){
             t_list* ready_list = program->ready;
             t_list* semaphore_blocked_list = threads_in_semaphore_block_list(program);
             t_list* join_blocked_list = threads_in_join_block_list(program);
+            t_list* exit_list = threads_in_exit_list(program);
 
-            total_exec_time(new_list, ready_list, semaphore_blocked_list, join_blocked_list, program->exec);
-            //TODO:Hallar hallar la suma del tiempo de ejecucion
+            struct timespec* elapsed_time = total_exec_time(new_list, exit_list, ready_list, semaphore_blocked_list, join_blocked_list, program->exec);
 
             char* separator = "\n";
             string_append(&metrics, "--Program: ");
@@ -882,14 +882,16 @@ char* generate_program_metrics(){
             string_append(&metrics, pid);
             free(pid);
             string_append(&metrics, separator);
+
             string_append(&metrics, "----Threads in NEW: ");
             char* new = string_itoa(list_size(new_list));
             string_append(&metrics, new);
-            char* new_threads = new_threads_metrics(program);
+            char* new_threads = new_threads_metrics(new_list);
             string_append(&metrics, new_threads);
             free(new);
             free(new_threads);
             string_append(&metrics, separator);
+
             string_append(&metrics, "----Threads in READY: ");
             char* ready= string_itoa(list_size(ready_list));
             string_append(&metrics, ready);
@@ -898,6 +900,7 @@ char* generate_program_metrics(){
             free(ready);
             free(ready_threads);
             string_append(&metrics, separator);
+
             string_append(&metrics, "----Threads in RUN: ");
             char* run = string_itoa(threads_in_exec(program));
             string_append(&metrics, run);
@@ -906,6 +909,7 @@ char* generate_program_metrics(){
             free(run);
             free(run_threads);
             string_append(&metrics, separator);
+
             string_append(&metrics, "----Threads in BLOCKED: ");
             char* blocked = string_itoa(list_size(semaphore_blocked_list) + list_size(join_blocked_list));
             string_append(&metrics, blocked);
@@ -915,9 +919,19 @@ char* generate_program_metrics(){
             free(blocked_threads);
             string_append(&metrics, separator);
 
+            string_append(&metrics, "----Threads in EXIT: ");
+            char* exited = string_itoa(list_size(exit_list));
+            string_append(&metrics, exited);
+            char* exited_threads = exited_threads_metrics(exit_list);
+            string_append(&metrics, exited_threads);
+            free(exited);
+            free(exited_threads);
+            string_append(&metrics, separator);
+
             list_destroy(new_list);
             list_destroy(semaphore_blocked_list);
             list_destroy(join_blocked_list);
+            list_destroy(exit_list);
         }
         list_iterate(programs, iterate);
     } else {
@@ -927,11 +941,12 @@ char* generate_program_metrics(){
     return metrics;
 }
 
-char* new_threads_metrics(t_program* program){
+char* new_threads_metrics(t_list* news){
 
     char* metrics = string_new();
     int cant = 0;
 
+    /**
     if(list_size(programs) != 0){
 
         void iterate(void* _thread){
@@ -950,7 +965,7 @@ char* new_threads_metrics(t_program* program){
     } else {
         string_append(&metrics, "\n--------No threads in NEW");
     }
-
+    */
     return metrics;
 }
 
@@ -969,6 +984,13 @@ char* run_threads_metrics(t_program* program){
 }
 
 char* blocked_threads_metrics(t_program* program){
+
+    char* metrics = string_new();
+
+    return metrics;
+}
+
+char* exited_threads_metrics(t_list* exited){
 
     char* metrics = string_new();
 
@@ -1268,6 +1290,14 @@ int threads_in_exec(t_program* program){
     return 0;
 }
 
+t_list* threads_in_exit_list(t_program* program){
+    bool condition(void* _thread){
+        t_thread* thread = (t_thread*)_thread;
+        return program->pid == thread->pid;
+    }
+    return list_filter(EXIT, condition);
+}
+
 void destroy_program(PID pid){
 
     bool condition(void* _program){
@@ -1372,6 +1402,95 @@ void remove_from_asking_for_thread(t_program* program){
     list_remove_by_condition(asking_for_thread, condition);
 }
 
-void total_exec_time(t_list* news, t_list* readys, t_list* semaphores, t_list* joins, t_thread* exec){
+struct timespec* total_exec_time(t_list* news, t_list* exits, t_list* readys, t_list* semaphores, t_list* joins, t_thread* exec){
 
+    struct timespec* elapsed_time = malloc(sizeof(struct timespec));
+    elapsed_time->tv_nsec = 0;
+    elapsed_time->tv_sec = 0;
+
+    if(news != NULL){
+
+        find_exec_time_on_list(exits, elapsed_time);
+    }
+
+    if(exits != NULL){
+
+        find_exec_time_on_list(exits, elapsed_time);
+    }
+
+    if(readys != NULL){
+
+        find_exec_time_on_list(readys, elapsed_time);
+    }
+
+    if(semaphores != NULL){
+
+        find_exec_time_on_list(semaphores, elapsed_time);
+    }
+
+    if(joins != NULL) {
+
+        find_exec_time_on_list(joins, elapsed_time);
+    }
+
+    if(exec != NULL){
+
+        find_exec_time(exec, elapsed_time);
+    }
+    printf("%lld.%.9ld", (long long)elapsed_time->tv_sec, elapsed_time->tv_nsec);
+}
+
+void find_exec_time_on_list(t_list* list, struct timespec* elapsed_time){
+    void iterate(void* _thread){
+        t_thread* thread = (t_thread*)_thread;
+        find_exec_time(thread, elapsed_time);
+    }
+    list_iterate(list, iterate);
+}
+
+void find_exec_time(t_thread* thread, struct timespec* elapsed_time){
+
+    struct timespec* end = malloc(sizeof(struct timespec*));
+    *end = get_time();
+    struct timespec* start = thread->start_time;
+
+    time_diff(start, end, elapsed_time);
+
+    free(end);
+}
+
+void find_runtime_on_list(t_list* list, struct timespec* elapsed_time){
+    void iterate(void* _thread){
+        t_thread* thread = (t_thread*)_thread;
+        if(list_size(thread->exec_list) > 0){
+            find_runtime(thread->exec_list, elapsed_time);
+        }
+    }
+    list_iterate(list, iterate);
+}
+
+void find_runtime(t_list* exec_list, struct timespec* elapsed_time){
+
+    void adder(void* _interval){
+        t_interval* interval = (t_interval*)_interval;
+
+        struct timespec* start = interval->start_time;
+        struct timespec* end = interval->end_time;
+
+        time_diff(start, end, elapsed_time);
+    }
+    list_iterate(exec_list, adder);
+}
+
+void time_diff(struct timespec* start, struct timespec* end, struct timespec* diff){
+    if ((end->tv_nsec - start->tv_nsec) < 0)
+    {
+        diff->tv_sec += (end->tv_sec - start->tv_sec - 1);
+        diff->tv_nsec += (end->tv_nsec - start->tv_nsec + 1000000000);
+    }
+    else
+    {
+        diff->tv_sec += (end->tv_sec - start->tv_sec);
+        diff->tv_nsec += (end->tv_nsec - start->tv_nsec);
+    }
 }
