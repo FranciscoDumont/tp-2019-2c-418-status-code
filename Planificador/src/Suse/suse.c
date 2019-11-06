@@ -36,7 +36,7 @@ int main() {
 
 //--LISTO
 void start_log(){
-    logger = log_create("../suse.log", "suse", 1, LOG_LEVEL_INFO);
+    logger = log_create("../suse.log", "suse", 1, LOG_LEVEL_TRACE);
 }
 
 void initialize_structures(){
@@ -866,7 +866,16 @@ char* generate_program_metrics(){
 
     if(list_size(programs) != 0){
         void iterate(void* _program){
+
             t_program* program = (t_program*)_program;
+            t_list* new_list = threads_in_new_list(program);
+            t_list* ready_list = program->ready;
+            t_list* semaphore_blocked_list = threads_in_semaphore_block_list(program);
+            t_list* join_blocked_list = threads_in_join_block_list(program);
+
+            total_exec_time(new_list, ready_list, semaphore_blocked_list, join_blocked_list, program->exec);
+            //TODO:Hallar hallar la suma del tiempo de ejecucion
+
             char* separator = "\n";
             string_append(&metrics, "--Program: ");
             char* pid = string_itoa(program->pid);
@@ -874,7 +883,7 @@ char* generate_program_metrics(){
             free(pid);
             string_append(&metrics, separator);
             string_append(&metrics, "----Threads in NEW: ");
-            char* new = string_itoa(threads_in_new(program));
+            char* new = string_itoa(list_size(new_list));
             string_append(&metrics, new);
             char* new_threads = new_threads_metrics(program);
             string_append(&metrics, new_threads);
@@ -882,7 +891,7 @@ char* generate_program_metrics(){
             free(new_threads);
             string_append(&metrics, separator);
             string_append(&metrics, "----Threads in READY: ");
-            char* ready= string_itoa(threads_in_ready(program));
+            char* ready= string_itoa(list_size(ready_list));
             string_append(&metrics, ready);
             char* ready_threads = ready_threads_metrics(program);
             string_append(&metrics, ready_threads);
@@ -898,13 +907,17 @@ char* generate_program_metrics(){
             free(run_threads);
             string_append(&metrics, separator);
             string_append(&metrics, "----Threads in BLOCKED: ");
-            char* blocked = string_itoa(threads_in_blocked(program));
+            char* blocked = string_itoa(list_size(semaphore_blocked_list) + list_size(join_blocked_list));
             string_append(&metrics, blocked);
             char* blocked_threads = blocked_threads_metrics(program);
             string_append(&metrics, blocked_threads);
             free(blocked);
             free(blocked_threads);
             string_append(&metrics, separator);
+
+            list_destroy(new_list);
+            list_destroy(semaphore_blocked_list);
+            list_destroy(join_blocked_list);
         }
         list_iterate(programs, iterate);
     } else {
@@ -1084,7 +1097,7 @@ t_thread* find_thread(t_program* program, TID tid){
             //Busco el hilo en NEW
             thread = (t_thread*)list_find(NEW, tid_pid_thread_finder);
 
-            //TODO:verificar que no sea NULL y si lo es, buscar en la lista de BLOCKED
+            //TODO:verificar que no sea NULL y si lo es, buscar en la lista de BLOCKED, es necesario(?)
         }
     }
 
@@ -1168,11 +1181,18 @@ bool no_more_threads(t_program* program){
 }
 
 int threads_in_new(t_program* program){
+    t_list* list = threads_in_new_list(program);
+    int size = list_size(list);
+    list_destroy(list);
+    return size;
+}
+
+t_list* threads_in_new_list(t_program* program){
     bool condition(void* _thread){
         t_thread* thread = (t_thread*)_thread;
         return program->pid == thread->pid;
     }
-    return list_count_satisfying(NEW, condition);
+    return list_filter(NEW, condition);
 }
 
 int threads_in_ready(t_program* program){
@@ -1184,51 +1204,61 @@ int threads_in_blocked(t_program* program){
 }
 
 int threads_in_join_block(t_program* program){
-    bool condition(void* _block){
+    t_list* list = threads_in_join_block_list(program);
+    int size = list_size(list);
+    list_destroy(list);
+    return size;
+}
+
+t_list* threads_in_join_block_list(t_program* program){
+
+    t_list* list = list_create();
+
+    void condition(void* _block){
         t_block* block = (t_block*)_block;
 
         if(block->block_type == JOIN){
             t_join_block* join_block = (t_join_block*)(block->block_structure);
             t_thread* blocked_thread = join_block->blocked_thread;
-            return blocked_thread->pid == program->pid;
-        } else {
-            return false;
+            if(blocked_thread->pid == program->pid){
+                list_add(list, (void*)blocked_thread);
+            }
         }
-
     }
-    return list_count_satisfying(BLOCKED, condition);
+    list_iterate(BLOCKED, condition);
+
+    return list;
 }
 
 int threads_in_semaphore_block(t_program* program){
 
-    void* seedB = malloc(sizeof(int));
-    *((int*)seedB) = 0;
+    t_list* list = threads_in_semaphore_block_list(program);
+    int size = list_size(list);
+    list_destroy(list);
+    return size;
+}
 
-    void* seedB_plus_grade(void* _seedB, void* _block) {
+t_list* threads_in_semaphore_block_list(t_program* program){
+    t_list* list = list_create();
+
+    void condition(void* _block){
         t_block* block = (t_block*)_block;
         if(block->block_type == SEMAPHORE){
 
             t_semaphore_block* s_block = (t_semaphore_block*)block->block_structure;
             t_semaphore* semaphore = s_block->semaphore;
 
-            bool condition(void* _thread){
+            void condition2(void* _thread){
                 t_thread* thread = (t_thread*)_thread;
-                return thread->pid == program->pid;
+                if(thread->pid == program->pid){
+                    list_add(list, (void*)thread);
+                }
             }
-            *((int*) _seedB) = list_count_satisfying(semaphore->blocked_threads, condition);
-
-        } else {
-            *((int*) _seedB) = 0;
+            list_iterate(semaphore->blocked_threads, condition2);
         }
-
-        return _seedB;
     }
-
-    void* blocked_grade_ptr = list_fold(BLOCKED, seedB, &seedB_plus_grade);
-    int blocked_grade = *((int*)blocked_grade_ptr);
-    free(blocked_grade_ptr);
-
-    return blocked_grade;
+    list_iterate(BLOCKED, condition);
+    return list;
 }
 
 int threads_in_exec(t_program* program){
@@ -1340,4 +1370,8 @@ void remove_from_asking_for_thread(t_program* program){
         return ((t_program*)_program)->pid == program->pid;
     }
     list_remove_by_condition(asking_for_thread, condition);
+}
+
+void total_exec_time(t_list* news, t_list* readys, t_list* semaphores, t_list* joins, t_thread* exec){
+
 }

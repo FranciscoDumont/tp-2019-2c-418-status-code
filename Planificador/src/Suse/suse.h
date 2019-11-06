@@ -340,6 +340,13 @@ bool no_more_threads(t_program* program);
 int threads_in_new(t_program* program);
 
 /**
+ * Retorna una lista con los hilos en new de un programa dado, destruir despues de usar
+ * @param program
+ * @return
+ */
+t_list* threads_in_new_list(t_program* program);
+
+/**
  * Retorna la cantidad de hilos en el estado READY de un programa especifico
  * @param program
  * @return int, cant de hilos en READY
@@ -361,11 +368,25 @@ int threads_in_blocked(t_program* program);
 int threads_in_join_block(t_program* program);
 
 /**
+ * Retorno la lista de los hilos bloqueados por un join
+ * @param program
+ * @return
+ */
+t_list* threads_in_join_block_list(t_program* program);
+
+/**
  * Retorna la cantidad de hilos en semaphore_block de un programa especifico
  * @param program
  * @return
  */
 int threads_in_semaphore_block(t_program* program);
+
+/**
+ * Retorno la lista de los hilos bloqueados por un semaphore
+ * @param program
+ * @return
+ */
+t_list* threads_in_semaphore_block_list(t_program* program);
 
 /**
  * Retorna la cantidad de hilos en el estado EXEC de un programa especifico
@@ -411,5 +432,15 @@ bool is_in_asking_for_thread(t_program* program);
  * Remuevo un programa de la lista de asking_for_thread
  */
 void remove_from_asking_for_thread(t_program* program);
+
+/**
+ * Hallo el tiempo de ejecucion total(hasta el momento) para un programa dado
+ * @param news
+ * @param readys
+ * @param semaphores
+ * @param joins
+ * @param exec
+ */
+void total_exec_time(t_list* news, t_list* readys, t_list* semaphores, t_list* joins, t_thread* exec);
 
 #endif //SUSE_SUSE_H
