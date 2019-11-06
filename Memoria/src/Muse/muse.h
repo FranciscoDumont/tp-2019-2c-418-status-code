@@ -26,7 +26,7 @@ t_list* PROCESS_TABLE;
 int CANTIDAD_PAGINAS_ACTUALES;
 int LIMITE_PAGINAS;
 int MAPA_MEMORIA_SIZE;
-int* MAPA_MEMORIA;
+t_bitarray* MAPA_MEMORIA;
 
 typedef struct {
     int pid;
@@ -90,4 +90,5 @@ void* mp_escribir_metadata(void* espacio_libre, uint32_t tam, int esta_libre);
 int mp_buscar_frame_libre();
 
 process_t* buscar_proceso(int id_proceso);
+char* mapa_memoria_to_string();
 #endif //TP_2019_2C_418_STATUS_CODE_MUSE_H

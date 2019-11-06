@@ -8,8 +8,13 @@ int main() {
 
     CANTIDAD_PAGINAS_ACTUALES = 0;
 	LIMITE_PAGINAS = config.memory_size / config.page_size;
-	MAPA_MEMORIA_SIZE = LIMITE_PAGINAS;
 	MAPA_MEMORIA = calloc(LIMITE_PAGINAS, sizeof(int));
+	MAPA_MEMORIA_SIZE = ceil((double) LIMITE_PAGINAS / 8);
+	char bitarray[MAPA_MEMORIA_SIZE];
+	MAPA_MEMORIA = bitarray_create_with_mode(bitarray, sizeof(bitarray), LSB_FIRST);
+	for(int indice = 0; indice < MAPA_MEMORIA_SIZE*8; indice++){
+	    bitarray_clean_bit(MAPA_MEMORIA, indice);
+	}
 
     MAIN_MEMORY = malloc(config.memory_size);
 
@@ -206,7 +211,7 @@ int muse_init(int id, char *ip, int puerto) {
 
     // Loggeo el valor del id que recibi
     log_info(logger, "El fd que recibo de libMuse es: %d", id);
-    log_info(logger, "El ip que recibo de libMuse es: %d", ip);
+    log_info(logger, "El ip que recibo de libMuse es: %s", ip);
     log_info(logger, "El puerto que recibo de libMuse es: %d", puerto);
 
     process_t* nuevo_proceso = crear_proceso(id);
@@ -239,7 +244,8 @@ uint32_t muse_alloc(uint32_t tam, int id_proceso) {
     void* espacio_libre = MAIN_MEMORY + config.page_size * frame_libre;
     mp_escribir_metadata(espacio_libre, tam, false);
     mp_escribir_metadata(espacio_libre + tam, (uint32_t)paginas_necesarias-tam, true);
-    MAPA_MEMORIA[frame_libre] = 1;
+    bitarray_set_bit(MAPA_MEMORIA, frame_libre);
+    printf("\nBITARRAY = %s", mapa_memoria_to_string());
 
     return -1;
 }
@@ -310,7 +316,7 @@ int mp_buscar_frame_libre(){
 	int nro_frame = -1; // Si no encuentra un frame libre va a devolver -1
 	bool esta_todo_ok = false;
 	for (i = 0; i<MAPA_MEMORIA_SIZE; ++i){
-	    if (MAPA_MEMORIA[i] == 0){
+	    if (! bitarray_test_bit(MAPA_MEMORIA, i)){
 	        nro_frame = i;
             break; //si el lugar está libre salgo del for
 	    }
@@ -321,11 +327,11 @@ int mp_buscar_frame_libre(){
 
 char* mapa_memoria_to_string(){
 	char* resultado = string_new();
-	string_append(&resultado, string_itoa(MAPA_MEMORIA_SIZE));
+	string_append(&resultado, string_itoa(MAPA_MEMORIA_SIZE*8));
 	string_append(&resultado, " [");
 	int i;
-	for(i=0; i<MAPA_MEMORIA_SIZE; i++){
-		string_append(&resultado, string_itoa(MAPA_MEMORIA[i]));
+	for(i=0; i<(MAPA_MEMORIA->size*8); i++){
+		string_append(&resultado, string_itoa(bitarray_test_bit(MAPA_MEMORIA, i)));
 		string_append(&resultado, "|");
 	}
 	string_append(&resultado, "]");
@@ -344,4 +350,3 @@ process_t* buscar_proceso(int id_proceso){
     return proceso_encontrado;
     // esta funcion esta bien aca xd
 }
-
