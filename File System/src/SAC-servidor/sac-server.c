@@ -2,30 +2,7 @@
 // Created by utnso on 28/10/19.
 //
 #include "sac-server.h"
-
-
-//sac_server_config* read_config(){
-//    sac_server_config* config;
-//    t_log* logger;
-//
-//    config = malloc(sizeof(sac_server_config));
-//
-//    logger = log_create("../sac_server.log", "sac-server", 1, LOG_LEVEL_TRACE);
-//
-//
-//    t_config* config_file = config_create("../sac_server.config");
-//    config->listen_port = config_get_int_value(config_file, "LISTEN_PORT");
-//    config->ip = config_get_string_value(config_file, "IP");
-//
-//    log_trace(logger,
-//              "Config file read: LISTEN_PORT: %d, IP: %s",
-//              config->listen_port,
-//              config->ip
-//    );
-//    config_destroy(config_file);
-//
-//    return config;
-//}
+#include "funciones.h"
 
 void serverFunction(){
 
