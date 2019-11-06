@@ -91,4 +91,7 @@ int mp_buscar_frame_libre();
 
 process_t* buscar_proceso(int id_proceso);
 char* mapa_memoria_to_string();
+void* moverse_virtual(segment_t* el_segmento, int tam);
+
+
 #endif //TP_2019_2C_418_STATUS_CODE_MUSE_H

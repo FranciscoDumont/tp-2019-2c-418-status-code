@@ -21,9 +21,9 @@ int main() {
     int respuesta = muse_init(114, "localhost", 5003);
     log_info(logger, "El resultado de muse_init es: %d\n\n", respuesta);
 
-    muse_alloc(88);
-    muse_alloc(88);
-    muse_alloc(88);
+    muse_alloc(10);
+    muse_alloc(16);
+    muse_alloc(150);
     uint32_t respuesta_alloc = muse_alloc(88);
     log_info(logger, "El resultado de muse_alloc es: %d\n\n", respuesta_alloc);
 

@@ -100,6 +100,10 @@ uint32_t muse_alloc(uint32_t tam) {
     receive_header(server_socket, buffer_header);
     t_list *respuesta_list = receive_package(server_socket, buffer_header);
     uint32_t rta = *((uint32_t *) list_get(respuesta_list, 0));
+    free(tam_aux);
+    free_package(package);
+    free(buffer_header);
+    list_destroy_and_destroy_elements(respuesta_list, element_destroyer);
     return rta;
 }
 

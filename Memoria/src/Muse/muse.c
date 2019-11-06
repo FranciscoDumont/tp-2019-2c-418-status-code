@@ -8,7 +8,6 @@ int main() {
 
     CANTIDAD_PAGINAS_ACTUALES = 0;
 	LIMITE_PAGINAS = config.memory_size / config.page_size;
-	MAPA_MEMORIA = calloc(LIMITE_PAGINAS, sizeof(int));
 	MAPA_MEMORIA_SIZE = ceil((double) LIMITE_PAGINAS / 8);
 	char bitarray[MAPA_MEMORIA_SIZE];
 	MAPA_MEMORIA = bitarray_create_with_mode(bitarray, sizeof(bitarray), LSB_FIRST);
@@ -19,7 +18,6 @@ int main() {
     MAIN_MEMORY = malloc(config.memory_size);
 
 	log_info(logger, "Se pueden almacenar %d páginas", LIMITE_PAGINAS);
-
 
     pthread_t server_thread;
     pthread_create(&server_thread, NULL, server_function, NULL);
@@ -228,24 +226,38 @@ void muse_close() {
 
 uint32_t muse_alloc(uint32_t tam, int id_proceso) {
     // Veo cuantas paginas necesito
-    int paginas_necesarias = (int) ceil((double) tam/config.page_size);
-    log_info(logger, "Paginas necesarias: %d", paginas_necesarias);
+    int paginas_necesarias;
 
     process_t* el_proceso = buscar_proceso(id_proceso);
 
-    // Si el proceso ya tiene segmentos veo de asignarlo ahi
-    //  xd
-    // Si no tiene segmentos creo uno nuevo
-    int frame_libre = mp_buscar_frame_libre();
-    page_t* nueva_pagina = crear_pagina(frame_libre, true, false, false); //todo ver si estan bien los bits esos
+    //Analizaremos segmento a segmento de Heap,
+    // verificando si alguno de los Headers de metadata se encuentra con el valor free para incorporar el malloc.
+    paginas_necesarias = (int) ceil((double)(tam + 1*sizeof(heap_metadata))/config.page_size);
+
+    // En caso de no encontrarlo, buscaremos si hay algún segmento de Heap que se pueda extender.
+
+    // Por último, en caso de no poder extender un segmento, deberá crear otro nuevo.
+
     segment_t* nuevo_segmento = crear_segmento(false);
-    list_add(nuevo_segmento->pages, nueva_pagina);
+    paginas_necesarias = (int) ceil((double)(tam + 2*sizeof(heap_metadata))/config.page_size);
+    log_info(logger, "Paginas necesarias: %d", paginas_necesarias);
+    // Reservo los frames necesarios de la memoria principal
+    for(int i = 0; i<paginas_necesarias; i++){
+        int frame_libre = mp_buscar_frame_libre();
+        bitarray_set_bit(MAPA_MEMORIA, frame_libre);
+        page_t* nueva_pagina = crear_pagina(frame_libre, true, false, false);
+        list_add(nuevo_segmento->pages, nueva_pagina);
+    }
+    // Tengo el segmento con la lista de paginas creada,
+    // ahora cargo los metadata en los lugares correspondientes de la MP
+    page_t* primera_pagina = list_get(nuevo_segmento->pages, 0);
+    void* posicion_primer_metadata = MAIN_MEMORY + config.page_size * primera_pagina->frame;
+    mp_escribir_metadata(posicion_primer_metadata, tam, false);
+    void* posicion_segundo_metadata = moverse_virtual(nuevo_segmento, tam + sizeof(heap_metadata));
+    mp_escribir_metadata(posicion_segundo_metadata, (uint32_t)(paginas_necesarias*config.page_size)-tam, true);
     list_add(el_proceso->segments, nuevo_segmento);
-    void* espacio_libre = MAIN_MEMORY + config.page_size * frame_libre;
-    mp_escribir_metadata(espacio_libre, tam, false);
-    mp_escribir_metadata(espacio_libre + tam, (uint32_t)paginas_necesarias-tam, true);
-    bitarray_set_bit(MAPA_MEMORIA, frame_libre);
-    printf("\nBITARRAY = %s", mapa_memoria_to_string());
+
+//    log_info(logger, mapa_memoria_to_string());
 
     return -1;
 }
@@ -349,4 +361,12 @@ process_t* buscar_proceso(int id_proceso){
     process_t* proceso_encontrado = list_find(PROCESS_TABLE, key_search);
     return proceso_encontrado;
     // esta funcion esta bien aca xd
+}
+
+
+void* moverse_virtual(segment_t* el_segmento, int tam){
+    int numero_pagina = tam / config.page_size;
+    int offset = tam % config.page_size;
+    page_t* la_pagina = list_get(el_segmento->pages, numero_pagina);
+    return MAIN_MEMORY + (config.page_size * la_pagina->frame) + offset;
 }
