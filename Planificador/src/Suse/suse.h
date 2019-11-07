@@ -460,15 +460,17 @@ struct timespec* total_exec_time(t_list* news, t_list* exits, t_list* readys, t_
  * Hallo el tiempo de ejecucion(desde la creacion) de una lista de hilos de un programa dado
  * @param list
  * @param elapsed_time
+ * @param end
  */
-void find_exec_time_on_list(t_list* list, struct timespec* elapsed_time);
+void find_exec_time_on_list(t_list* list, struct timespec* elapsed_time, struct timespec* end);
 
 /**
  * Hallo el tiempo de ejecucion(desde la creacion) para un hilo dado
  * @param thread
- * @param timestamp
+ * @param elapsed_time
+ * @param end
  */
-void find_exec_time(t_thread* thread, struct timespec* timestamp);
+void find_exec_time(t_thread* thread, struct timespec* elapsed_time, struct timespec* end);
 
 /**
  * Hallo el tiempo de ejecucion(en EXEC) de una lista de hilos de un programa dado

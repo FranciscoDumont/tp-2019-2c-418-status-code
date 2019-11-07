@@ -230,8 +230,7 @@ void suse_create(int fd, char * ip, int port, t_list* received){
     new_thread->exec_list = list_create();
     new_thread->ready_list = list_create();
     new_thread->start_time = malloc(sizeof(struct timespec));
-    *(new_thread->start_time) = get_time(); //Esto esta bien? o tendria que ser desde que se empieza a ejecutar o desde
-    // que entra al programa?
+    *(new_thread->start_time) = get_time();
 
     //Busco al programa en el que se agregaria el nuevo hilo
     t_program* program = find_program(pid);
@@ -874,7 +873,8 @@ char* generate_program_metrics(){
             t_list* join_blocked_list = threads_in_join_block_list(program);
             t_list* exit_list = threads_in_exit_list(program);
 
-            struct timespec* elapsed_time = total_exec_time(new_list, exit_list, ready_list, semaphore_blocked_list, join_blocked_list, program->exec);
+            struct timespec* elapsed_time = total_exec_time(new_list, exit_list, ready_list, semaphore_blocked_list,
+                    join_blocked_list, program->exec);
 
             char* separator = "\n";
             string_append(&metrics, "--Program: ");
@@ -1404,59 +1404,60 @@ void remove_from_asking_for_thread(t_program* program){
 
 struct timespec* total_exec_time(t_list* news, t_list* exits, t_list* readys, t_list* semaphores, t_list* joins, t_thread* exec){
 
+    struct timespec* end = malloc(sizeof(struct timespec*));
+    *end = get_time();
+
     struct timespec* elapsed_time = malloc(sizeof(struct timespec));
     elapsed_time->tv_nsec = 0;
     elapsed_time->tv_sec = 0;
 
     if(news != NULL){
 
-        find_exec_time_on_list(exits, elapsed_time);
+        find_exec_time_on_list(news, elapsed_time, end);
     }
 
     if(exits != NULL){
 
-        find_exec_time_on_list(exits, elapsed_time);
+        find_exec_time_on_list(exits, elapsed_time, end);
     }
 
     if(readys != NULL){
 
-        find_exec_time_on_list(readys, elapsed_time);
+        find_exec_time_on_list(readys, elapsed_time, end);
     }
 
     if(semaphores != NULL){
 
-        find_exec_time_on_list(semaphores, elapsed_time);
+        find_exec_time_on_list(semaphores, elapsed_time, end);
     }
 
     if(joins != NULL) {
 
-        find_exec_time_on_list(joins, elapsed_time);
+        find_exec_time_on_list(joins, elapsed_time, end);
     }
 
     if(exec != NULL){
 
-        find_exec_time(exec, elapsed_time);
+        find_exec_time(exec, elapsed_time, end);
     }
+
+    free(end);
     printf("%lld.%.9ld", (long long)elapsed_time->tv_sec, elapsed_time->tv_nsec);
 }
 
-void find_exec_time_on_list(t_list* list, struct timespec* elapsed_time){
+void find_exec_time_on_list(t_list* list, struct timespec* elapsed_time, struct timespec* end){
     void iterate(void* _thread){
         t_thread* thread = (t_thread*)_thread;
-        find_exec_time(thread, elapsed_time);
+        find_exec_time(thread, elapsed_time, end);
     }
     list_iterate(list, iterate);
 }
 
-void find_exec_time(t_thread* thread, struct timespec* elapsed_time){
+void find_exec_time(t_thread* thread, struct timespec* elapsed_time, struct timespec* end){
 
-    struct timespec* end = malloc(sizeof(struct timespec*));
-    *end = get_time();
     struct timespec* start = thread->start_time;
 
     time_diff(start, end, elapsed_time);
-
-    free(end);
 }
 
 void find_runtime_on_list(t_list* list, struct timespec* elapsed_time){
