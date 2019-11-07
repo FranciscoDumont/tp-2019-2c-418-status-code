@@ -4,6 +4,9 @@
 
 #ifndef TP_2019_2C_418_STATUS_CODE_OPERACIONES_H_
 #define TP_2019_2C_418_STATUS_CODE_OPERACIONES_H_
+
+#include <commons/collections/list.h>
+#include <fcntl.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <fuse.h>
@@ -12,8 +15,8 @@
 #include <errno.h>
 #include <altaLibreria/connections.h>
 #include <altaLibreria/structures.h>
-//#include <fcntl.h>
-//#include <unistd.h>
+#include "fuse_example.h"
+
 
 #define PORT 8080
 
@@ -43,14 +46,28 @@
  */
 #define CUSTOM_FUSE_OPT_KEY(t, p, v) { t, offsetof(struct t_runtime_options, p), v }
 
-int sac_open(char* ruta );
+int sac_getattr(const char *ruta, struct stat *stbuf);
+
+int sac_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi);
+
+int sac_open(const char *ruta, struct fuse_file_info *fi);
+
 int sac_mkdir(char* ruta);
-int sac_mknode(char* ruta);
-int sac_read(char* ruta );
-int sac_write(char* ruta );
-int sac_getattr(char* ruta );
 
+int sac_mknod(char* ruta);
 
+int sac_read(const char *ruta, char *buf, size_t size, off_t offset, struct fuse_file_info *fi);
 
+int sac_write (const char * ruta, const char * algo, size_t size, off_t off_set, struct fuse_file_info * nosequees);
+
+static struct fuse_operations hello_oper = {
+        .getattr = sac_getattr,
+        .open = sac_open,
+        .read = sac_read,
+        .readdir = sac_readdir,
+        .mknod = sac_mknod,
+        .mkdir = sac_mkdir,
+        .write = sac_write
+};
 
 #endif //TP_2019_2C_418_STATUS_CODE_OPERACIONES_H
