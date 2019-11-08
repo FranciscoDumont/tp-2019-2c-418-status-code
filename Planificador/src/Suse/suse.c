@@ -1484,14 +1484,40 @@ void find_runtime(t_list* exec_list, struct timespec* elapsed_time){
 }
 
 void time_diff(struct timespec* start, struct timespec* end, struct timespec* diff){
+
+    //Verifico si la resta entre final y principio da negativa
     if ((end->tv_nsec - start->tv_nsec) < 0)
     {
-        diff->tv_sec += (end->tv_sec - start->tv_sec - 1);
-        diff->tv_nsec += (end->tv_nsec - start->tv_nsec + 1000000000);
+        //Verifico si la suma entre el acumulado y el nuevo tiempo es mayor a 999999999ns (casi un segundo), me excedi del limite
+        if((diff->tv_nsec + (end->tv_nsec - start->tv_nsec + 1000000000)) > 999999999 ||
+           (diff->tv_nsec + (end->tv_nsec - start->tv_nsec + 1000000000)) < 0){
+
+            //This is ok
+            diff->tv_sec += (end->tv_sec - start->tv_sec);
+            //TODO:check if this is ok
+            diff->tv_nsec += (end->tv_nsec - start->tv_nsec - 1000000000);
+        } else {
+
+            //This is ok
+            diff->tv_sec += (end->tv_sec - start->tv_sec - 1);
+            diff->tv_nsec += (end->tv_nsec - start->tv_nsec + 1000000000);
+        }
     }
     else
     {
-        diff->tv_sec += (end->tv_sec - start->tv_sec);
-        diff->tv_nsec += (end->tv_nsec - start->tv_nsec);
+        //Verifico si la suma entre el acumulado y el nuevo tiempo es mayor a 999999999ns (casi un segundo), me excedi del limite
+        if((diff->tv_nsec + (end->tv_nsec - start->tv_nsec)) > 999999999 ||
+            (diff->tv_nsec + (end->tv_nsec - start->tv_nsec)) < 0){
+
+            //This is ok
+            diff->tv_sec += (end->tv_sec - start->tv_sec + 1);
+            //TODO:check if this is ok
+            diff->tv_nsec += (end->tv_nsec - start->tv_nsec - 1000000000);
+        } else {
+
+            //This is ok
+            diff->tv_sec += (end->tv_sec - start->tv_sec);
+            diff->tv_nsec += (end->tv_nsec - start->tv_nsec);
+        }
     }
 }

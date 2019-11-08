@@ -488,9 +488,9 @@ void find_runtime(t_list* exec_list, struct timespec* timestamp);
 
 /**
  * Hallo la diferencia de tiempo entre dos timespecs
- * @param start
- * @param end
- * @param diff
+ * @param start, timespec en el que inicio la medicion
+ * @param end, tiemspec en el que termino la medicion
+ * @param diff, timespec en el que se almacena la diferencia entre ambos
  */
 void time_diff(struct timespec* start, struct timespec* end, struct timespec* diff);
 
