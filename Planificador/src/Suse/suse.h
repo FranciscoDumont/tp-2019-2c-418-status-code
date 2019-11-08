@@ -457,6 +457,13 @@ void remove_from_asking_for_thread(t_program* program);
 struct timespec* total_exec_time(t_list* news, t_list* exits, t_list* readys, t_list* semaphores, t_list* joins, t_thread* exec);
 
 /**
+ * Conversion de un timespec a microsegundos;
+ * @param timespec
+ * @return
+ */
+long timespec_to_us(struct timespec* timespec);
+
+/**
  * Hallo el tiempo de ejecucion(desde la creacion) de una lista de hilos de un programa dado
  * @param list
  * @param elapsed_time

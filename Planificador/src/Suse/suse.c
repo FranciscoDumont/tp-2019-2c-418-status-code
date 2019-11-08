@@ -1411,11 +1411,13 @@ struct timespec* total_exec_time(t_list* news, t_list* exits, t_list* readys, t_
     elapsed_time->tv_nsec = 0;
     elapsed_time->tv_sec = 0;
 
+    //TODO:check if this is needed
     if(news != NULL){
 
         find_exec_time_on_list(news, elapsed_time, end);
     }
 
+    //TODO:check if this is needed
     if(exits != NULL){
 
         find_exec_time_on_list(exits, elapsed_time, end);
@@ -1442,7 +1444,14 @@ struct timespec* total_exec_time(t_list* news, t_list* exits, t_list* readys, t_
     }
 
     free(end);
-    printf("%lld.%.9ld", (long long)elapsed_time->tv_sec, elapsed_time->tv_nsec);
+
+    printf("%ldus en ejecucion\n", timespec_to_us(elapsed_time));
+
+    //printf("%lld.%.9ld", (long long)elapsed_time->tv_sec, elapsed_time->tv_nsec);
+}
+
+long timespec_to_us(struct timespec* timespec){
+    return (timespec->tv_sec * 1000000) + (timespec->tv_nsec / 1000);
 }
 
 void find_exec_time_on_list(t_list* list, struct timespec* elapsed_time, struct timespec* end){
