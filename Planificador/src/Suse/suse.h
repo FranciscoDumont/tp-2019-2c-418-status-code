@@ -180,12 +180,6 @@ void* metrics_function(void* arg);
 void* generate_metrics(void* arg);
 
 /**
- * Genero las metricas de cada hilo
- * @return char* metricas
- */
-char* generate_thread_metrics();
-
-/**
  * Genero las metricas de cada programa
  * @return char* metricas
  */
@@ -193,38 +187,59 @@ char* generate_program_metrics();
 
 /**
  * Genero las metricas de los hilos en NEW de un programa dado
- * @param news
- * @return
+ * @param news, lista de hilos en new
+ * @param elapsed_time, tiempo de ejecucion total del programa
+ * @param end, tiempo que se toma como final(se genera al inicio de la metrica)
+ * @return metrica de los hilos
  */
-char* new_threads_metrics(t_list* news);
+char* new_threads_metrics(t_list* news, long elapsed_time, struct timespec* end);
 
 /**
  * Genero las metricas de los hilos en READY de un programa dado
- * @param program
- * @return
+ * @param readys, lista de hilos en ready
+ * @param elapsed_time, tiempo de ejecucion total del programa
+ * @param end, tiempo que se toma como final(se genera al inicio de la metrica)
+ * @return metrica de los hilos
  */
-char* ready_threads_metrics(t_program* program);
+char* ready_threads_metrics(t_list* readys, long elapsed_time, struct timespec* end);
 
 /**
- * Genero las metricas de los hilos en RUN de un programa dado
- * @param program
- * @return
+ * Genero las metricas del hilo en RUN de un programa dado
+ * @param thread, hilo en RUN
+ * @param elapsed_time, tiempo de ejecucion total del programa
+ * @param end, tiempo que se toma como final(se genera al inicio de la metrica)
+ * @return metrica del hilo
  */
-char* run_threads_metrics(t_program* program);
+char* run_thread_metrics(t_thread* thread, long elapsed_time, struct timespec* end);
 
 /**
- * Genero las metricas de los hilos en BLOCKED de un programa dado
- * @param program
- * @return
+ * Genero las metricas del hilo en RUN de un programa dado
+ * @param semaphores, hilos bloqueados por semaforos
+ * @param joins, hilos bloqueados por joins
+ * @param elapsed_time, tiempo de ejecucion total del programa
+ * @param end, tiempo que se toma como final(se genera al inicio de la metrica)
+ * @return metrica de los hilos
  */
-char* blocked_threads_metrics(t_program* program);
+char* blocked_threads_metrics(t_list* semaphores, t_list* joins, long elapsed_time, struct timespec* end);
+
+/**
+ * Genero las metricas de los hilos bloqueados por un semaforo o un join
+ * This name is shit
+ * @param blocks, hilos bloqueados por alguna razon
+ * @param elapsed_time, tiempo de ejecucion total del programa
+ * @param end, tiempo que se toma como final(se genera al inicio de la metrica)
+ * @return metrica de los hilos
+ */
+char* blocked_thread_metric(t_list* blocks, long elapsed_time, struct timespec* end);
 
 /**
  * Genero las metricas de los hilos en EXIT de un programa dado
- * @param exited
- * @return
+ * @param exits, hilos finalizados de un programa
+ * @param elapsed_time, tiempo de ejecucion total del programa
+ * @param end, tiempo que se toma como final(se genera al inicio de la metrica)
+ * @return metrica de los hilos
  */
-char* exited_threads_metrics(t_list* exited);
+char* exited_threads_metrics(t_list* exits, long elapsed_time, struct timespec* end);
 
 /**
  * Genero las metricas del sistema
@@ -454,7 +469,7 @@ void remove_from_asking_for_thread(t_program* program);
  * @param joins
  * @param exec
  */
-struct timespec* total_exec_time(t_list* news, t_list* exits, t_list* readys, t_list* semaphores, t_list* joins, t_thread* exec);
+long total_exec_time(t_list* news, t_list* exits, t_list* readys, t_list* semaphores, t_list* joins, t_thread* exec, struct timespec* end);
 
 /**
  * Conversion de un timespec a microsegundos;
@@ -465,9 +480,9 @@ long timespec_to_us(struct timespec* timespec);
 
 /**
  * Hallo el tiempo de ejecucion(desde la creacion) de una lista de hilos de un programa dado
- * @param list
- * @param elapsed_time
- * @param end
+ * @param list, lista de hilos
+ * @param elapsed_time, timespec sobre el que se ira acumulando las distintas diferencias
+ * @param end, tiempo final sobre el que se hara la medicion
  */
 void find_exec_time_on_list(t_list* list, struct timespec* elapsed_time, struct timespec* end);
 
@@ -480,18 +495,18 @@ void find_exec_time_on_list(t_list* list, struct timespec* elapsed_time, struct 
 void find_exec_time(t_thread* thread, struct timespec* elapsed_time, struct timespec* end);
 
 /**
- * Hallo el tiempo de ejecucion(en EXEC) de una lista de hilos de un programa dado
- * @param list
- * @param elapsed_time
- */
-void find_runtime_on_list(t_list* list, struct timespec* elapsed_time);
-
-/**
- * Hallo el tiempo de ejecucion(en EXEC) para la lista de ejecucion de un programa dado
+ * Hallo el tiempo de ejecucion(en EXEC) para la lista de ejecuciones de un programa dado
  * @param exec_list
  * @param timestamp
  */
-void find_runtime(t_list* exec_list, struct timespec* timestamp);
+void find_run_time(t_list* exec_list, struct timespec* timestamp);
+
+/**
+ * Hallo el tiempo de espera(en READY) para la lista de esperas de un programa dado
+ * @param exec_list
+ * @param timestamp
+ */
+void find_wait_time(t_list* exec_list, struct timespec* timestamp);
 
 /**
  * Hallo la diferencia de tiempo entre dos timespecs

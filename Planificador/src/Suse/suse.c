@@ -830,7 +830,7 @@ void* metrics_function(void* arg){
 
 void* generate_metrics(void* arg){
     char* metric_to_log = string_new();
-    string_append(&metric_to_log, "---------METRICS:\n");
+    string_append(&metric_to_log, "\n");
     char* separator = "\n";
     char* system_metrics = generate_system_metrics();
     string_append(&metric_to_log, system_metrics);
@@ -840,10 +840,6 @@ void* generate_metrics(void* arg){
     string_append(&metric_to_log, program_metrics);
     free(program_metrics);
     string_append(&metric_to_log, separator);
-    char* thread_metrics = generate_thread_metrics();
-    string_append(&metric_to_log, thread_metrics);
-    free(thread_metrics);
-    string_append(&metric_to_log, separator);
 
     pthread_mutex_lock(&mutex_logger);
     log_info(logger, metric_to_log);
@@ -852,20 +848,18 @@ void* generate_metrics(void* arg){
     free(metric_to_log);
 }
 
-char* generate_thread_metrics(){
-    char* metrics = string_new();
-    string_append(&metrics, "Thread metrics:\n");
-    return metrics;
-}
-
 char* generate_program_metrics(){
 
     char* metrics = string_new();
-    string_append(&metrics, "Program metrics:\n");
+    string_append(&metrics, "PROGRAM METRICS:\n");
+    struct timespec* end = malloc(sizeof(struct timespec*));
+    *end = get_time();
 
+    //Itero la lista de programas
     if(list_size(programs) != 0){
         void iterate(void* _program){
 
+            //Genero una lista con los programas en cada estado
             t_program* program = (t_program*)_program;
             t_list* new_list = threads_in_new_list(program);
             t_list* ready_list = program->ready;
@@ -873,11 +867,11 @@ char* generate_program_metrics(){
             t_list* join_blocked_list = threads_in_join_block_list(program);
             t_list* exit_list = threads_in_exit_list(program);
 
-            struct timespec* elapsed_time = total_exec_time(new_list, exit_list, ready_list, semaphore_blocked_list,
-                    join_blocked_list, program->exec);
+            long elapsed_time = total_exec_time(new_list, exit_list, ready_list, semaphore_blocked_list,
+                    join_blocked_list, program->exec, end);
 
             char* separator = "\n";
-            string_append(&metrics, "--Program: ");
+            string_append(&metrics, "\n--Program: ");
             char* pid = string_itoa(program->pid);
             string_append(&metrics, pid);
             free(pid);
@@ -886,7 +880,7 @@ char* generate_program_metrics(){
             string_append(&metrics, "----Threads in NEW: ");
             char* new = string_itoa(list_size(new_list));
             string_append(&metrics, new);
-            char* new_threads = new_threads_metrics(new_list);
+            char* new_threads = new_threads_metrics(new_list, elapsed_time, end);
             string_append(&metrics, new_threads);
             free(new);
             free(new_threads);
@@ -895,16 +889,16 @@ char* generate_program_metrics(){
             string_append(&metrics, "----Threads in READY: ");
             char* ready= string_itoa(list_size(ready_list));
             string_append(&metrics, ready);
-            char* ready_threads = ready_threads_metrics(program);
+            char* ready_threads = ready_threads_metrics(ready_list, elapsed_time, end);
             string_append(&metrics, ready_threads);
             free(ready);
             free(ready_threads);
             string_append(&metrics, separator);
 
-            string_append(&metrics, "----Threads in RUN: ");
+            string_append(&metrics, "----Thread in RUN: ");
             char* run = string_itoa(threads_in_exec(program));
             string_append(&metrics, run);
-            char* run_threads = run_threads_metrics(program);
+            char* run_threads = run_thread_metrics(program->exec, elapsed_time, end);
             string_append(&metrics, run_threads);
             free(run);
             free(run_threads);
@@ -913,7 +907,7 @@ char* generate_program_metrics(){
             string_append(&metrics, "----Threads in BLOCKED: ");
             char* blocked = string_itoa(list_size(semaphore_blocked_list) + list_size(join_blocked_list));
             string_append(&metrics, blocked);
-            char* blocked_threads = blocked_threads_metrics(program);
+            char* blocked_threads = blocked_threads_metrics(semaphore_blocked_list, join_blocked_list, elapsed_time, end);
             string_append(&metrics, blocked_threads);
             free(blocked);
             free(blocked_threads);
@@ -922,7 +916,7 @@ char* generate_program_metrics(){
             string_append(&metrics, "----Threads in EXIT: ");
             char* exited = string_itoa(list_size(exit_list));
             string_append(&metrics, exited);
-            char* exited_threads = exited_threads_metrics(exit_list);
+            char* exited_threads = exited_threads_metrics(exit_list, elapsed_time, end);
             string_append(&metrics, exited_threads);
             free(exited);
             free(exited_threads);
@@ -935,64 +929,234 @@ char* generate_program_metrics(){
         }
         list_iterate(programs, iterate);
     } else {
-        string_append(&metrics, "--No more programs in scheduler\n");
+        string_append(&metrics, "\n--No more programs in scheduler\n");
     }
 
+    free(end);
     return metrics;
 }
 
-char* new_threads_metrics(t_list* news){
+char* new_threads_metrics(t_list* news, long elapsed_time, struct timespec* end){
 
     char* metrics = string_new();
-    int cant = 0;
 
-    /**
-    if(list_size(programs) != 0){
+    if(list_size(news) != 0){
 
         void iterate(void* _thread){
             t_thread* thread = (t_thread*)_thread;
-            if(thread->pid == program->pid){
-                cant++;
+            struct timespec* time_on_planner = malloc(sizeof(struct timespec));
+            time_on_planner->tv_sec = 0;
+            time_on_planner->tv_nsec = 0;
 
-            }
-        }
-        list_iterate(NEW, iterate);
+            find_exec_time(thread, time_on_planner, end);
 
-        if(cant == 0){
-            string_append(&metrics, "\n--------No threads in NEW for this program");
+            long exec_time = timespec_to_us(time_on_planner)/1000;
+
+            float exec_percent = (timespec_to_us(time_on_planner) / (float)elapsed_time) * 100;
+            string_append(&metrics, string_from_format("\n--------Thread: %d, %ldms in execution, 0ms waiting, 0ms using CPU, %.2f%s of time in execution.", thread->tid, exec_time, exec_percent, "%%"));
+
+            free(time_on_planner);
         }
+        list_iterate(news, iterate);
 
     } else {
-        string_append(&metrics, "\n--------No threads in NEW");
+        string_append(&metrics, "\n--------No threads in NEW for this program.");
     }
-    */
     return metrics;
 }
 
-char* ready_threads_metrics(t_program* program){
+char* ready_threads_metrics(t_list* readys, long elapsed_time, struct timespec* end){
 
     char* metrics = string_new();
+
+    if(list_size(readys) == 0){
+
+        string_append(&metrics, "\n--------No threads in READY for this program.");
+    } else {
+
+        void iterate(void* _thread){
+            t_thread* thread = (t_thread*)_thread;
+
+            struct timespec* time_on_planner = malloc(sizeof(struct timespec));
+            time_on_planner->tv_sec = 0;
+            time_on_planner->tv_nsec = 0;
+
+            struct timespec* time_on_ready = malloc(sizeof(struct timespec));
+            time_on_ready->tv_sec = 0;
+            time_on_ready->tv_nsec = 0;
+
+            struct timespec* time_on_cpu = malloc(sizeof(struct timespec));
+            time_on_cpu->tv_sec = 0;
+            time_on_cpu->tv_nsec = 0;
+
+            t_interval* last_one = (t_interval*)list_get(thread->ready_list, (list_size(thread->ready_list) - 1));
+            *(last_one->end_time) = *(end);
+
+            find_exec_time(thread, time_on_planner, end);
+            find_wait_time(thread->ready_list, time_on_ready);
+            find_run_time(thread->exec_list, time_on_cpu);
+
+            long exec_time = timespec_to_us(time_on_planner)/1000;
+            long wait_time = timespec_to_us(time_on_ready)/1000;
+            long cpu_time = timespec_to_us(time_on_cpu)/1000;
+
+            float exec_percent = (timespec_to_us(time_on_planner) / (float)elapsed_time) * 100;
+            string_append(&metrics, string_from_format("\n--------Thread: %d, %ldms in execution, %ldms waiting, %ldms using CPU, %.2f%s of time in execution.", thread->tid, exec_time, wait_time, cpu_time, exec_percent, "%%"));
+
+            free(time_on_planner);
+            free(time_on_ready);
+            free(time_on_cpu);
+        }
+        list_iterate(readys, iterate);
+    }
 
     return metrics;
 }
 
-char* run_threads_metrics(t_program* program){
+char* run_thread_metrics(t_thread* thread, long elapsed_time, struct timespec* end){
 
     char* metrics = string_new();
+
+    if(thread == NULL){
+
+        string_append(&metrics, "\n--------No thread in EXEC for this program.");
+    } else {
+
+        struct timespec* time_on_planner = malloc(sizeof(struct timespec));
+        time_on_planner->tv_sec = 0;
+        time_on_planner->tv_nsec = 0;
+
+        struct timespec* time_on_ready = malloc(sizeof(struct timespec));
+        time_on_ready->tv_sec = 0;
+        time_on_ready->tv_nsec = 0;
+
+        struct timespec* time_on_cpu = malloc(sizeof(struct timespec));
+        time_on_cpu->tv_sec = 0;
+        time_on_cpu->tv_nsec = 0;
+
+        t_interval* last_one = (t_interval*)list_get(thread->exec_list, (list_size(thread->exec_list) - 1));
+        *(last_one->end_time) = *(end);
+
+        find_exec_time(thread, time_on_planner, end);
+        find_wait_time(thread->ready_list, time_on_ready);
+        find_run_time(thread->exec_list, time_on_cpu);
+
+        long exec_time = timespec_to_us(time_on_planner)/1000;
+        long wait_time = timespec_to_us(time_on_ready)/1000;
+        long cpu_time = timespec_to_us(time_on_cpu)/1000;
+
+        float exec_percent = (timespec_to_us(time_on_planner) / (float)elapsed_time) * 100;
+
+        string_append(&metrics, string_from_format("\n--------Thread: %d, %ldms in execution, %ldms waiting, %ldms using CPU, %.2f%s of time in execution.", thread->tid, exec_time, wait_time, cpu_time, exec_percent, "%%"));
+
+        free(time_on_planner);
+        free(time_on_ready);
+        free(time_on_cpu);
+    }
 
     return metrics;
 }
 
-char* blocked_threads_metrics(t_program* program){
+char* blocked_threads_metrics(t_list* semaphores, t_list* joins, long elapsed_time, struct timespec* end){
 
     char* metrics = string_new();
+    string_append(&metrics, "\n--------Threads blocked by a semaphore:");
+    char* semaphore_blocks = blocked_thread_metric(semaphores, elapsed_time, end);
+    string_append(&metrics, semaphore_blocks);
+    free(semaphore_blocks);
+    string_append(&metrics, "\n--------Threads blocked by a join:");
+    char* join_blocks = blocked_thread_metric(joins, elapsed_time, end);
+    string_append(&metrics, join_blocks);
+    free(join_blocks);
+    return metrics;
+}
+
+char* blocked_thread_metric(t_list* blocks, long elapsed_time, struct timespec* end){
+
+    char* metrics = string_new();
+
+    if(list_size(blocks) == 0){
+
+        string_append(&metrics, "\n----------No blocked threads to show.");
+    } else {
+
+        void iterate(void* _thread){
+            t_thread* thread = (t_thread*)_thread;
+
+            struct timespec* time_on_planner = malloc(sizeof(struct timespec));
+            time_on_planner->tv_sec = 0;
+            time_on_planner->tv_nsec = 0;
+
+            struct timespec* time_on_ready = malloc(sizeof(struct timespec));
+            time_on_ready->tv_sec = 0;
+            time_on_ready->tv_nsec = 0;
+
+            struct timespec* time_on_cpu = malloc(sizeof(struct timespec));
+            time_on_cpu->tv_sec = 0;
+            time_on_cpu->tv_nsec = 0;
+
+            find_exec_time(thread, time_on_planner, end);
+            find_wait_time(thread->ready_list, time_on_ready);
+            find_run_time(thread->exec_list, time_on_cpu);
+
+            long exec_time = timespec_to_us(time_on_planner)/1000;
+            long wait_time = timespec_to_us(time_on_ready)/1000;
+            long cpu_time = timespec_to_us(time_on_cpu)/1000;
+
+            float exec_percent = (timespec_to_us(time_on_planner) / (float)elapsed_time) * 100;
+            string_append(&metrics, string_from_format("\n----------Thread: %d, %ldms in execution, %ldms waiting, %ldms using CPU, %.2f%s of time in execution.", thread->tid, exec_time, wait_time, cpu_time, exec_percent, "%%"));
+
+            free(time_on_planner);
+            free(time_on_ready);
+            free(time_on_cpu);
+        }
+        list_iterate(blocks, iterate);
+    }
 
     return metrics;
 }
 
-char* exited_threads_metrics(t_list* exited){
+char* exited_threads_metrics(t_list* exits, long elapsed_time, struct timespec* end){
 
     char* metrics = string_new();
+
+    if(list_size(exits) == 0){
+
+        string_append(&metrics, "\n----------No threads in EXIT to show.");
+    } else {
+
+        void iterate(void* _thread){
+            t_thread* thread = (t_thread*)_thread;
+
+            struct timespec* time_on_planner = malloc(sizeof(struct timespec));
+            time_on_planner->tv_sec = 0;
+            time_on_planner->tv_nsec = 0;
+
+            struct timespec* time_on_ready = malloc(sizeof(struct timespec));
+            time_on_ready->tv_sec = 0;
+            time_on_ready->tv_nsec = 0;
+
+            struct timespec* time_on_cpu = malloc(sizeof(struct timespec));
+            time_on_cpu->tv_sec = 0;
+            time_on_cpu->tv_nsec = 0;
+
+            find_exec_time(thread, time_on_planner, end);
+            find_wait_time(thread->ready_list, time_on_ready);
+            find_run_time(thread->exec_list, time_on_cpu);
+
+            long exec_time = timespec_to_us(time_on_planner)/1000;
+            long wait_time = timespec_to_us(time_on_ready)/1000;
+            long cpu_time = timespec_to_us(time_on_cpu)/1000;
+
+            float exec_percent = (timespec_to_us(time_on_planner) / (float)elapsed_time) * 100;
+            string_append(&metrics, string_from_format("\n----------Thread: %d, %ldms in execution, %ldms waiting, %ldms using CPU, %.2f%s of time in execution.", thread->tid, exec_time, wait_time, cpu_time, exec_percent, "%%"));
+
+            free(time_on_planner);
+            free(time_on_ready);
+            free(time_on_cpu);
+        }
+        list_iterate(exits, iterate);
+    }
 
     return metrics;
 }
@@ -1000,9 +1164,9 @@ char* exited_threads_metrics(t_list* exited){
 char* generate_system_metrics(){
     char* metrics = string_new();
     char* separator = "\n";
-    char* sml = "\nSystem metrics:\n";
+    char* sml = "\nSYSTEM METRICS:\n";
     string_append(&metrics, sml);
-    char* mgl = "--Multiprogramming grade: ";
+    char* mgl = "\n--Multiprogramming grade: ";
     string_append(&metrics, mgl);
     char* mg = string_itoa(multiprogramming_grade());
     string_append(&metrics, mg);
@@ -1402,10 +1566,8 @@ void remove_from_asking_for_thread(t_program* program){
     list_remove_by_condition(asking_for_thread, condition);
 }
 
-struct timespec* total_exec_time(t_list* news, t_list* exits, t_list* readys, t_list* semaphores, t_list* joins, t_thread* exec){
-
-    struct timespec* end = malloc(sizeof(struct timespec*));
-    *end = get_time();
+long total_exec_time(t_list* news, t_list* exits, t_list* readys, t_list* semaphores, t_list* joins,
+        t_thread* exec, struct timespec* end){
 
     struct timespec* elapsed_time = malloc(sizeof(struct timespec));
     elapsed_time->tv_nsec = 0;
@@ -1443,7 +1605,11 @@ struct timespec* total_exec_time(t_list* news, t_list* exits, t_list* readys, t_
         find_exec_time(exec, elapsed_time, end);
     }
 
-    free(end);
+    long us = timespec_to_us(elapsed_time);
+
+    free(elapsed_time);
+
+    return us;
 
     printf("%ldus en ejecucion\n", timespec_to_us(elapsed_time));
 
@@ -1469,17 +1635,20 @@ void find_exec_time(t_thread* thread, struct timespec* elapsed_time, struct time
     time_diff(start, end, elapsed_time);
 }
 
-void find_runtime_on_list(t_list* list, struct timespec* elapsed_time){
-    void iterate(void* _thread){
-        t_thread* thread = (t_thread*)_thread;
-        if(list_size(thread->exec_list) > 0){
-            find_runtime(thread->exec_list, elapsed_time);
-        }
+void find_run_time(t_list* exec_list, struct timespec* elapsed_time){
+
+    void adder(void* _interval){
+        t_interval* interval = (t_interval*)_interval;
+
+        struct timespec* start = interval->start_time;
+        struct timespec* end = interval->end_time;
+
+        time_diff(start, end, elapsed_time);
     }
-    list_iterate(list, iterate);
+    list_iterate(exec_list, adder);
 }
 
-void find_runtime(t_list* exec_list, struct timespec* elapsed_time){
+void find_wait_time(t_list* exec_list, struct timespec* elapsed_time){
 
     void adder(void* _interval){
         t_interval* interval = (t_interval*)_interval;
@@ -1498,16 +1667,12 @@ void time_diff(struct timespec* start, struct timespec* end, struct timespec* di
     if ((end->tv_nsec - start->tv_nsec) < 0)
     {
         //Verifico si la suma entre el acumulado y el nuevo tiempo es mayor a 999999999ns (casi un segundo), me excedi del limite
-        if((diff->tv_nsec + (end->tv_nsec - start->tv_nsec + 1000000000)) > 999999999 ||
-           (diff->tv_nsec + (end->tv_nsec - start->tv_nsec + 1000000000)) < 0){
+        if((diff->tv_nsec + (end->tv_nsec - start->tv_nsec + 1000000000)) > 999999999){
 
-            //This is ok
             diff->tv_sec += (end->tv_sec - start->tv_sec);
-            //TODO:check if this is ok
-            diff->tv_nsec += (end->tv_nsec - start->tv_nsec - 1000000000);
+            diff->tv_nsec += (end->tv_nsec - start->tv_nsec);
         } else {
 
-            //This is ok
             diff->tv_sec += (end->tv_sec - start->tv_sec - 1);
             diff->tv_nsec += (end->tv_nsec - start->tv_nsec + 1000000000);
         }
@@ -1515,16 +1680,12 @@ void time_diff(struct timespec* start, struct timespec* end, struct timespec* di
     else
     {
         //Verifico si la suma entre el acumulado y el nuevo tiempo es mayor a 999999999ns (casi un segundo), me excedi del limite
-        if((diff->tv_nsec + (end->tv_nsec - start->tv_nsec)) > 999999999 ||
-            (diff->tv_nsec + (end->tv_nsec - start->tv_nsec)) < 0){
+        if((diff->tv_nsec + (end->tv_nsec - start->tv_nsec)) > 999999999){
 
-            //This is ok
             diff->tv_sec += (end->tv_sec - start->tv_sec + 1);
-            //TODO:check if this is ok
             diff->tv_nsec += (end->tv_nsec - start->tv_nsec - 1000000000);
         } else {
 
-            //This is ok
             diff->tv_sec += (end->tv_sec - start->tv_sec);
             diff->tv_nsec += (end->tv_nsec - start->tv_nsec);
         }
