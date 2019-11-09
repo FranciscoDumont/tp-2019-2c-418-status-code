@@ -34,6 +34,8 @@ typedef struct {
 } process_t;
 
 typedef struct {
+    int base;
+    int size;
     bool is_shared;
     t_list* pages;
 } segment_t;
@@ -49,7 +51,8 @@ typedef struct {
 typedef struct {
     uint32_t size;
     bool isFree;
-} heap_metadata;
+} __attribute__((packed))
+heap_metadata;
 
 
 // Configuraciones
@@ -80,7 +83,7 @@ int muse_sync(uint32_t addr, size_t len);
 int muse_unmap(uint32_t dir);
 
 process_t* crear_proceso(int id);
-segment_t* crear_segmento(bool is_shared);
+segment_t* crear_segmento(int base, int size, bool is_shared);
 page_t* crear_pagina(int frame, int presence_bit, int modified_bit, int use);
 
 // Devuelve un puntero a donde termina la estructura

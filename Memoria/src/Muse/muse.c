@@ -238,8 +238,14 @@ uint32_t muse_alloc(uint32_t tam, int id_proceso) {
 
     // Por último, en caso de no poder extender un segmento, deberá crear otro nuevo.
 
-    segment_t* nuevo_segmento = crear_segmento(false);
     paginas_necesarias = (int) ceil((double)(tam + 2*sizeof(heap_metadata))/config.page_size);
+    int segmento_tam = paginas_necesarias * config.page_size;
+    int segmento_base = 0;
+    if (list_size(el_proceso->segments) > 0) { // Si no es el primer segmento, veo cual será la base
+        segment_t* ultimo_segmento = list_get(el_proceso->segments, list_size(el_proceso->segments) - 1);
+        segmento_base = ultimo_segmento->base + ultimo_segmento->size;
+    }
+    segment_t* nuevo_segmento = crear_segmento(segmento_base, segmento_tam, false);
     log_info(logger, "Paginas necesarias: %d", paginas_necesarias);
     // Reservo los frames necesarios de la memoria principal
     for(int i = 0; i<paginas_necesarias; i++){
@@ -295,8 +301,10 @@ process_t* crear_proceso(int id){
 }
 
 
-segment_t* crear_segmento(bool is_shared){
+segment_t* crear_segmento(int base,int size, bool is_shared){
     segment_t* nuevo_segmento = malloc(sizeof(segment_t));
+    nuevo_segmento->base = base;
+    nuevo_segmento->size = size;
     nuevo_segmento->is_shared = is_shared;
     t_list* nueva_lista = list_create();
     nuevo_segmento->pages = nueva_lista;
