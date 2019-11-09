@@ -852,7 +852,7 @@ char* generate_program_metrics(){
 
     char* metrics = string_new();
     string_append(&metrics, "PROGRAM METRICS:\n");
-    struct timespec* end = malloc(sizeof(struct timespec*));
+    struct timespec* end = malloc(sizeof(struct timespec));
     *end = get_time();
 
     //Itero la lista de programas
@@ -953,8 +953,10 @@ char* new_threads_metrics(t_list* news, long elapsed_time, struct timespec* end)
             long exec_time = timespec_to_us(time_on_planner)/1000;
 
             float exec_percent = (timespec_to_us(time_on_planner) / (float)elapsed_time) * 100;
-            string_append(&metrics, string_from_format("\n--------Thread: %d, %ldms in execution, 0ms waiting, 0ms using CPU, %.2f%s of time in execution.", thread->tid, exec_time, exec_percent, "%%"));
+            char* metric = string_from_format("\n--------Thread: %d, %ldms in execution, 0ms waiting, 0ms using CPU, %.2f%s of time in execution.", thread->tid, exec_time, exec_percent, "%%");
+            string_append(&metrics, metric);
 
+            free(metric);
             free(time_on_planner);
         }
         list_iterate(news, iterate);
@@ -1001,8 +1003,10 @@ char* ready_threads_metrics(t_list* readys, long elapsed_time, struct timespec* 
             long cpu_time = timespec_to_us(time_on_cpu)/1000;
 
             float exec_percent = (timespec_to_us(time_on_planner) / (float)elapsed_time) * 100;
-            string_append(&metrics, string_from_format("\n--------Thread: %d, %ldms in execution, %ldms waiting, %ldms using CPU, %.2f%s of time in execution.", thread->tid, exec_time, wait_time, cpu_time, exec_percent, "%%"));
+            char* metric = string_from_format("\n--------Thread: %d, %ldms in execution, %ldms waiting, %ldms using CPU, %.2f%s of time in execution.", thread->tid, exec_time, wait_time, cpu_time, exec_percent, "%%");
+            string_append(&metrics, metric);
 
+            free(metric);
             free(time_on_planner);
             free(time_on_ready);
             free(time_on_cpu);
@@ -1047,8 +1051,10 @@ char* run_thread_metrics(t_thread* thread, long elapsed_time, struct timespec* e
 
         float exec_percent = (timespec_to_us(time_on_planner) / (float)elapsed_time) * 100;
 
-        string_append(&metrics, string_from_format("\n--------Thread: %d, %ldms in execution, %ldms waiting, %ldms using CPU, %.2f%s of time in execution.", thread->tid, exec_time, wait_time, cpu_time, exec_percent, "%%"));
+        char* metric = string_from_format("\n--------Thread: %d, %ldms in execution, %ldms waiting, %ldms using CPU, %.2f%s of time in execution.", thread->tid, exec_time, wait_time, cpu_time, exec_percent, "%%");
+        string_append(&metrics, metric);
 
+        free(metric);
         free(time_on_planner);
         free(time_on_ready);
         free(time_on_cpu);
@@ -1104,8 +1110,10 @@ char* blocked_thread_metric(t_list* blocks, long elapsed_time, struct timespec* 
             long cpu_time = timespec_to_us(time_on_cpu)/1000;
 
             float exec_percent = (timespec_to_us(time_on_planner) / (float)elapsed_time) * 100;
-            string_append(&metrics, string_from_format("\n----------Thread: %d, %ldms in execution, %ldms waiting, %ldms using CPU, %.2f%s of time in execution.", thread->tid, exec_time, wait_time, cpu_time, exec_percent, "%%"));
+            char* metric = string_from_format("\n----------Thread: %d, %ldms in execution, %ldms waiting, %ldms using CPU, %.2f%s of time in execution.", thread->tid, exec_time, wait_time, cpu_time, exec_percent, "%%");
+            string_append(&metrics, metric);
 
+            free(metric);
             free(time_on_planner);
             free(time_on_ready);
             free(time_on_cpu);
@@ -1149,8 +1157,10 @@ char* exited_threads_metrics(t_list* exits, long elapsed_time, struct timespec* 
             long cpu_time = timespec_to_us(time_on_cpu)/1000;
 
             float exec_percent = (timespec_to_us(time_on_planner) / (float)elapsed_time) * 100;
-            string_append(&metrics, string_from_format("\n----------Thread: %d, %ldms in execution, %ldms waiting, %ldms using CPU, %.2f%s of time in execution.", thread->tid, exec_time, wait_time, cpu_time, exec_percent, "%%"));
+            char* metric = string_from_format("\n----------Thread: %d, %ldms in execution, %ldms waiting, %ldms using CPU, %.2f%s of time in execution.", thread->tid, exec_time, wait_time, cpu_time, exec_percent, "%%");
+            string_append(&metrics, metric);
 
+            free(metric);
             free(time_on_planner);
             free(time_on_ready);
             free(time_on_cpu);
