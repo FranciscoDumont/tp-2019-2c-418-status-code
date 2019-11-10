@@ -1,0 +1,3 @@
+/home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-cli/cliente/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-cli/cliente/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-cli/cliente/cmake-build-debug/CMakeFiles/cliente.dir

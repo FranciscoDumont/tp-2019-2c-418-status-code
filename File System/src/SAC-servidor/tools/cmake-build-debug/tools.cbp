@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="tools"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-servidor/tools/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j2 -f &quot;/home/utnso/Documentos/tp-2019-2c-418-status-code/File\ System/src/SAC-servidor/tools/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j2 -f &quot;/home/utnso/Documentos/tp-2019-2c-418-status-code/File\ System/src/SAC-servidor/tools/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j2 -f &quot;/home/utnso/Documentos/tp-2019-2c-418-status-code/File\ System/src/SAC-servidor/tools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j2 -f &quot;/home/utnso/Documentos/tp-2019-2c-418-status-code/File\ System/src/SAC-servidor/tools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-servidor/tools/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j2 -f &quot;/home/utnso/Documentos/tp-2019-2c-418-status-code/File\ System/src/SAC-servidor/tools/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j2 -f &quot;/home/utnso/Documentos/tp-2019-2c-418-status-code/File\ System/src/SAC-servidor/tools/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j2 -f &quot;/home/utnso/Documentos/tp-2019-2c-418-status-code/File\ System/src/SAC-servidor/tools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j2 -f &quot;/home/utnso/Documentos/tp-2019-2c-418-status-code/File\ System/src/SAC-servidor/tools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-servidor/tools/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j2 -f &quot;/home/utnso/Documentos/tp-2019-2c-418-status-code/File\ System/src/SAC-servidor/tools/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j2 -f &quot;/home/utnso/Documentos/tp-2019-2c-418-status-code/File\ System/src/SAC-servidor/tools/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j2 -f &quot;/home/utnso/Documentos/tp-2019-2c-418-status-code/File\ System/src/SAC-servidor/tools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j2 -f &quot;/home/utnso/Documentos/tp-2019-2c-418-status-code/File\ System/src/SAC-servidor/tools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="tools">
+				<Option output="/home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-servidor/tools/cmake-build-debug/tools" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-servidor/tools/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/usr/include/altaLibreria"/>
+					<Add directory="/usr/include/commons"/>
+					<Add directory="/home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-servidor/tools/include"/>
+					<Add directory="/usr/lib/gcc/i686-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/i686-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/i386-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j2 -f &quot;/home/utnso/Documentos/tp-2019-2c-418-status-code/File\ System/src/SAC-servidor/tools/cmake-build-debug/Makefile&quot;  VERBOSE=1 tools"/>
+					<CompileFile command="/usr/bin/make -j2 -f &quot;/home/utnso/Documentos/tp-2019-2c-418-status-code/File\ System/src/SAC-servidor/tools/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j2 -f &quot;/home/utnso/Documentos/tp-2019-2c-418-status-code/File\ System/src/SAC-servidor/tools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j2 -f &quot;/home/utnso/Documentos/tp-2019-2c-418-status-code/File\ System/src/SAC-servidor/tools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="tools/fast">
+				<Option output="/home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-servidor/tools/cmake-build-debug/tools" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-servidor/tools/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/usr/include/altaLibreria"/>
+					<Add directory="/usr/include/commons"/>
+					<Add directory="/home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-servidor/tools/include"/>
+					<Add directory="/usr/lib/gcc/i686-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/i686-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/i386-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j2 -f &quot;/home/utnso/Documentos/tp-2019-2c-418-status-code/File\ System/src/SAC-servidor/tools/cmake-build-debug/Makefile&quot;  VERBOSE=1 tools/fast"/>
+					<CompileFile command="/usr/bin/make -j2 -f &quot;/home/utnso/Documentos/tp-2019-2c-418-status-code/File\ System/src/SAC-servidor/tools/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j2 -f &quot;/home/utnso/Documentos/tp-2019-2c-418-status-code/File\ System/src/SAC-servidor/tools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j2 -f &quot;/home/utnso/Documentos/tp-2019-2c-418-status-code/File\ System/src/SAC-servidor/tools/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-servidor/tools/tools.c">
+			<Option target="tools"/>
+		</Unit>
+		<Unit filename="/home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-servidor/tools/tools.h">
+			<Option target="tools"/>
+		</Unit>
+		<Unit filename="/home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-servidor/tools/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-cli/cliente/cliente.c
+cliente.h
+/home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-cli/cliente/cliente.h
+
+/home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-cli/cliente/cliente.h
+altaLibreria/connections.h
+-
+altaLibreria/structures.h
+-
+commons/collections/list.h
+-
+string.h
+-
+
+/usr/include/commons/string.h
+stdbool.h
+-
+stdarg.h
+-
+

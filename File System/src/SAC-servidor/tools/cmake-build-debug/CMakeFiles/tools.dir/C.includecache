@@ -1,0 +1,54 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-servidor/tools/tools.c
+tools.h
+/home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-servidor/tools/tools.h
+
+/home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-servidor/tools/tools.h
+stdio.h
+-
+string.h
+-
+sys/mman.h
+-
+unistd.h
+-
+stdint.h
+-
+fcntl.h
+-
+stdio.h
+-
+stdlib.h
+-
+commons/bitarray.h
+-
+commons/log.h
+-
+commons/collections/list.h
+-
+memory.h
+-
+
+/usr/include/commons/memory.h
+stdlib.h
+-
+stdio.h
+-
+ctype.h
+-
+string.h
+/usr/include/commons/string.h
+
+/usr/include/commons/string.h
+stdbool.h
+-
+stdarg.h
+-
+

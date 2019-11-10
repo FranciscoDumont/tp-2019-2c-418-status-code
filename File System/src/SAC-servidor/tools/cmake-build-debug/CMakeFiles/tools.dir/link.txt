@@ -1,0 +1,1 @@
+/usr/bin/cc -g   CMakeFiles/tools.dir/tools.c.o  -o tools /usr/lib/libaltaLibreria.so -lcommons 

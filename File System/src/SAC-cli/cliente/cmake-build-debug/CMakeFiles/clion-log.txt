@@ -1,0 +1,4 @@
+/home/utnso/Documentos/cmake-3.15.3/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" "/home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-cli/cliente"
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/utnso/Documentos/tp-2019-2c-418-status-code/File System/src/SAC-cli/cliente
