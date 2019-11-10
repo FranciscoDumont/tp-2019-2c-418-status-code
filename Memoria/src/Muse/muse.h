@@ -7,6 +7,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <math.h>
+#include <signal.h>
 #include <commons/log.h>
 #include <commons/string.h>
 #include <commons/config.h>
@@ -96,7 +97,9 @@ int mp_buscar_frame_libre();
 
 process_t* buscar_proceso(int id_proceso);
 char* mapa_memoria_to_string();
-void* moverse_virtual(segment_t* el_segmento, int tam);
+void* traducir_virtual(segment_t* un_segmento, uint32_t direccion_virtual);
+void* puntero_a_mp_del_primer_metadata_libre(segment_t* un_segmento);
+int segmento_ocupado_size(segment_t* un_segmento);
 
 
 #endif //TP_2019_2C_418_STATUS_CODE_MUSE_H

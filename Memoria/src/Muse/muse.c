@@ -234,6 +234,27 @@ uint32_t muse_alloc(uint32_t tam, int id_proceso) {
     //Analizaremos segmento a segmento de Heap,
     // verificando si alguno de los Headers de metadata se encuentra con el valor free para incorporar el malloc.
     paginas_necesarias = (int) ceil((double)(tam + 1*sizeof(heap_metadata))/config.page_size);
+    int cantidad_segmentos_en_proceso = list_size(el_proceso->segments);
+    // Por cada segmento busco una metadata libre
+    for(int i=0; i<cantidad_segmentos_en_proceso; i++){
+        segment_t* un_segmento = list_get(el_proceso->segments, i);
+        page_t* primera_pagina = list_get(un_segmento->pages, 0);
+        heap_metadata* una_metadata;
+        void* puntero = puntero_a_mp_del_primer_metadata_libre(un_segmento);
+        if(puntero == NULL){continue;} // Si no hay un metadata libre pasa al sig segmento
+        memcpy(una_metadata, puntero, sizeof(heap_metadata));
+
+        if(una_metadata->size >= tam + 1*sizeof(heap_metadata)){
+            int usado = segmento_ocupado_size(un_segmento);
+            uint32_t dir_virtual = usado;
+            // Si la metadata está libre y hay espacio: guardo ahí
+            mp_escribir_metadata(puntero, tam, false); //sobreescrivo el actual metadata
+            // Ahora tengogo que escribir el metadata que va a lo ultimo
+            void* posicion_segundo_metadata = puntero + sizeof(heap_metadata) + tam;
+            mp_escribir_metadata(posicion_segundo_metadata, (uint32_t)(un_segmento->size)-(usado+sizeof(heap_metadata)+tam), true);
+            return dir_virtual + sizeof(heap_metadata);
+        }
+    }
 
     // En caso de no encontrarlo, buscaremos si hay algún segmento de Heap que se pueda extender.
 
@@ -243,7 +264,7 @@ uint32_t muse_alloc(uint32_t tam, int id_proceso) {
     int segmento_tam = paginas_necesarias * config.page_size;
     int segmento_base = 0;
     if (list_size(el_proceso->segments) > 0) { // Si no es el primer segmento, veo cual será la base
-        segment_t* ultimo_segmento = list_get(el_proceso->segments, list_size(el_proceso->segments) - 1);
+        segment_t* ultimo_segmento = list_get(el_proceso->segments, cantidad_segmentos_en_proceso - 1);
         segmento_base = ultimo_segmento->base + ultimo_segmento->size;
     }
     segment_t* nuevo_segmento = crear_segmento(segmento_base, segmento_tam, false);
@@ -260,13 +281,10 @@ uint32_t muse_alloc(uint32_t tam, int id_proceso) {
     page_t* primera_pagina = list_get(nuevo_segmento->pages, 0);
     void* posicion_primer_metadata = MAIN_MEMORY + config.page_size * primera_pagina->frame;
     mp_escribir_metadata(posicion_primer_metadata, tam, false);
-    void* posicion_segundo_metadata = moverse_virtual(nuevo_segmento, tam + sizeof(heap_metadata));
+    void* posicion_segundo_metadata = traducir_virtual(nuevo_segmento, tam + sizeof(heap_metadata));
     mp_escribir_metadata(posicion_segundo_metadata, (uint32_t)(paginas_necesarias*config.page_size)-tam, true);
     list_add(el_proceso->segments, nuevo_segmento);
-
-//    log_info(logger, mapa_memoria_to_string());
-
-    return -1;
+    return nuevo_segmento->base + sizeof(heap_metadata);
 }
 
 void muse_free(uint32_t dir) {
@@ -373,15 +391,56 @@ process_t* buscar_proceso(int id_proceso){
 }
 
 
-void* moverse_virtual(segment_t* el_segmento, int tam){
-    int numero_pagina = tam / config.page_size;
-    int offset = tam % config.page_size;
-    page_t* la_pagina = list_get(el_segmento->pages, numero_pagina);
+void* puntero_a_mp_del_primer_metadata_libre(segment_t* un_segmento){
+    int tamanio_ocupado = segmento_ocupado_size(un_segmento);
+    if(tamanio_ocupado == un_segmento->size){
+        return NULL;
+    }
+
+    return traducir_virtual(un_segmento, tamanio_ocupado);
+}
+
+
+void* traducir_virtual(segment_t* un_segmento, uint32_t direccion_virtual){
+    int numero_pagina = direccion_virtual / config.page_size;
+    int offset = direccion_virtual % config.page_size;
+    page_t* la_pagina = list_get(un_segmento->pages, numero_pagina);
     return MAIN_MEMORY + (config.page_size * la_pagina->frame) + offset;
 }
 
 
-// TESTS //
+
+int segmento_ocupado_size(segment_t* un_segmento){
+    heap_metadata* una_metadata;
+    void* puntero = traducir_virtual(un_segmento, 0);
+    int tamanio = 0;
+
+    while(tamanio < un_segmento->size){
+        memcpy(una_metadata, puntero, sizeof(heap_metadata));
+        if(!una_metadata->isFree){
+            tamanio += sizeof(heap_metadata) + una_metadata->size;
+            puntero = traducir_virtual(un_segmento, tamanio);
+        }else if(una_metadata->size == 0){
+            // Si es free y el size = 0 hago sumo 5
+            tamanio += sizeof(heap_metadata);
+        }
+    }
+    return tamanio;
+}
+
+
+
+
+
+
+/*
+████████╗███████╗███████╗████████╗███████╗
+╚══██╔══╝██╔════╝██╔════╝╚══██╔══╝██╔════╝
+   ██║   █████╗  ███████╗   ██║   ███████╗
+   ██║   ██╔══╝  ╚════██║   ██║   ╚════██║
+   ██║   ███████╗███████║   ██║   ███████║
+   ╚═╝   ╚══════╝╚══════╝   ╚═╝   ╚══════╝
+*/
 
 void tests_memoria(){
     //mem_assert recive mensaje de error y una condicion, si falla el test lo loggea
