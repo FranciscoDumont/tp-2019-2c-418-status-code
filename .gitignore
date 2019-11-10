@@ -1,6 +1,12 @@
 # Prerequisites
 *.d
 
+# bin
+*.bin
+
+#logos
+*.log
+
 # Object files
 *.o
 *.ko
@@ -78,6 +84,6 @@ altaLibreria/build-dir/
 /Ejemplos/servidor/cmake-build-debug/
 /File System/src/SAC-cli/_sac_cli/fuse
 
-/File System/src/SAC-servidor/prueba.bin
+/File System/src/SAC-servidor/tools/disco.bin
 /File System/src/SAC-servidor/cmake-build-debug
 /File System/src/SAC-cli/cmake-build-debug
