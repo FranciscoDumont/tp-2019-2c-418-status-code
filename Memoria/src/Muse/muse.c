@@ -21,6 +21,7 @@ int main() {
 
     pthread_t server_thread;
     pthread_create(&server_thread, NULL, server_function, NULL);
+    tests_memoria();
     pthread_join(server_thread, NULL);
 
 
@@ -377,4 +378,34 @@ void* moverse_virtual(segment_t* el_segmento, int tam){
     int offset = tam % config.page_size;
     page_t* la_pagina = list_get(el_segmento->pages, numero_pagina);
     return MAIN_MEMORY + (config.page_size * la_pagina->frame) + offset;
+}
+
+
+// TESTS //
+
+void tests_memoria(){
+    //mem_assert recive mensaje de error y una condicion, si falla el test lo loggea
+    #define mem_assert(message, test) do { if (!(test)) { log_error(test_logger, message); tests_fail++; } tests_run++; } while (0)
+    t_log * test_logger = log_create("memory_tests.log", "MEM", true, LOG_LEVEL_TRACE);
+    int tests_run = 0;
+    int tests_fail = 0;
+
+    int id = 1;
+    muse_init(id, "localhost", 5003);
+
+    int tmp;
+    tmp = muse_alloc(10, id);
+    mem_assert("Alloc 1", tmp == 5);
+
+    tmp = muse_alloc(16, id);
+    mem_assert("Alloc 2", tmp == 5+10+5);
+
+    tmp = muse_alloc(150, id);
+    mem_assert("Alloc 3", tmp == 5+10+5+16+5);
+
+    tmp = muse_alloc(88, id);
+    mem_assert("Alloc 4", tmp == 5+10+5+16+5+150+5);
+
+    log_warning(test_logger, "Pasaron %d de %d tests", tests_run-tests_fail, tests_run);
+    log_destroy(test_logger);
 }
