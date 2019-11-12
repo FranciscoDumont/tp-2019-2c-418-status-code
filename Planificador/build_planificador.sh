@@ -7,6 +7,7 @@ if [[ $UID != 0  ]]; then
 	exit 1
 fi
 
+sudo apt update
 sudo apt install cmake
 
 cd src/Suse/
