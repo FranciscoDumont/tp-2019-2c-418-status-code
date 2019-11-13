@@ -10,7 +10,6 @@ t_list* asking_for_thread;
 t_list* semaphores;
 
 pthread_mutex_t mutex_logger;
-pthread_mutex_t mutex_programs;
 
 //--LISTO
 int main() {
@@ -41,7 +40,6 @@ void start_log(){
 
 void initialize_structures(){
     pthread_mutex_init(&mutex_logger, NULL);
-    pthread_mutex_init(&mutex_programs, NULL);
 
     config = malloc(sizeof(SUSEConfig));
     programs = list_create();
@@ -138,7 +136,7 @@ void server_function(){
 
     //--Funcion que se ejecuta cuando se conecta un nuevo programa
     void new(int fd, char * ip, int port){
-        create_new_program(ip, port, fd);
+        create_new_program(fd);
     }
 
     //--Funcion que se ejecuta cuando se pierde la conexion con un cliente
@@ -156,32 +154,32 @@ void server_function(){
         switch (headerStruct->type){
             case SUSE_CREATE:
             {
-                suse_create(fd, ip, port, cosas);
+                suse_create(fd, cosas);
                 break;
             }
             case SUSE_SCHEDULE_NEXT:
             {
-                suse_schedule_next(fd, ip, port, cosas);
+                suse_schedule_next(fd, cosas);
                 break;
             }
             case SUSE_JOIN:
             {
-                suse_join(fd, ip, port, cosas);
+                suse_join(fd, cosas);
                 break;
             }
             case SUSE_CLOSE:
             {
-                suse_close(fd, ip, port, cosas);
+                suse_close(fd, cosas);
                 break;
             }
             case SUSE_WAIT:
             {
-                suse_wait(fd, ip, port, cosas);
+                suse_wait(fd, cosas);
                 break;
             }
             case SUSE_SIGNAL:
             {
-                suse_signal(fd, ip, port, cosas);
+                suse_signal(fd, cosas);
                 break;
             }
             default:
@@ -200,7 +198,7 @@ void server_function(){
 }
 
 //--LISTO
-void create_new_program(char* ip, int port, int fd){
+void create_new_program(int fd){
     PID pid = fd;
     t_program* new_program = (t_program*)malloc(sizeof(t_program));
     new_program->pid = fd;
@@ -208,9 +206,7 @@ void create_new_program(char* ip, int port, int fd){
     new_program->exec = NULL;
     new_program->executing = false;
 
-    pthread_mutex_lock(&mutex_programs);
     list_add(programs, (void*)new_program);
-    pthread_mutex_unlock(&mutex_programs);
 
     pthread_mutex_lock(&mutex_logger);
     log_trace(logger, "New program added, PID:%d", pid);
@@ -218,7 +214,7 @@ void create_new_program(char* ip, int port, int fd){
 }
 
 //--LISTO
-void suse_create(int fd, char * ip, int port, t_list* received){
+void suse_create(int fd, t_list* received){
     PID pid = fd;
     int tid = *((int*)list_get(received, 0));
     int return_code;
@@ -315,7 +311,7 @@ void suse_create(int fd, char * ip, int port, t_list* received){
     free_list(received, element_destroyer);
 }
 
-void suse_schedule_next(int fd, char * ip, int port, t_list* received){
+void suse_schedule_next(int fd, t_list* received){
     PID pid = fd;
     t_program* program = find_program(pid);
     int return_tid;
@@ -459,7 +455,7 @@ t_thread* schedule_new_thread(t_program* program){
     return (t_thread*)list_remove(program->ready, 0);
 }
 
-void suse_join(int fd, char * ip, int port, t_list* received){
+void suse_join(int fd, t_list* received){
     PID pid = fd;
     int tid = *((int*)list_get(received, 0));
     t_program* program = find_program(pid);
@@ -531,7 +527,7 @@ void suse_join(int fd, char * ip, int port, t_list* received){
 
 }
 
-void suse_close(int fd, char * ip, int port, t_list* received){
+void suse_close(int fd, t_list* received){
     PID pid = fd;
     int tid = *((int*)list_get(received, 0));
     t_program* program = find_program(pid);
@@ -711,7 +707,7 @@ void assign_thread(t_program* program, t_thread* thread, MessageType header){
     create_response_thread(program->pid, response, header);
 }
 
-void suse_wait(int fd, char * ip, int port, t_list* received){
+void suse_wait(int fd, t_list* received){
 
     int response;
     char* id = (char*)list_get(received, 1);
@@ -760,7 +756,7 @@ void suse_wait(int fd, char * ip, int port, t_list* received){
     free_list(received, element_destroyer);
 }
 
-void suse_signal(int fd, char * ip, int port, t_list* received){
+void suse_signal(int fd, t_list* received){
 
     int response;
     char* id = (char*)list_get(received, 1);
@@ -769,15 +765,10 @@ void suse_signal(int fd, char * ip, int port, t_list* received){
     PID pid = fd;
     int tid = *((int*)list_get(received, 0));
 
-    //Busco al hilo y al programa del mismo que me llamaron a signal
-    t_program* program = find_program(pid);
-    t_thread* thread = find_thread(program, tid);
-
     pthread_mutex_lock(&mutex_logger);
     log_trace(logger, "Thread: %d of program: %d asking for a signal on semaphore: %s", tid, pid, id);
     pthread_mutex_unlock(&mutex_logger);
 
-    //TODO:Verificar si tendria que pasar algo en caso de que el current_value exceda al max_value
     semaphore->current_value++;
 
     //Si el valor actual es mayor al maximo, lo reduzco hasta el valor maximo
