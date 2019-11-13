@@ -1620,10 +1620,6 @@ long total_exec_time(t_list* news, t_list* exits, t_list* readys, t_list* semaph
     free(elapsed_time);
 
     return us;
-
-    printf("%ldus en ejecucion\n", timespec_to_us(elapsed_time));
-
-    //printf("%lld.%.9ld", (long long)elapsed_time->tv_sec, elapsed_time->tv_nsec);
 }
 
 long timespec_to_us(struct timespec* timespec){
