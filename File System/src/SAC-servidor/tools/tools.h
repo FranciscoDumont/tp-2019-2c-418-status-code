@@ -17,37 +17,12 @@
 #include <commons/log.h>
 #include <commons/collections/list.h>
 #include <memory.h>
+#include "../structs.h"
+#include <time.h>
 
+t_list * buscarBloquesMemoriaLibres(int cantidad,GBloque* disco, char* nombreParticion);
 
-#define  IDENTIFICADOR_TAMANIO 3
-#define  NOMBRE_ARCHIV_MAX 71
-#define  PUNTEROS_SIMPLES_CANTIDAD 1000
-#define  RELLENO_TAMANIO 4081
-#define BLOQUE_TAMANIO 4096
-#define CANTIDAD_ARCHIVOS_MAX 1024
-
-
-typedef struct bloque_t{
-    unsigned char bytes[BLOQUE_TAMANIO];
-} GBloque;
-
-typedef struct header_t{
-    unsigned char identificador[IDENTIFICADOR_TAMANIO];
-    int32_t version;
-    int32_t bitmap_inicio;
-    int32_t bitMap_tamanio;
-    unsigned char relleno[RELLENO_TAMANIO];
-}GHeader;
-
-typedef struct file_t{
-    uint8_t estado; // 0:borrado 1:Ocupado 2:Directorio
-    unsigned char nombre_archvio[NOMBRE_ARCHIV_MAX];
-    int32_t ptr_bloque_padre;
-    int32_t size;
-    int64_t fecha_creacion;
-    int64_t fecha_modificacion;
-    int32_t GBloque[PUNTEROS_SIMPLES_CANTIDAD];
-}GFile;
+char* obtenerFechaActual();
 
 int obtenerTamanioArchivo (char* file);
 
@@ -55,11 +30,13 @@ int obtenerNBloquesBitMap(double disco_size);
 
 int obtenerCantidadBytsBitmap(int disco_size);
 
+void inicializarBloqueDirectorio(GBloque* bloque);
+
 void escribirHeader(GBloque* puntero_disco, int bitmap_size);
 
 char* crearBitMap(int bitmap_count_bloques);
 
-void escribirBitMap(GBloque* puntero_disco, int  bitmap_count);
+void escribirBitMap(GBloque* puntero_disco, int  bitmap_bloques_count, int bitmap_size);
 
 void escribirNodeTabla (GBloque* puntero_disco);
 
@@ -73,4 +50,9 @@ void mostrarTablaNodos(GBloque* disco);
 
 void mostrarParticion(char* nombre_particion);
 
+void mostrarNodo(GFile* nodo,GBloque* disco);
+
+GBloque* mapParticion (char* particion);
+
+void munmapParticion (GBloque* disco, char* nombreParticion);
 #endif //SERVIDOR_FILESYSTEM_H
