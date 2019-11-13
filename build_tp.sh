@@ -15,7 +15,6 @@ cd ..
 sudo apt update
 sudo apt install cmake
 
-
 #Instalacion del planificador
 cd tp-2019-2c-418-status-code/Planificador
 
