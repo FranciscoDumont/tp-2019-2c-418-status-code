@@ -7,7 +7,16 @@ if [[ $UID != 0  ]]; then
 	exit 1
 fi
 
-cd src/Suse/
+cd ~
+
+git clone https://github.com/sisoputnfrba/hilolay.git
+
+cd hilolay
+make
+sudo make install
+
+cd ~/tp-2019-2c-418-status-code/Planificador/src/Suse/
+
 mkdir -p cmake-build-debug
 cd cmake-build-debug
 cmake ..
