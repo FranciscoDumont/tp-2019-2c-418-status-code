@@ -13,10 +13,15 @@ sudo make install
 cd ..
 
 sudo apt update
-sudo apt install cmake
+yes | sudo apt install cmake
+
+#Instalacion de AltaLibreria
+cd ~/tp-2019-2c-418-status-code/altaLibreria
+
+sudo ./build_biblioteca.sh
 
 #Instalacion del planificador
-cd tp-2019-2c-418-status-code/Planificador
+cd ~/tp-2019-2c-418-status-code/Planificador
 
 sudo ./build_planificador.sh
 
