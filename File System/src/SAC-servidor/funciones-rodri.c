@@ -4,10 +4,6 @@
 
 #include "funciones-rodri.h"
 
-GFile* buscar_archivo(char* path){
-
-
-}
 
 extern file_t* nodeTable;
 
@@ -51,4 +47,17 @@ int sac_getattr(const char *path, struct stat *stbuf) {
         res = -ENOENT;
     }
     return res;
+}
+
+int sac_read(const char *path, char *buf, size_t cant, off_t offset, struct fuse_file_info *fi){
+
+    ////Divido el path en tokens o obtengo el nombre del archivo
+    t_list* pathDividido = dividirPath(path);
+    char* nombre_dir = list_get(pathDividido,list_size(pathDividido)-1);
+
+    ////Obtengo mi tabla de nodos
+    GBloque* disco = mapParticion(particion);
+    GFile* tablaNodos = obtenerTablaNodos(disco);
+
+
 }
