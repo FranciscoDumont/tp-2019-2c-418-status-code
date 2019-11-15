@@ -50,14 +50,24 @@ int sac_getattr(const char *path, struct stat *stbuf) {
 }
 
 int sac_read(const char *path, char *buf, size_t cant, off_t offset, struct fuse_file_info *fi){
+    size_t len;
+    (void) fi;
 
     ////Divido el path en tokens o obtengo el nombre del archivo
     t_list* pathDividido = dividirPath(path);
-    char* nombre_dir = list_get(pathDividido,list_size(pathDividido)-1);
+    char* file_name = list_get(pathDividido,list_size(pathDividido)-1);
 
-    ////Obtengo mi tabla de nodos
-    GBloque* disco = mapParticion(particion);
-    GFile* tablaNodos = obtenerTablaNodos(disco);
+//    ////Obtengo mi tabla de nodos
+//    GBloque* disco = mapParticion(particion);
+//    GFile* tablaNodos = obtenerTablaNodos(disco);
 
+    len = obtenerTamanioArchivo(file_name);
+    if (offset < len) {
+        if (offset + size > len)
+            size = len - offset;
+        memcpy(buf, fseek(file_name,offset,SEEK_SET), size);
+    } else
+        size = 0;
 
+    return size;
 }
