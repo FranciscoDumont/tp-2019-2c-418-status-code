@@ -13,4 +13,6 @@
 #include "structs.h"
 #include <time.h>
 
+GFile* obtenerTablaNodos(GBloque* comienzoParticion);
+GFile* hallar_padre(GBloque* bloque, char* nombrePadre, GBloque* disco);
 #endif //TOOLS_FUNCIONES_EMI_H

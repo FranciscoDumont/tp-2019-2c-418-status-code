@@ -16,15 +16,24 @@
  */
 //Ver de cambiarle el nombre
 
+GFile* obtenerTablaNodos(GBloque* comienzoParticion){
+    GHeader* header = (GHeader*)comienzoParticion;
 
-GFile* hallar_padre(GBloque* bloque, char* nombrePadre){
+    //Y saco del header el tamanio del bitmap
+    //Corro entonces el puntero 1 bloque mas los bloques que ocupa el bitMap
+    return (GFile *) header + 1 + header->bitMap_tamanio;
+}
+
+
+GFile* hallar_padre(GBloque* bloque, char* nombrePadre, GBloque* disco){
    int* punteroArchivo = (int*) bloque;
     GFile* nodo;
+    GFile* tablaNodos = obtenerTablaNodos(disco);
 
     //Si igual tener que ver si se llego al final del artchivo o algo asi
     //Le pondria eof al final de los puntero o menos 1 no se
-    for(int i = 0; i < BLOQUE_TAMANIO/4 && *punteroArchivo != EOF;i++){
-//        nodo =buscarNodo(punteroArchivo);
+    for(int i = 0; i < BLOQUE_TAMANIO/4 && *(punteroArchivo + i) != -1;i++){
+        nodo = tablaNodos + i;
 
         if(strcmp(nodo->nombre_archvio,nombrePadre) == 0){
             return nodo;
@@ -53,74 +62,19 @@ t_list* dividirPath(char* path){
     return pathDividido;
 }
 
-////Probar Dudo que funcione
-//void buscarPath(t_list* pathDividido){
-//   //Inicaliizo las variables
-//   t_list* nodosCandidatos = list_create();
-//   GFile* nodo;
-//
-//   //Busco en todos los nodos si hay algunos que tengan ese nombre
-//   for(int nro_nodo = 0 ; nro_nodo < 1024; nro_nodo++){
-//       GFile* nodo = buscarNodo();
-//       //Obtengo el nombre del archivo que es el ultimo en tokenizar
-//       char*nombreArchivo = (char*) list_get(pathDividido, list_size(pathDividido)-1);
-//
-//        //Si comparo los nombres y es verdadero los agrego a la lista de nodos candidatos
-//       if(strcmp(nodo->nombre_archvio,nombreArchivo) == 0){
-//           list_add(nodosCandidatos, nodo);
-//       }
-//   }
-//
-//   nodo = list_get(nodosCandidatos,0);
-//   //Recorres toda la familia de los nodos candidatos para ver que coincidan
-//   for(int i = 0; i < list_size(nodosCandidatos) && nodo->ptr_bloque_padre == 0; i++){
-//      bool noEraPadre = 0;
-//       //Hallo el nodo padre con el puntero al bloque donde esta alojado
-//       GFile* nodoPadre = hallar_padre(nodo->ptr_bloque_padre,list_get(pathDividido,1));
-//
-//       //Recorre toda la familia de ese nodo, j = 1 porque me salteo el nombre
-//       for(int j = 1; nodoPadre->ptr_bloque_padre == 0 && j <= list_size(pathDividido); j++){
-//
-//           //Si hallar padre devuelve menos uno es que no se encontro un nodo en el bloque
-//           // que esta el padre con ese nombre
-//           if(nodoPadre == -1){
-//               noEraPadre = 1;
-//               break;
-//           }
-//
-//           GFile* nodoPadre = hallar_padre(nodoPadre->ptr_bloque_padre,list_get(pathDividido,list_size(pathDividido)-j-1));
-//       }
-//
-//       //Saco de la lista al nodo que no llego a la raiz
-//       if(noEraPadre) {
-//           list_remove(nodosCandidatos, i);
-//       }
-//       nodo = list_get(nodosCandidatos,i+1);
-//
-//   }
-//
-//   return list_is_empty(nodosCandidatos)?-1:list_get(nodosCandidatos,0);
-//}
 
-GFile* obtenerTablaNodos(GBloque* comienzoParticion){
-    GHeader* header = (GHeader*)comienzoParticion;
-
-    //Y saco del header el tamanio del bitmap
-    //Corro entonces el puntero 1 bloque mas los bloques que ocupa el bitMap
-    return (GFile *) header + 1 + header->bitMap_tamanio;
-}
 
 int obtenerBitMapSize(char* particion){
     int disco_size = obtenerTamanioArchivo(particion);
     return obtenerCantidadBytsBitmap(disco_size);
 }
 
-t_bitarray* obtenerBitMap(char* particion, GBloque* disco){
-
-    int tamanioBitmap = obtenerBitMapSize(particion);
-
-    return bitarray_create((char *)(disco + 1), tamanioBitmap);
-}
+//t_bitarray* obtenerBitMap(char* particion, GBloque* disco){
+//
+//    int tamanioBitmap = obtenerBitMapSize(particion);
+//
+//    return bitarray_create((char *)(disco + 1), tamanioBitmap);
+//}
 
 
 int obtenerNodoLibre (GFile* comienzoTabla){
@@ -148,6 +102,8 @@ int sac_mkdir(char* path, int nro_nodoPadre){
 
     //Esto porahi hay que sacarlo
     char* particion =  "../tools/disco.bin";
+    char* fecha_actual = obtenerFechaActual();
+    GFile* nodoAbuelo;
 
     //Obtengo el path dividido para la funcion de busqueda
     t_list* pathDividido = dividirPath(path);
@@ -176,11 +132,11 @@ int sac_mkdir(char* path, int nro_nodoPadre){
     if(list_is_empty(listaBloquesLibres)){
         return -1;
     }
-
     memcpy((nodoLibre->nombre_archvio), nombre_dir, strlen(nombre_dir)+1);
     nodoLibre->estado = 2;
-    nodoLibre->fecha_creacion = nodoLibre->fecha_modificacion = obtenerFechaActual();
-    nodoLibre->ptr_bloque_padre = nro_nodoPadre;
+    nodoLibre->fecha_creacion =  atoi(fecha_actual);
+    nodoLibre->fecha_modificacion = atoi(fecha_actual);
+    nodoLibre->ptr_bloque_padre = (tablaNodos + nro_nodoPadre)->GBloque[0];
     nodoLibre->GBloque[0] = *(int*)list_get(listaBloquesLibres,0);
     nodoLibre->size = 0;
 
@@ -189,40 +145,95 @@ int sac_mkdir(char* path, int nro_nodoPadre){
     escribir_dir(disco,tablaNodos + nro_nodoPadre, nro_nodoLibre);
 
     munmapParticion (disco, "../tools/disco.bin");
-
+    free(fecha_actual);
     return 0;
 }
 
-void main (){
-    t_log* logger = log_create("formateo.log", "SAC", 0, LOG_LEVEL_TRACE);
+int buscarPath(t_list* pathDividido){
 
+   //Inicaliizo las variables
+   t_list* nodosCandidatos = list_create();
+   GBloque* disco = mapParticion("../tools/disco.bin");
 
-    formatear("../tools/disco.bin",logger);
+    GFile* nodo = obtenerTablaNodos(disco);
+    //Obtengo el nombre del archivo que es el ultimo en tokenizar
+    char*nombreArchivo = (char*) list_get(pathDividido, list_size(pathDividido)-1);
 
-    //t_list * lista = buscarBloquesMemoriaLibres(1,disco, "../tools/disco.bin");
-    GBloque* disco = mapParticion("../tools/disco.bin");
-    GFile* carpetaRaiz = (GFile*) (disco+2);
+   //Busco en todos los nodos si hay algunos que tengan ese nombre
+   for(int nro_nodo = 0 ; nro_nodo < 1024; nro_nodo++){
+        //Si comparo los nombres y es verdadero los agrego a la lista de nodos candidatos
+       if(strcmp((nodo + nro_nodo)->nombre_archvio,nombreArchivo) == 0){
+           list_add(nodosCandidatos, nodo+ nro_nodo);
+       }
+   }
 
-    char* tuVieja = malloc((strlen("/algo/No_anda_el_nombre_bien")));
-    memcpy(tuVieja,"/algo/No_anda_el_nombre_bien",strlen("/algo/No_anda_el_nombre_bien")+1);
-    sac_mkdir(tuVieja,0);
-    memcpy(tuVieja,"/algo/archivo_2",strlen("/algo/archivo_2")+1);
-    sac_mkdir(tuVieja,1);
-    memcpy(tuVieja,"/algo/archivo_3",strlen("/algo/archivo_3")+1);
-    sac_mkdir(tuVieja,1);
+   nodo = list_get(nodosCandidatos,0);
 
-    mostrarParticion("../tools/disco.bin");
+   //Recorres toda la familia de los nodos candidatos para ver que coincidan
+   for(int i = 0; i < list_size(nodosCandidatos) && nodo->ptr_bloque_padre != 0; i++){
+      bool noEraPadre = 0;
+       //Hallo el nodo padre con el puntero al bloque donde esta alojado
+       GFile* nodoPadre = hallar_padre(disco + nodo->ptr_bloque_padre,list_get(pathDividido,1),disco);
 
-    mostrarNodo(carpetaRaiz, disco);
-    mostrarNodo(carpetaRaiz + 1, disco);
-    mostrarNodo(carpetaRaiz + 2, disco);
-    mostrarNodo(carpetaRaiz + 3, disco);
+       //Recorre toda la familia de ese nodo, j = 1 porque me salteo el nombre
+       for(int j = 1; nodoPadre->ptr_bloque_padre != 0 && j <= list_size(pathDividido); j++){
+
+           //Si hallar padre devuelve menos uno es que no se encontro un nodo en el bloque
+           // que esta el padre con ese nombre
+           if(nodoPadre == -1){
+               noEraPadre = 1;
+               break;
+           }
+
+           GFile* nodoPadre = hallar_padre(nodoPadre->ptr_bloque_padre,list_get(pathDividido,list_size(pathDividido)-j-1),disco);
+       }
+
+       //Saco de la lista al nodo que no llego a la raiz
+       if(noEraPadre) {
+           list_remove(nodosCandidatos, i);
+       }
+       nodo = list_get(nodosCandidatos,i+1);
+
+   }
 
     munmapParticion (disco, "../tools/disco.bin");
 
+   return list_is_empty(nodosCandidatos)?-1:list_get(nodosCandidatos,0);
+}
 
 
-    //printf("\n%d\n", *(int*)list_get(lista,0));
+void main (){
+//    t_log* logger = log_create("formateo.log", "SAC", 0, LOG_LEVEL_TRACE);
+//
+//
+//   formatear("../tools/disco.bin",logger);
+//
+//    //t_list * lista = buscarBloquesMemoriaLibres(1,disco, "../tools/disco.bin");
+//    GBloque* disco = mapParticion("../tools/disco.bin");
+//    GFile* carpetaRaiz = (GFile*) (disco+2);
+//
+//    char* tuVieja = malloc(50);
+//    memcpy(tuVieja,"/Carpeta1",strlen("/Carpeta1")+1);
+//    sac_mkdir(tuVieja,0);
+//    memcpy(tuVieja,"/Carpeta2",strlen("/Carpeta2")+1);
+//    sac_mkdir(tuVieja,0);
+//    memcpy(tuVieja,"/Carpeta1/archivo1",strlen("/Carpeta1/archivo1")+1);
+//    sac_mkdir(tuVieja,1);
+//
+//    mostrarParticion("../tools/disco.bin");
+//
+//    mostrarNodo(carpetaRaiz, disco);
+//    mostrarNodo(carpetaRaiz + 1, disco);
+//    mostrarNodo(carpetaRaiz + 2, disco);
+//    mostrarNodo(carpetaRaiz + 3, disco);
+//
+//    munmapParticion (disco, "../tools/disco.bin");
+
+    char* tuVieja = malloc(50);
+    memcpy(tuVieja,"/Carpeta1/archivo1",strlen("/Carpeta1/archivo1")+1);
+
+    t_list* path = dividirPath(tuVieja);
+    printf("%d", buscarPath(path));
     //printf("\nestado:%d   bloque usado: %d", carpetaRaiz->estado,carpetaRaiz->GBloque[0]);
 
 }
