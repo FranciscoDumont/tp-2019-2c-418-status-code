@@ -6,6 +6,7 @@ include_directories(include)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(funciones-rodri funciones-rodri.c funciones-rodri.h tools/tools.c tools/tools.c)
-
+add_executable(funciones-rodri
+        funciones-rodri.c funciones-rodri.h
+        tools/tools.c tools/tools.h)
 target_link_libraries(funciones-rodri "/usr/lib/libaltaLibreria.so" "/usr/lib/libcommons.so")

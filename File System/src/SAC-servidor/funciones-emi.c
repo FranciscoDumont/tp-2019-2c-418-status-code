@@ -16,14 +16,6 @@
  */
 //Ver de cambiarle el nombre
 
-GFile* obtenerTablaNodos(GBloque* comienzoParticion){
-    GHeader* header = (GHeader*)comienzoParticion;
-
-    //Y saco del header el tamanio del bitmap
-    //Corro entonces el puntero 1 bloque mas los bloques que ocupa el bitMap
-    return (GFile *) header + 1 + header->bitMap_tamanio;
-}
-
 
 GFile* hallar_padre(GBloque* bloque, char* nombrePadre, GBloque* disco){
    int* punteroArchivo = (int*) bloque;

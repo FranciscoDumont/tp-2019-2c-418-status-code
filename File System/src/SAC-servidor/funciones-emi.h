@@ -13,6 +13,8 @@
 #include "structs.h"
 #include <time.h>
 
+t_list* dividirPath(char* path);
+
 GFile* obtenerTablaNodos(GBloque* comienzoParticion);
 GFile* hallar_padre(GBloque* bloque, char* nombrePadre, GBloque* disco);
 #endif //TOOLS_FUNCIONES_EMI_H

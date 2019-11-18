@@ -10,7 +10,6 @@
 #define  RELLENO_TAMANIO 4081
 #define BLOQUE_TAMANIO 4096
 #define CANTIDAD_ARCHIVOS_MAX 1024
-#define  EOF -1
 
 
 typedef struct bloque_t{
@@ -27,7 +26,7 @@ typedef struct header_t{
 
 typedef struct file_t{
     int8_t estado; // 0:borrado 1:Ocupado 2:Directorio
-    unsigned char nombre_archvio[NOMBRE_ARCHIV_MAX];
+    unsigned char nombre_archivo[NOMBRE_ARCHIV_MAX];
     int32_t ptr_bloque_padre;
     int32_t size;
     int64_t fecha_creacion;

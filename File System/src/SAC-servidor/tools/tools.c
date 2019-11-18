@@ -6,6 +6,15 @@
  **** Funciones auxiliares****
  *****************************
  */
+
+GFile* obtenerTablaNodos(GBloque* comienzoParticion){
+    GHeader* header = (GHeader*)comienzoParticion;
+
+    //Y saco del header el tamanio del bitmap
+    //Corro entonces el puntero 1 bloque mas los bloques que ocupa el bitMap
+    return (GFile *) header + 1 + header->bitMap_tamanio;
+}
+
 int obtenerBitMapSize(char* particion){
     int disco_size = obtenerTamanioArchivo(particion);
     return obtenerCantidadBytsBitmap(disco_size);
@@ -125,7 +134,7 @@ void crearDirectorioRaiz(GFile* nodo, GBloque* disco, char* nombreParticion) {
 
     //Inizializo el dir Raiz
     nodo->ptr_bloque_padre = -1;
-    memcpy(nodo->nombre_archvio, "", strlen(""));
+    memcpy(nodo->nombre_archivo, "", strlen(""));
     nodo->estado = 2;
     nodo->size = 0;
     nodo->fecha_creacion = nodo->fecha_modificacion = atoi(obtenerFechaActual());
@@ -223,7 +232,7 @@ void escribirNodeTabla (GBloque* puntero_disco){
     for(int numero_archivo = 0; numero_archivo < CANTIDAD_ARCHIVOS_MAX; numero_archivo++){
         nodo[numero_archivo].estado = 0;
         nodo[numero_archivo].size = 0;
-        (nodo[numero_archivo].nombre_archvio)[0]='\0';
+        (nodo[numero_archivo].nombre_archivo)[0]='\0';
     }
 }
 
@@ -302,13 +311,13 @@ void mostrarTablaNodos(GBloque* disco){
         printf("Tabal de nodos \n");
         for(int file = 0; file < CANTIDAD_ARCHIVOS_MAX; file ++){
             if(nodo[file].estado != 0){
-                printf("\nNumero:%d\t Estado:%d\t Tamanio:%d\t Padre:%d\t Nombre:%s\t", file+1, nodo[file].estado, nodo[file].size, nodo[file].ptr_bloque_padre, nodo[file].nombre_archvio);
+                printf("\nNumero:%d\t Estado:%d\t Tamanio:%d\t Padre:%d\t Nombre:%s\t", file+1, nodo[file].estado, nodo[file].size, nodo[file].ptr_bloque_padre, nodo[file].nombre_archivo);
             }
         }
 }
 
 void mostrarNodo(GFile* nodo,GBloque* disco){
-    printf("\nNombre: %s\n", nodo->nombre_archvio);
+    printf("\nNombre: %s\n", nodo->nombre_archivo);
     printf("Tamanio: %d\n", nodo->size);
     printf("Estado: %d\n", nodo->estado);
     printf("Bloque padre: %d\n", nodo->ptr_bloque_padre);
