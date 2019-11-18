@@ -20,6 +20,8 @@
 #include "../structs.h"
 #include <time.h>
 
+int obtenerBitMapSize(char* particion);
+
 t_bitarray* obtenerBitMap(char* particion, GBloque* disco);
 
 t_list * buscarBloquesMemoriaLibres(int cantidad,GBloque* disco, char* nombreParticion);

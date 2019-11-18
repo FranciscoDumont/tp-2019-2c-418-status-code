@@ -64,10 +64,10 @@ t_list* dividirPath(char* path){
 
 
 
-int obtenerBitMapSize(char* particion){
-    int disco_size = obtenerTamanioArchivo(particion);
-    return obtenerCantidadBytsBitmap(disco_size);
-}
+//int obtenerBitMapSize(char* particion){
+//    int disco_size = obtenerTamanioArchivo(particion);
+//    return obtenerCantidadBytsBitmap(disco_size);
+//}
 
 //t_bitarray* obtenerBitMap(char* particion, GBloque* disco){
 //
