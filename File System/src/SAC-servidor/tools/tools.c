@@ -6,6 +6,17 @@
  **** Funciones auxiliares****
  *****************************
  */
+int obtenerBitMapSize(char* particion){
+    int disco_size = obtenerTamanioArchivo(particion);
+    return obtenerCantidadBytsBitmap(disco_size);
+}
+
+t_bitarray* obtenerBitMap(char* particion, GBloque* disco){
+
+    int tamanioBitmap = obtenerBitMapSize(particion);
+
+    return bitarray_create((char *)(disco + 1), tamanioBitmap);
+}
 
 t_list * buscarBloquesMemoriaLibres(int cantidad,GBloque* disco, char* nombreParticion){
 //Commons andan mal bitmap lee medio raro
@@ -117,7 +128,7 @@ void crearDirectorioRaiz(GFile* nodo, GBloque* disco, char* nombreParticion) {
     memcpy(nodo->nombre_archvio, "", strlen(""));
     nodo->estado = 2;
     nodo->size = 0;
-    nodo->fecha_creacion = nodo->fecha_modificacion = obtenerFechaActual();
+    nodo->fecha_creacion = nodo->fecha_modificacion = atoi(obtenerFechaActual());
 
     //Busco un bloque libre para que guarde todos los puntero a los archivos
     t_list* bloqueLibre = buscarBloquesMemoriaLibres(1, disco, nombreParticion);
@@ -301,8 +312,8 @@ void mostrarNodo(GFile* nodo,GBloque* disco){
     printf("Tamanio: %d\n", nodo->size);
     printf("Estado: %d\n", nodo->estado);
     printf("Bloque padre: %d\n", nodo->ptr_bloque_padre);
-    printf("Fecha creacion: %s\n", nodo->fecha_creacion);
-    printf("Fecha modificacion: %s\n", nodo->fecha_modificacion);
+    printf("Fecha creacion: %d\n", nodo->fecha_creacion);
+    printf("Fecha modificacion: %d\n", nodo->fecha_modificacion);
     if(nodo->estado == 2){
         printf("Directorio:");
         int* array_archivos = (int*) (disco + nodo->GBloque[0]);
