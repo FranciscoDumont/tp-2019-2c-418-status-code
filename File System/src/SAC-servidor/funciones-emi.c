@@ -115,12 +115,7 @@ int obtenerBitMapSize(char* particion){
     return obtenerCantidadBytsBitmap(disco_size);
 }
 
-t_bitarray* obtenerBitMap(char* particion, GBloque* disco){
 
-    int tamanioBitmap = obtenerBitMapSize(particion);
-
-    return bitarray_create((char *)(disco + 1), tamanioBitmap);
-}
 
 
 int obtenerNodoLibre (GFile* comienzoTabla){
