@@ -16,5 +16,7 @@ int sac_getattr(const char *path, struct stat *stbuf);
 
 int sac_read(const char *path, char *buf, size_t size, off_t offset);
 
+t_list* dividirPath(char* path);
+
 
 #endif //SAC_CLI_FUNCIONES_H

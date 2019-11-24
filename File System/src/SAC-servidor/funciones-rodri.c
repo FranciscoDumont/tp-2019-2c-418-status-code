@@ -38,27 +38,41 @@ int sac_mknod(char* path, mode_t mode, dev_t dev) { // mode y dev son los permis
     return 0;
 }
 
-//int sac_getattr(const char *path, struct stat *stbuf) {
-//    int res = 0;
-//
-//    //implementar el algoritmo de busqueda del archivo
-//
-//    memset(stbuf, 0, sizeof(struct stat));
-//
-//    //Si path es igual a "/" nos estan pidiendo los atributos del punto de montaje
-//
-//    if (strcmp(path, "/") == 0) {
-//        stbuf->st_mode = S_IFDIR | 0755;
-//        stbuf->st_nlink = 2;
-//    } else if (strcmp(path, DEFAULT_FILE_PATH) == 0) {
-//        stbuf->st_mode = S_IFREG | 0444;
-//        stbuf->st_nlink = 1;
-//        stbuf->st_size = strlen(DEFAULT_FILE_CONTENT);
-//    } else {
-//        res = -ENOENT;
-//    }
-//    return res;
-//}
+int sac_getattr(const char *path, struct stat *stbuf) {
+    int res = 0;
+    int current_node = 0;
+    GFile* nodo;
+
+    t_list* pathDividido = dividirPath(path);
+    char* nombre_archivo = list_get(pathDividido,list_size(pathDividido)-1);
+
+    char* particion =  "../tools/disco.bin";
+    GBloque* disco = mapParticion(particion);
+    GFile* tablaNodos = obtenerTablaNodos(disco);
+
+    while(strcmp(tablaNodos[current_node].nombre_archivo, nombre_archivo) != 0){
+        current_node ++;
+    }
+
+    nodo = tablaNodos + current_node;
+
+
+    memset(stbuf, 0, sizeof(struct stat));
+
+    if(nodo -> estado == 2) {
+        stbuf->st_mode = S_IFDIR | 0755;
+        stbuf->st_nlink = 2;
+        stbuf->st_mtime = nodo->fecha_modificacion;
+    } else if(nodo -> estado == 1){
+        stbuf -> st_mode = S_IFREG | 0444;
+        stbuf -> st_nlink = 1;
+        stbuf -> st_size = obtenerTamanioArchivo(nombre_archivo);
+        stbuf->st_mtime = nodo->fecha_modificacion;
+    } else {
+        res = -ENOENT;
+    }
+    return res;
+}
 
 t_list* dividirPath(char* path){
     char* token = strtok(path, "/");
