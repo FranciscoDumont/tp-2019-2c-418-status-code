@@ -100,6 +100,7 @@ void eliminarNodoEnDirectorio(GFile* nodoPadre,int nodoAEliminar ){
     for(int i = 0;i < 1024; i++){
         if(nodoPadre->GBloque[i] == nodoAEliminar){
             nodoPadre->GBloque[i] = -1;
+
         }
     }
 }
