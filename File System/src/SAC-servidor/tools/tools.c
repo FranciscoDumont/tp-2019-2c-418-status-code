@@ -1,19 +1,9 @@
 #include "tools.h"
 
 
-
 /*****************************
  **** Funciones auxiliares****
- *****************************
- */
-
-GFile* obtenerTablaNodos(GBloque* comienzoParticion){
-    GHeader* header = (GHeader*)comienzoParticion;
-
-    //Y saco del header el tamanio del bitmap
-    //Corro entonces el puntero 1 bloque mas los bloques que ocupa el bitMap
-    return (GFile *) header + 1 + header->bitMap_tamanio;
-}
+ ****************************/
 
 int obtenerBitMapSize(char* particion){
     int disco_size = obtenerTamanioArchivo(particion);
@@ -134,7 +124,7 @@ void crearDirectorioRaiz(GFile* nodo, GBloque* disco, char* nombreParticion) {
 
     //Inizializo el dir Raiz
     nodo->ptr_bloque_padre = -1;
-    memcpy(nodo->nombre_archivo, "", strlen(""));
+    memcpy(nodo->nombre_archvio, "", strlen(""));
     nodo->estado = 2;
     nodo->size = 0;
     nodo->fecha_creacion = nodo->fecha_modificacion = atoi(obtenerFechaActual());
@@ -167,13 +157,119 @@ char* crearBitMap(int byts_bitmap){
     return bitmap->bitarray;
 }
 
+//Busca un path en el disco
+int buscarPath(t_list* pathDividido){
+
+    //Inicializo el nodo resultado en error
+    int nodoResultado = -1;
+
+    //Veo si el path esta vacio
+    if(!list_is_empty(pathDividido)) {
+        //Si no lo esta  quiere decir que no es la raiz
+
+        //Obtengo el nombre del archivo que es el ultimo en tokenizar
+        char*nombreArchivo = (char*) list_get(pathDividido, list_size(pathDividido)-1);
+
+        t_list* nodosCandidatos = hallar_posibles_nodos(nombreArchivo);
+
+        //Mapeop el disco a memoria
+        GBloque* disco = mapParticion("../tools/disco.bin");
+        GFile* tablaNodos = obtenerTablaNodos(disco);
+
+
+        //Me fijo de los candidatos cual cumple con el path
+        for (int i = 0; i < list_size(nodosCandidatos); i++) {
+            //Traigo el nodo candidato a memoria
+            GFile *nodoCandidato = tablaNodos + (int) list_get(nodosCandidatos, i);
+            GFile* nodoPadre = tablaNodos + nodoCandidato->ptr_bloque_padre;
+            bool esNodo = false;
+
+            //Reviso si el nodo candidato y el path tienen que estar en la raiz solamente
+            if( nodoCandidato->ptr_bloque_padre == 0 && list_size(pathDividido) == 1 ){
+                esNodo = true;
+            }else {
+
+                //Voy iterando los padres y viendo si coinciden con el path
+                for (int j = 1; j < list_size(pathDividido); j++) {
+                    char *nombreArchivo = (char *) list_get(pathDividido, list_size(pathDividido) - 1 - j);
+                    if (strcmp(nodoPadre->nombre_archvio, nombreArchivo, strlen(nombreArchivo)) != 0) {
+                        esNodo = false;
+                        break;
+                    }
+                    esNodo = true;
+                    nodoPadre = tablaNodos + nodoPadre->ptr_bloque_padre;
+                }
+            }
+            //Si cumplio el nodo es el nodo resultado
+            if(esNodo){
+                nodoResultado = (int) list_get(nodosCandidatos, i);
+                break;
+            }
+        }
+
+        //Librero los recursos y demapeo la particion
+        list_destroy(nodosCandidatos);
+        munmapParticion (disco, "../tools/disco.bin");
+    }else{
+        nodoResultado = 0;
+    }
+
+    return  nodoResultado;
+}
+
+//Sirve para devolver los posibles nodos que contengan un nombre
+t_list* hallar_posibles_nodos(char* nombreNodo){
+
+    t_list* nodosCandidatos = list_create();
+    GBloque* disco = mapParticion("../tools/disco.bin");//Seguro va a tener que ser una variable global
+
+    GFile* nodo = obtenerTablaNodos(disco);
+    for(int nro_nodo = 0 ; nro_nodo < 1024; nro_nodo++){
+        //Si comparo los nombres y es verdadero los agrego a la lista de nodos candidatos
+        if(strcmp((nodo + nro_nodo)->nombre_archvio,nombreNodo) == 0){
+            list_add(nodosCandidatos, nro_nodo);
+        }
+    }
+
+    munmapParticion(disco,"../tools/disco.bin");
+
+    return nodosCandidatos;
+}
+
+//Te divide el path separado con '/' en una lista
+t_list* dividirPath(char* path){
+    char* token = strtok(path, "/");
+    t_list* pathDividido = list_create();
+
+    while(token != NULL){
+        list_add(pathDividido, token);
+        token = strtok(NULL, "/");
+    }
+    return pathDividido;
+}
+
+int obtenerNodoLibre (GFile* comienzoTabla){
+    for(int i = 0; i  < CANTIDAD_ARCHIVOS_MAX; i++ ) {
+        if ((comienzoTabla + i)->estado == 0) {
+            return i;
+
+        }
+    }
+    return -1;
+}
+
+GFile* obtenerTablaNodos(GBloque* comienzoParticion){
+    GHeader* header = (GHeader*)comienzoParticion;
+
+    //Y saco del header el tamanio del bitmap
+    //Corro entonces el puntero 1 bloque mas los bloques que ocupa el bitMap
+    return (GFile *) header + 1 + header->bitMap_tamanio;
+}
 
 /*****************************
  **** Funciones formateo *****
- *****************************
- */
+ ****************************/
 
-//Esta medio inestable usar las sac-tool
 int formatear (char* nombre_particion, t_log* logger){
 
     int disco_size = obtenerTamanioArchivo(nombre_particion);
@@ -232,15 +328,17 @@ void escribirNodeTabla (GBloque* puntero_disco){
     for(int numero_archivo = 0; numero_archivo < CANTIDAD_ARCHIVOS_MAX; numero_archivo++){
         nodo[numero_archivo].estado = 0;
         nodo[numero_archivo].size = 0;
-        (nodo[numero_archivo].nombre_archivo)[0]='\0';
+        (nodo[numero_archivo].nombre_archvio)[0]='\0';
+        for(int j=0; j < 1000; j++){
+            nodo[numero_archivo].GBloque[j] = -1;
+        }
     }
 }
 
 
 /*****************************
  **** Funciones Mostrar ******
- *****************************
- */
+ ****************************/
 
 void mostrarParticion(char* nombre_particion){
 
@@ -304,6 +402,9 @@ void mostrarBitMap(GBloque* disco, int bitmap_size){
     printf("Bloques: %d\t Bloques usados:%d\t Bloques libres: %d\n", pos_bit, bits_usados, bits_libres);
     printf("\n");
 
+    bitarray_destroy(bitmap);
+    free(bitArray);
+
 }
 
 void mostrarTablaNodos(GBloque* disco){
@@ -311,19 +412,42 @@ void mostrarTablaNodos(GBloque* disco){
         printf("Tabal de nodos \n");
         for(int file = 0; file < CANTIDAD_ARCHIVOS_MAX; file ++){
             if(nodo[file].estado != 0){
-                printf("\nNumero:%d\t Estado:%d\t Tamanio:%d\t Padre:%d\t Nombre:%s\t", file+1, nodo[file].estado, nodo[file].size, nodo[file].ptr_bloque_padre, nodo[file].nombre_archivo);
+                printf("\nNumero:%d\t Estado:%d\t Tamanio:%d\t Padre:%d\t Nombre:%s\t", file, nodo[file].estado, nodo[file].size, nodo[file].ptr_bloque_padre, nodo[file].nombre_archvio);
             }
         }
 }
 
+//void mostrarNodoDirectorio(GFile* nodo,GBloque* disco){
+//    printf("\nNombre: %s\n", nodo->nombre_archvio);
+//    printf("Tamanio: %d\n", nodo->size);
+//    printf("Estado: %d\n", nodo->estado);
+//    printf("Bloque padre: %d\n", nodo->ptr_bloque_padre);
+//    printf("Fecha creacion: %d\n", nodo->fecha_creacion);
+//    printf("Fecha modificacion: %d\n", nodo->fecha_modificacion);
+//    printf("Bloque que usa: %d\n", nodo->GBloque[0]);
+//    if(nodo->estado == 2){
+//        printf("Directorio:");
+//        int* array_archivos = (int*) (disco + nodo->GBloque[0]);
+//        for(int i = 0; i < (BLOQUE_TAMANIO/ sizeof(int));i++){
+//            if(*(array_archivos+i) != -1) {
+//                printf("\n\tArchivo %d: %d", i, *(array_archivos + i));
+//            }
+//        }
+//        printf("\n");
+//    }
+//
+//}
+
+
 void mostrarNodo(GFile* nodo,GBloque* disco){
-    printf("\nNombre: %s\n", nodo->nombre_archivo);
+    printf("\nNombre: %s\n", nodo->nombre_archvio);
     printf("Tamanio: %d\n", nodo->size);
     printf("Estado: %d\n", nodo->estado);
     printf("Bloque padre: %d\n", nodo->ptr_bloque_padre);
     printf("Fecha creacion: %d\n", nodo->fecha_creacion);
     printf("Fecha modificacion: %d\n", nodo->fecha_modificacion);
     if(nodo->estado == 2){
+        printf("Bloque que usa: %d\n", nodo->GBloque[0]);
         printf("Directorio:");
         int* array_archivos = (int*) (disco + nodo->GBloque[0]);
         for(int i = 0; i < (BLOQUE_TAMANIO/ sizeof(int));i++){
@@ -332,23 +456,13 @@ void mostrarNodo(GFile* nodo,GBloque* disco){
             }
         }
         printf("\n");
+    }else{
+        printf("Bloques que usa:");
+        for(int i = 0; i < 1000;i++){
+            if(nodo->GBloque[i] !=-1){
+                printf("\n\tBloque %d: %d", i, nodo->GBloque[i]);
+            }
+        }
     }
 
 }
-
-
-
-//int main(int argc, char *argv[]){
-//    t_log* logger = log_create("formateo.log", "SAC", 0, LOG_LEVEL_TRACE);
-//
-//
-//    formatear("../disco.bin",logger);
-//
-//
-//
-//    mostrarParticion("../disco.bin");
-//
-//
-//    log_destroy(logger);
-//    return 0;
-//}

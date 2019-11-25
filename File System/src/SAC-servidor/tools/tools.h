@@ -20,6 +20,10 @@
 #include "../structs.h"
 #include <time.h>
 
+/*****************************
+ **** Funciones auxiliares****
+ ****************************/
+
 int obtenerBitMapSize(char* particion);
 
 t_bitarray* obtenerBitMap(char* particion, GBloque* disco);
@@ -36,15 +40,35 @@ int obtenerCantidadBytsBitmap(int disco_size);
 
 void inicializarBloqueDirectorio(GBloque* bloque);
 
-void escribirHeader(GBloque* puntero_disco, int bitmap_size);
+int buscarPath(t_list* pathDividido);
+
+t_list* hallar_posibles_nodos(char* nombreNodo);
+
+t_list* dividirPath(char* path);
+
+GBloque* mapParticion (char* particion);
+
+void munmapParticion (GBloque* disco, char* nombreParticion);
+
+int obtenerNodoLibre (GFile* comienzoTabla);
 
 char* crearBitMap(int bitmap_count_bloques);
+
+/*****************************
+ **** Funciones formateo *****
+ ****************************/
+
+void escribirHeader(GBloque* puntero_disco, int bitmap_size);
 
 void escribirBitMap(GBloque* puntero_disco, int  bitmap_bloques_count, int bitmap_size);
 
 void escribirNodeTabla (GBloque* puntero_disco);
 
 int formatear (char* nombre_particion, t_log* logger);
+
+/*****************************
+ **** Funciones Mostrar ******
+ ****************************/
 
 void mostrarHeader(GBloque* disco );
 
@@ -56,7 +80,4 @@ void mostrarParticion(char* nombre_particion);
 
 void mostrarNodo(GFile* nodo,GBloque* disco);
 
-GBloque* mapParticion (char* particion);
-
-void munmapParticion (GBloque* disco, char* nombreParticion);
 #endif //SERVIDOR_FILESYSTEM_H

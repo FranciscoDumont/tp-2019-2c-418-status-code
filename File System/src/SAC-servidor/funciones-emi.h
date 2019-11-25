@@ -11,10 +11,9 @@
 #include <commons/log.h>
 #include <commons/collections/list.h>
 #include "structs.h"
-#include <time.h>
-
-t_list* dividirPath(char* path);
 
 GFile* obtenerTablaNodos(GBloque* comienzoParticion);
-GFile* hallar_padre(GBloque* bloque, char* nombrePadre, GBloque* disco);
+//GFile* hallar_padre(GBloque* bloque, char* nombrePadre, GBloque* disco);
+t_list* hallar_posibles_nodos(char* nombreNodo);
+int buscarPath(t_list* pathDividido);
 #endif //TOOLS_FUNCIONES_EMI_H
