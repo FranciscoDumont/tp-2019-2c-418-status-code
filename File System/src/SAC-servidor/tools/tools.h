@@ -6,6 +6,7 @@
 #define SERVIDOR_FILESYSTEM_H
 
 #include <stdio.h>
+#include "../structs.h"
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -17,7 +18,6 @@
 #include <commons/log.h>
 #include <commons/collections/list.h>
 #include <memory.h>
-#include "../structs.h"
 #include <time.h>
 
 /*****************************
@@ -53,6 +53,8 @@ void munmapParticion (GBloque* disco, char* nombreParticion);
 int obtenerNodoLibre (GFile* comienzoTabla);
 
 char* crearBitMap(int bitmap_count_bloques);
+
+GFile* obtenerTablaNodos(GBloque* comienzoParticion);
 
 /*****************************
  **** Funciones formateo *****

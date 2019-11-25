@@ -124,7 +124,7 @@ void crearDirectorioRaiz(GFile* nodo, GBloque* disco, char* nombreParticion) {
 
     //Inizializo el dir Raiz
     nodo->ptr_bloque_padre = -1;
-    memcpy(nodo->nombre_archvio, "", strlen(""));
+    memcpy(nodo->nombre_archivo, "", strlen(""));
     nodo->estado = 2;
     nodo->size = 0;
     nodo->fecha_creacion = nodo->fecha_modificacion = atoi(obtenerFechaActual());
@@ -192,7 +192,7 @@ int buscarPath(t_list* pathDividido){
                 //Voy iterando los padres y viendo si coinciden con el path
                 for (int j = 1; j < list_size(pathDividido); j++) {
                     char *nombreArchivo = (char *) list_get(pathDividido, list_size(pathDividido) - 1 - j);
-                    if (strcmp(nodoPadre->nombre_archvio, nombreArchivo, strlen(nombreArchivo)) != 0) {
+                    if (strcmp(nodoPadre->nombre_archivo, nombreArchivo, strlen(nombreArchivo)) != 0) {
                         esNodo = false;
                         break;
                     }
@@ -226,7 +226,7 @@ t_list* hallar_posibles_nodos(char* nombreNodo){
     GFile* nodo = obtenerTablaNodos(disco);
     for(int nro_nodo = 0 ; nro_nodo < 1024; nro_nodo++){
         //Si comparo los nombres y es verdadero los agrego a la lista de nodos candidatos
-        if(strcmp((nodo + nro_nodo)->nombre_archvio,nombreNodo) == 0){
+        if(strcmp((nodo + nro_nodo)->nombre_archivo,nombreNodo) == 0){
             list_add(nodosCandidatos, nro_nodo);
         }
     }
@@ -328,7 +328,7 @@ void escribirNodeTabla (GBloque* puntero_disco){
     for(int numero_archivo = 0; numero_archivo < CANTIDAD_ARCHIVOS_MAX; numero_archivo++){
         nodo[numero_archivo].estado = 0;
         nodo[numero_archivo].size = 0;
-        (nodo[numero_archivo].nombre_archvio)[0]='\0';
+        (nodo[numero_archivo].nombre_archivo)[0]='\0';
         for(int j=0; j < 1000; j++){
             nodo[numero_archivo].GBloque[j] = -1;
         }
@@ -412,7 +412,7 @@ void mostrarTablaNodos(GBloque* disco){
         printf("Tabal de nodos \n");
         for(int file = 0; file < CANTIDAD_ARCHIVOS_MAX; file ++){
             if(nodo[file].estado != 0){
-                printf("\nNumero:%d\t Estado:%d\t Tamanio:%d\t Padre:%d\t Nombre:%s\t", file, nodo[file].estado, nodo[file].size, nodo[file].ptr_bloque_padre, nodo[file].nombre_archvio);
+                printf("\nNumero:%d\t Estado:%d\t Tamanio:%d\t Padre:%d\t Nombre:%s\t", file, nodo[file].estado, nodo[file].size, nodo[file].ptr_bloque_padre, nodo[file].nombre_archivo);
             }
         }
 }
@@ -440,7 +440,7 @@ void mostrarTablaNodos(GBloque* disco){
 
 
 void mostrarNodo(GFile* nodo,GBloque* disco){
-    printf("\nNombre: %s\n", nodo->nombre_archvio);
+    printf("\nNombre: %s\n", nodo->nombre_archivo);
     printf("Tamanio: %d\n", nodo->size);
     printf("Estado: %d\n", nodo->estado);
     printf("Bloque padre: %d\n", nodo->ptr_bloque_padre);
@@ -457,10 +457,10 @@ void mostrarNodo(GFile* nodo,GBloque* disco){
         }
         printf("\n");
     }else{
-        printf("Bloques que usa:");
+        printf("Bloques que usa:\n");
         for(int i = 0; i < 1000;i++){
             if(nodo->GBloque[i] !=-1){
-                printf("\n\tBloque %d: %d", i, nodo->GBloque[i]);
+                printf("\tBloque %d: %d\n", i, nodo->GBloque[i]);
             }
         }
     }
