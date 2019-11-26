@@ -6,14 +6,19 @@
 
 //Funcion auxilliar para sac_mkdir
 int escribir_dir(GBloque* disco,GFile* nodo,int puntero){
-    int cantidadArchivos = (nodo->size)/sizeof(int);
+    int resultado = -1;
     nodo->size +=sizeof(puntero);
-
-    //Desde el comienzo de la particion me muevo al bloque donde tengo guradado todo
-    //Lo casteo a int para tener un array de puntero a bloques
     int* bloque_memoria =(int*) (disco + nodo->GBloque[0]);
-    //Desde el array de int me muevo hasta el ultimo lugar ocupado
-    *( bloque_memoria + cantidadArchivos ) = puntero;
+
+    for(int i = 0; i < 1024; i++){
+        if(bloque_memoria[i]==-1){
+            bloque_memoria[i] = puntero;
+            resultado = 0;
+            break;
+        }
+    }
+
+    return resultado;
 }
 
 //Crea una carpeta en disco
@@ -88,19 +93,12 @@ int sac_rmdir(char* path){
 
 }
 
-void liberarBloqueMemoria(int bloque, GBloque* disco, char* nombreParticion){
-    t_bitarray* bitmap = obtenerBitMap(nombreParticion, disco);
 
-    bitarray_clean_bit(bitmap, bloque);
+void eliminarNodoEnDirectorio(int* bloqueDirectorio,int nodoAEliminar ){
 
-    bitarray_destroy(bitmap);
-
-}
-void eliminarNodoEnDirectorio(GFile* nodoPadre,int nodoAEliminar ){
     for(int i = 0;i < 1024; i++){
-        if(nodoPadre->GBloque[i] == nodoAEliminar){
-            nodoPadre->GBloque[i] = -1;
-
+        if(bloqueDirectorio[i]  == nodoAEliminar){
+            bloqueDirectorio[i] = -1;
         }
     }
 }
@@ -112,53 +110,59 @@ int sac_rmnod(char* path){
     t_list* listaSinElHijo = list_take(pathDividido, list_size(pathDividido) - 1);
     int nro_nodo_padre = buscarPath(listaSinElHijo);
     list_destroy(listaSinElHijo);
-
+    list_destroy(pathDividido);
     GBloque* disco = mapParticion("../tools/disco.bin");
     GFile* tablaNodos = obtenerTablaNodos(disco);
     GFile* nodoAEliminar = tablaNodos + nro_nodo;
 
     int bloque;
     for(int i = 0; i < 1000; i++){
-        if(bloque = nodoAEliminar->GBloque[i] != -1){
-            liberarBloqueMemoria(bloque,disco,"../tools/disco.bin" );
+        if((bloque = nodoAEliminar->GBloque[i]) != -1){
+            liberarBloqueMemoria( calcularCorreccion(bloque),disco,"../tools/disco.bin" );
             nodoAEliminar->GBloque[i] = -1;
         }
     }
     nodoAEliminar->nombre_archivo[0] = '\0';
-    eliminarNodoEnDirectorio(tablaNodos + nro_nodo_padre, nro_nodo);
+    GFile* nodoPadre = tablaNodos + nro_nodo_padre;
+    nodoPadre->size -= sizeof(int);
+    GBloque* bloqueDir = disco+nodoPadre->GBloque[0];
+    eliminarNodoEnDirectorio((int*) bloqueDir, nro_nodo);
     nodoAEliminar->estado = 0;
-
     munmapParticion(disco,"../tools/disco.bin");
 }
 
 void main (){
-//    t_log* logger = log_create("formateo.log", "SAC", 0, LOG_LEVEL_TRACE);
+    t_log* logger = log_create("formateo.log", "SAC", 0, LOG_LEVEL_TRACE);
 //
 //
-//   formatear("../tools/disco.bin",logger);
-
-    //t_list * lista = buscarBloquesMemoriaLibres(1,disco, "../tools/disco.bin");
+//  formatear("../tools/disco.bin",logger);
+//
+//    //t_list * lista = buscarBloquesMemoriaLibres(1,disco, "../tools/disco.bin");
     GBloque* disco = mapParticion("../tools/disco.bin");
     GFile* carpetaRaiz = (GFile*) (disco+2);
 //
-    char* tuVieja = malloc(50);
-//   memcpy(tuVieja,"/Carpeta1",strlen("/Carpeta1")+1);
+//    char* tuVieja = malloc(50);
+//    memcpy(tuVieja,"/Carpeta1",strlen("/Carpeta1")+1);
 //    sac_mkdir(tuVieja);
 //    memcpy(tuVieja,"/Carpeta2",strlen("/Carpeta2")+1);
 //    sac_mkdir(tuVieja);
-    memcpy(tuVieja,"/Carpeta1/archivo1",strlen("/Carpeta1/archivo1")+1);
+//     memcpy(tuVieja,"/Carpeta1/archivo1",strlen("/Carpeta1/archivo1")+1);
 //    sac_mkdir(tuVieja);
-//    memcpy(tuVieja,"/Carpeta24/archivo1",strlen("/Carpeta24/archivo1")+1);
+//    memcpy(tuVieja,"/Carpeta2/archivo1",strlen("/Carpeta2/archivo1")+1);
 //    sac_mkdir(tuVieja);
-    sac_rmnod(tuVieja);
+//    memcpy(tuVieja,"/Carpeta3",strlen("/Carpeta3")+1);
+//    sac_mkdir(tuVieja);
+//  sac_rmnod(tuVieja);
+//  free(tuVieja);
+    liberarBloqueMemoria( calcularCorreccion(4),disco,"../tools/disco.bin" );
 
     mostrarParticion("../tools/disco.bin");
 
     mostrarNodo(carpetaRaiz, disco);
     mostrarNodo(carpetaRaiz + 1, disco);
-    mostrarNodo(carpetaRaiz + 2, disco);
-    mostrarNodo(carpetaRaiz + 3, disco);
-    mostrarNodo(carpetaRaiz + 4, disco);
+//    mostrarNodo(carpetaRaiz + 2, disco);
+//    mostrarNodo(carpetaRaiz + 3, disco);
+//    mostrarNodo(carpetaRaiz + 4, disco);
 
 
     munmapParticion (disco, "../tools/disco.bin");

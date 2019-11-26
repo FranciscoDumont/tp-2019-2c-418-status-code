@@ -56,6 +56,10 @@ char* crearBitMap(int bitmap_count_bloques);
 
 GFile* obtenerTablaNodos(GBloque* comienzoParticion);
 
+void liberarBloqueMemoria(int bloque, GBloque* disco, char* nombreParticion);
+
+int calcularCorreccion(int nro_bloque)
+
 /*****************************
  **** Funciones formateo *****
  ****************************/
