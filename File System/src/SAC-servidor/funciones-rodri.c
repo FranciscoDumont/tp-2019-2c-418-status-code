@@ -4,37 +4,85 @@
 
 #include "funciones-rodri.h"
 
+int obtenerNodoPadre(char* path){
+    int nodoPadre;
+    ////Divido el path y obtengo la lista menos el ultimo elemento
+    t_list* pathDividido = dividirPath(path);
 
+    if(list_size(pathDividido) < 2){ ////esta en la carpeta raiz
+        list_destroy(pathDividido);
+        return 0;
+    }else{
+
+        t_list *pathModificado = list_take(pathDividido, list_size(pathDividido) - 2);
+        nodoPadre = buscarPath(pathModificado);
+        list_destroy(pathModificado);
+        list_destroy(pathDividido);
+        return nodoPadre;
+
+        }
+}
+
+
+int esArchivoODirectorio(char* path){
+
+    ////Divido el path y obtengo el nombre
+    t_list* pathDividido = dividirPath(path);
+    char* file_name = list_get(pathDividido,list_size(path)-1);
+
+    ////Verifico si tiene un punto en la cadena
+    char* token = strtok(file_name, ".");
+
+    if(token != NULL){ ////Es un archivo porque tiene una extension
+        return 1;
+    }else {
+        return 2; ////Si es null quiere decir que el file_name no tiene extension por ende es un directorio
+    }
+}
 
 
 int sac_mknod(char* path, mode_t mode, dev_t dev) { // mode y dev son los permisos del archivo
     int current_node = 0;
     char* fecha_actual = obtenerFechaActual();
-
+    char* copiaPath = (char *)malloc( 75 * sizeof(char));
+    int estado;
+    int nodoPadre;
 
     //Traigo la particion a memoria
-    char* particion =  "../tools/disco.bin";
+    char* particion =  "tools/disco.bin";
     GBloque* disco = mapParticion(particion);
     GFile* tablaNodos = obtenerTablaNodos(disco);
 
-    while(tablaNodos[current_node].estado != 0 && current_node < NOMBRE_ARCHIV_MAX) {
-        current_node++;
-    }
+    ////Obtengo un nodo vacio
+
+    current_node = obtenerNodoLibre(tablaNodos);
+
     if(current_node >= NOMBRE_ARCHIV_MAX){
         return EDQUOT;
     }
 
+    ////Me posiciono en el nodo que quiero crear con aritmetica de punteros
     GFile* nodeToSet = tablaNodos + current_node;
+
+    nodoPadre = obtenerNodoPadre(path);
+
+    t_list* listaBloquesLibres = buscarBloquesMemoriaLibres(1,disco, particion);
 
     strcpy((char*)nodeToSet -> nombre_archivo, path + 1);
     nodeToSet->size = 0;
-    nodeToSet->estado = 1;
     nodeToSet->fecha_creacion =  atoi(fecha_actual);
     nodeToSet->fecha_modificacion = atoi(fecha_actual);
-    //nodoLibre->ptr_bloque_padre = (tablaNodos + nro_nodoPadre)->GBloque[0];
-    //nodoLibre->GBloque[0] = *(int*)list_get(listaBloquesLibres,0);
+    nodeToSet -> estado = 1;
+    nodeToSet->ptr_bloque_padre = nodoPadre;
+    nodeToSet->GBloque[0] = list_get(listaBloquesLibres,0);
 
-    ////msync(disk,diskSize, MS_SYNC); -> para que es?
+//    int tamanio_disco = obtenerTamanioArchivo(particion);
+//
+//    msync(disco,tamanio_disco, MS_SYNC);
+    free(copiaPath);
+    free(fecha_actual);
+    list_destroy(listaBloquesLibres);
+    munmapParticion(disco, particion);
     return 0;
 }
 
@@ -74,17 +122,6 @@ int sac_getattr(const char *path, struct stat *stbuf) {
     return res;
 }
 
-t_list* dividirPath(char* path){
-    char* token = strtok(path, "/");
-    t_list* pathDividido = list_create();
-
-    while(token != NULL){
-        list_add(pathDividido, token);
-        token = strtok(NULL, "/");
-    }
-    return pathDividido;
-}
-
 
 
 int sac_read(const char *path, char *buf, size_t size, off_t offset){
@@ -116,20 +153,27 @@ int main(){
     t_log* logger = log_create("formateo.log", "SAC", 0, LOG_LEVEL_TRACE);
 
 
-    formatear("../tools/disco.bin",logger);
+    formatear("tools/disco.bin",logger);
 
     //t_list * lista = buscarBloquesMemoriaLibres(1,disco, "../tools/disco.bin");
-    GBloque* disco = mapParticion("../tools/disco.bin");
+    GBloque* disco = mapParticion("tools/disco.bin");
     GFile* carpetaRaiz = (GFile*) (disco+2);
+    mostrarParticion("tools/disco.bin");
 
+    char* buffer = malloc(50);
 
+    memcpy(buffer,"/archivo1",strlen("/archivo1")+1);
+    sac_mknod(buffer, NULL, NULL);
+    memcpy(buffer,"/carpeta/archivo1/archivo2",strlen("/carpeta/archivo1/archivo2")+1);
+    sac_mknod(buffer, NULL, NULL);
+//    memcpy(buffer,"/archivo2",strlen("/archivo2")+1);
+//    sac_mknod(buffer, NULL, NULL);
 
-    mostrarParticion("../tools/disco.bin");
+    mostrarParticion("tools/disco.bin");
 
     mostrarNodo(carpetaRaiz, disco);
-    mostrarNodo(carpetaRaiz + 1, disco);
-    mostrarNodo(carpetaRaiz + 2, disco);
-    mostrarNodo(carpetaRaiz + 3, disco);
 
-    munmapParticion (disco, "../tools/disco.bin");
+    munmapParticion (disco, "tools/disco.bin");
+
+
 }
