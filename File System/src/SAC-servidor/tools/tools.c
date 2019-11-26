@@ -46,6 +46,7 @@ t_list * buscarBloquesMemoriaLibres(int cantidad,GBloque* disco, char* nombrePar
         }
     }
 
+    bitarray_destroy(bitmap);
     return bloquesLibres;
 
 }
@@ -70,7 +71,7 @@ void munmapParticion (GBloque* disco, char* nombreParticion){
 char* obtenerFechaActual(){
     time_t t;
     struct tm *tm;
-    char* fechayhora = malloc(sizeof(char)*8);
+    char* fechayhora = malloc(16);
 
     t=time(NULL);
     tm=localtime(&t);
@@ -127,7 +128,8 @@ void crearDirectorioRaiz(GFile* nodo, GBloque* disco, char* nombreParticion) {
     memcpy(nodo->nombre_archivo, "", strlen(""));
     nodo->estado = 2;
     nodo->size = 0;
-    nodo->fecha_creacion = nodo->fecha_modificacion = atoi(obtenerFechaActual());
+    char* fechahoy = obtenerFechaActual();
+    nodo->fecha_creacion = nodo->fecha_modificacion = atoi(fechahoy);
 
     //Busco un bloque libre para que guarde todos los puntero a los archivos
     t_list* bloqueLibre = buscarBloquesMemoriaLibres(1, disco, nombreParticion);
@@ -135,9 +137,13 @@ void crearDirectorioRaiz(GFile* nodo, GBloque* disco, char* nombreParticion) {
     inicializarBloqueDirectorio(disco + nro_nodoLibre);//Dir Bloque = inicio + nro_bloque
     nodo->GBloque[0] = nro_nodoLibre;
 
+    free(list_get(bloqueLibre,0));
+    free(fechahoy);
+    list_destroy(bloqueLibre);
+
 }
 
-char* crearBitMap(int byts_bitmap){
+t_bitarray* crearBitMap(int byts_bitmap){
 
     char* bitarray = malloc(byts_bitmap);
     int cantidad_bits = byts_bitmap * 8;
@@ -146,7 +152,7 @@ char* crearBitMap(int byts_bitmap){
     t_bitarray* bitmap = bitarray_create_with_mode(bitarray, byts_bitmap, MSB_FIRST);
 
     //Inicializo todos los bits en 0
-    for(int pos = 0; pos <= cantidad_bits; pos++){;
+    for(int pos = 0; pos < cantidad_bits; pos++){;
         bitarray_clean_bit(bitmap, pos);
     }
     //Seteo los bloques usados en el bitarray
@@ -154,7 +160,7 @@ char* crearBitMap(int byts_bitmap){
         bitarray_set_bit(bitmap, pos);
     }
 
-    return bitmap->bitarray;
+    return bitmap;
 }
 
 //Busca un path en el disco
@@ -349,12 +355,15 @@ void escribirHeader(GBloque* puntero_disco, int bitmap_size){
 
 void escribirBitMap(GBloque* disco, int  bitmap_bloques_count, int bitmap_size){
 
-    char* bitmap = crearBitMap(bitmap_size);
+    t_bitarray* bitmap = crearBitMap(bitmap_size);
 
     //Voy copiando el bitmap por partes en los distintos bloques
     for(int bloque = 0; bloque < bitmap_bloques_count ;bloque++){
-        memcpy(disco[bloque].bytes, bitmap + (bloque * BLOQUE_TAMANIO), BLOQUE_TAMANIO);
+        memcpy(disco[bloque].bytes, bitmap->bitarray + (bloque * BLOQUE_TAMANIO), BLOQUE_TAMANIO);
     }
+
+    free(bitmap->bitarray);
+    bitarray_destroy(bitmap);
 
 }
 

@@ -52,13 +52,13 @@ void munmapParticion (GBloque* disco, char* nombreParticion);
 
 int obtenerNodoLibre (GFile* comienzoTabla);
 
-char* crearBitMap(int bitmap_count_bloques);
+t_bitarray* crearBitMap(int bitmap_count_bloques);
 
 GFile* obtenerTablaNodos(GBloque* comienzoParticion);
 
 void liberarBloqueMemoria(int bloque, GBloque* disco, char* nombreParticion);
 
-int calcularCorreccion(int nro_bloque)
+int calcularCorreccion(int nro_bloque);
 
 /*****************************
  **** Funciones formateo *****
