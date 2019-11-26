@@ -14,7 +14,6 @@ pthread_mutex_t mutex_logger;
 //--LISTO
 int main() {
     pthread_t metrics_thread;
-    void* metrics_thread_error;
 
     start_log();
 
@@ -28,7 +27,7 @@ int main() {
 
     server_function();
 
-    pthread_join(metrics_thread, &metrics_thread_error);
+    pthread_detach(metrics_thread);
 
     return 0;
 }
@@ -126,11 +125,15 @@ void server_function(){
     int PORT = config->listen_port;
     int socket;
     if((socket = create_socket()) == -1) {
-        printf("Error creating socket\n");
+        pthread_mutex_lock(&mutex_logger);
+        log_error(logger, "Error creating socket");
+        pthread_mutex_unlock(&mutex_logger);
         return;
     }
     if((bind_socket(socket, PORT)) == -1) {
-        printf("Error binding socket\n");
+        pthread_mutex_lock(&mutex_logger);
+        log_error(logger, "Error binding socket");
+        pthread_mutex_unlock(&mutex_logger);
         return;
     }
 
@@ -151,6 +154,7 @@ void server_function(){
 
         t_list* cosas = receive_package(fd, headerStruct);
 
+        //Hacer un hilo para cada caso?
         switch (headerStruct->type){
             case SUSE_CREATE:
             {
@@ -223,6 +227,7 @@ void suse_create(int fd, t_list* received){
     t_thread* new_thread = malloc(sizeof(t_thread));
     new_thread->tid = tid;
     new_thread->pid = pid;
+    new_thread->last_estimated = 0;
     new_thread->exec_list = list_create();
     new_thread->ready_list = list_create();
     new_thread->start_time = malloc(sizeof(struct timespec));
@@ -450,9 +455,47 @@ int schedule_next(t_program* program){
     return return_tid;
 }
 
-//TODO:implementar SJF-E, actualmente es FIFO
 t_thread* schedule_new_thread(t_program* program){
-    return (t_thread*)list_remove(program->ready, 0);
+
+    t_thread* next_thread = NULL;
+
+    int position = 0;
+    int element_position;
+    void find_next_thread(void* _t_thread){
+        t_thread* thread = (t_thread*)_t_thread;
+
+        //Encuentro el ultimo intervalo de ejecucion
+        long last_real;
+        if(list_size(thread->exec_list) == 0){
+            last_real = 0;
+        } else {
+            t_interval* exec = last_exec(thread);
+
+            struct timespec* elapsed_time = malloc(sizeof(struct timespec));
+            elapsed_time->tv_nsec = 0;
+            elapsed_time->tv_sec = 0;
+            time_diff(exec->start_time, exec->end_time, elapsed_time);
+            last_real = timespec_to_us(elapsed_time);
+            free(elapsed_time);
+        }
+        thread->last_estimated = config->alpha_sjf * last_real + (1 - config->alpha_sjf) * thread->last_estimated;
+        if(next_thread == NULL){
+            next_thread = thread;
+            element_position = position;
+        } else {
+            if(next_thread->last_estimated > thread->last_estimated){
+                next_thread = thread;
+                element_position = position;
+            }
+        }
+        position++;
+    }
+    list_iterate(program->ready, &find_next_thread);
+    list_remove(program->ready, element_position);
+
+    return next_thread;
+
+    //return (t_thread*)list_remove(program->ready, 0);
 }
 
 void suse_join(int fd, t_list* received){
