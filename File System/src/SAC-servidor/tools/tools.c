@@ -265,6 +265,45 @@ GFile* obtenerTablaNodos(GBloque* comienzoParticion){
     //Corro entonces el puntero 1 bloque mas los bloques que ocupa el bitMap
     return (GFile *) header + 1 + header->bitMap_tamanio;
 }
+int calcularCorreccion(int nro_bloque){
+    int numero_correcto = nro_bloque;
+    switch(nro_bloque % 8){
+        case 0:
+            numero_correcto += 7;
+            break;
+        case 1:
+            numero_correcto += 5;
+            break;
+        case 2:
+            numero_correcto += 3;
+            break;
+        case 3:
+            numero_correcto += 1;
+            break;
+        case 4:
+            numero_correcto -= 1;
+            break;
+        case 5:
+            numero_correcto -= 3;
+            break;
+        case 6:
+            numero_correcto -= 5;
+            break;
+        case 7:
+            numero_correcto -= 7;
+            break;
+    }
+    return numero_correcto;
+}
+
+void liberarBloqueMemoria(int bloque, GBloque* disco, char* nombreParticion){
+    t_bitarray* bitmap = obtenerBitMap(nombreParticion, disco);
+
+    bitarray_clean_bit(bitmap, bloque);
+
+    bitarray_destroy(bitmap);
+
+}
 
 /*****************************
  **** Funciones formateo *****
@@ -449,10 +488,12 @@ void mostrarNodo(GFile* nodo,GBloque* disco){
     if(nodo->estado == 2){
         printf("Bloque que usa: %d\n", nodo->GBloque[0]);
         printf("Directorio:");
-        int* array_archivos = (int*) (disco + nodo->GBloque[0]);
-        for(int i = 0; i < (BLOQUE_TAMANIO/ sizeof(int));i++){
-            if(*(array_archivos+i) != -1) {
-                printf("\n\tArchivo %d: %d", i, *(array_archivos + i));
+        if(nodo->GBloque[0] != -1){
+            int* array_archivos = (int*) (disco + nodo->GBloque[0]);
+            for(int i = 0; i < (BLOQUE_TAMANIO/ sizeof(int));i++){
+                if(*(array_archivos+i) != -1) {
+                    printf("\n\tArchivo %d: %d", i, *(array_archivos + i));
+                }
             }
         }
         printf("\n");
