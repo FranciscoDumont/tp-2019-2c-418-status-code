@@ -200,7 +200,6 @@ int muse_init(int id, char *ip, int puerto) {
     return 1;
 }
 
-//todo implementar funciones
 void muse_close() {
 }
 
@@ -208,14 +207,29 @@ void muse_close() {
 uint32_t muse_alloc(uint32_t tam, int id_proceso) {
     // Veo cuantas paginas necesito
     int paginas_necesarias;
-
     process_t* el_proceso = buscar_proceso(id_proceso);
-
     t_list* segments = el_proceso->segments;
+    uint32_t ret_addr;
 
+    //En este caso el proceso no tiene ningun segmento
     if(list_size(segments) == 0){
 
-        //TODO crear segmento nuevo
+        paginas_necesarias = (int) ceil((double)(tam + 2*sizeof(heap_metadata))/config.page_size);
+        //TODO: verificar si hay paginas libres suficientes y usar un mutex?
+        segment_t* nuevo_segmento = crear_segmento(el_proceso, paginas_necesarias);
+
+        log_info(logger, "Paginas necesarias: %d", paginas_necesarias);
+
+        // Reservo los frames necesarios de la memoria principal
+        asignar_paginas(paginas_necesarias, nuevo_segmento);
+
+        // Tengo el segmento con la lista de paginas creada, ahora cargo los metadata en los lugares correspondientes de la MP
+        asignar_primer_metadata(nuevo_segmento, tam);
+        asignar_ultima_metadata(nuevo_segmento, tam, paginas_necesarias);
+
+        list_add(el_proceso->segments, nuevo_segmento);
+
+        ret_addr = nuevo_segmento->base + sizeof(heap_metadata);
     } else {
 
         //TODO verificar si hay algun segmento con capacidad de almacenaje
@@ -223,6 +237,11 @@ uint32_t muse_alloc(uint32_t tam, int id_proceso) {
         //TODO crear nuevo segmento(verificando si hay pag disponibles)
     }
 
+    /**
+     *
+     * Hasta aca estamos bien, revisar todo_ lo demas
+     *
+    */
     //Analizaremos segmento a segmento de Heap,
     // verificando si alguno de los Headers de metadata se encuentra con el valor free para incorporar el malloc.
     paginas_necesarias = (int) ceil((double)(tam + 1*sizeof(heap_metadata))/config.page_size);
@@ -248,7 +267,7 @@ uint32_t muse_alloc(uint32_t tam, int id_proceso) {
             void* posicion_segundo_metadata = traducir_virtual(un_segmento, dir_virtual + tam);
 
             mp_escribir_metadata(posicion_segundo_metadata, (uint32_t)(un_segmento->size)-(usado+sizeof(heap_metadata)+tam), true);
-            return dir_virtual;
+            ret_addr = dir_virtual;
         }
     }
 
@@ -256,26 +275,7 @@ uint32_t muse_alloc(uint32_t tam, int id_proceso) {
 
     // Por último, en caso de no poder extender un segmento, deberá crear otro nuevo.
 
-    paginas_necesarias = (int) ceil((double)(tam + 2*sizeof(heap_metadata))/config.page_size);
-    //TODO: verificar si hay paginas libres suficientes
-    segment_t* nuevo_segmento = crear_segmento(el_proceso, paginas_necesarias);
-
-    log_info(logger, "Paginas necesarias: %d", paginas_necesarias);
-
-    // Reservo los frames necesarios de la memoria principal
-    asignar_paginas(paginas_necesarias, nuevo_segmento);
-
-    // Tengo el segmento con la lista de paginas creada,
-    // ahora cargo los metadata en los lugares correspondientes de la MP
-    page_t* primera_pagina = list_get(nuevo_segmento->pages, 0);
-    void* posicion_primer_metadata = MAIN_MEMORY + config.page_size * primera_pagina->frame;
-    mp_escribir_metadata(posicion_primer_metadata, tam, false);
-    void* posicion_segundo_metadata = traducir_virtual(nuevo_segmento, tam + sizeof(heap_metadata));
-
-    mp_escribir_metadata(posicion_segundo_metadata, (uint32_t)(paginas_necesarias*config.page_size)-tam - 2*sizeof(heap_metadata), true);
-    list_add(el_proceso->segments, nuevo_segmento);
-
-    return nuevo_segmento->base + sizeof(heap_metadata);
+    return ret_addr;
 }
 
 void muse_free(uint32_t dir) {
@@ -342,20 +342,31 @@ page_t* crear_pagina(int frame, int presence_bit, int modified_bit, int use_bit)
     return nueva_pagina;
 }
 
-void* mp_escribir_metadata(void* espacio_libre, uint32_t tam, int esta_libre){
-    heap_metadata* nueva_metadata = malloc(sizeof(heap_metadata));
-    nueva_metadata->size = tam;
-    nueva_metadata->isFree = esta_libre;
-    const void * metadata = nueva_metadata;
-    memcpy(espacio_libre, metadata, sizeof(heap_metadata));
-    return espacio_libre + sizeof(heap_metadata);
+void asignar_primer_metadata(segment_t* segment, int tam){
+    page_t* primera_pagina = list_get(segment->pages, 0);
+    void* posicion_primer_metadata = MAIN_MEMORY + config.page_size * primera_pagina->frame;
+    mp_escribir_metadata(posicion_primer_metadata, tam, false);
 }
 
+void asignar_ultima_metadata(segment_t* segment, int tam, int paginas_necesarias){
+    void* posicion_segundo_metadata = traducir_virtual(segment, tam + sizeof(heap_metadata));
+    mp_escribir_metadata(posicion_segundo_metadata, (uint32_t)(paginas_necesarias * config.page_size) - tam - 2 * sizeof(heap_metadata), true);
+}
+
+void* mp_escribir_metadata(void* espacio_libre, uint32_t tam, int isFree){
+    //TODO: verificar si esta bien el copiado de memoria y liberarlo
+    heap_metadata* nueva_metadata = malloc(sizeof(heap_metadata));
+    nueva_metadata->size = tam;
+    nueva_metadata->isFree = isFree;
+    const void * metadata = nueva_metadata;
+    memcpy(espacio_libre, metadata, sizeof(heap_metadata));
+    //free(nueva_metadata);
+    return espacio_libre + sizeof(heap_metadata);
+}
 
 int mp_buscar_frame_libre(){
 	int i;
 	int nro_frame = -1; // Si no encuentra un frame libre va a devolver -1
-	bool esta_todo_ok = false;
 	for (i = 0; i<MAPA_MEMORIA_SIZE; ++i){
 	    if (! bitarray_test_bit(MAPA_MEMORIA, i)){
 	        nro_frame = i;
@@ -365,6 +376,13 @@ int mp_buscar_frame_libre(){
     return nro_frame;
 }
 
+process_t* buscar_proceso(int id_proceso){
+    bool key_search(void * un_proceso){
+        process_t * process = (process_t *) un_proceso;
+        return process->pid == id_proceso;
+    }
+    return (process_t*)list_find(PROCESS_TABLE, key_search);
+}
 
 char* mapa_memoria_to_string(){
 	char* resultado = string_new();
@@ -379,26 +397,12 @@ char* mapa_memoria_to_string(){
 	return resultado;
 }
 
-
-process_t* buscar_proceso(int id_proceso){
-    // esta funcion esta bien aca xd
-    bool key_search(void * un_proceso){
-        process_t * process = (process_t *) un_proceso;
-        return process->pid == id_proceso;
-    }
-
-    process_t* proceso_encontrado = list_find(PROCESS_TABLE, key_search);
-    return proceso_encontrado;
-    // esta funcion esta bien aca xd
-}
-
-
+//TODO: revisar esto, ya que podria haber un cacho libre en el medio y esto solo toma en cuenta la metadata del final del segmento
 void* puntero_a_mp_del_primer_metadata_libre(segment_t* un_segmento){
     int tamanio_ocupado = segmento_ocupado_size(un_segmento);
     if(tamanio_ocupado == un_segmento->size){
         return NULL;
     }
-
     return traducir_virtual(un_segmento, tamanio_ocupado - sizeof(heap_metadata));
 }
 
@@ -418,6 +422,7 @@ int segmento_ocupado_size(segment_t* un_segmento){
 
     while(tamanio < un_segmento->size){
         memcpy(una_metadata, puntero, sizeof(heap_metadata));
+        //TODO: arreglar esto, si tengo un cacho de memoria libre en el medio del segmento esto va a cortar, pero puede llegar a haber espacio ocupado luego del mismo
         if(!una_metadata->isFree){
             tamanio += sizeof(heap_metadata) + una_metadata->size;
             puntero = traducir_virtual(un_segmento, tamanio);

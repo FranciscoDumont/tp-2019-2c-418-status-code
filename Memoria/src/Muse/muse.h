@@ -102,18 +102,76 @@ segment_t* crear_segmento(proceso_t* process, int paginas_necesarias);
  */
 void asignar_paginas(int paginas_necesarias, segment_t * nuevo_segmento);
 
-page_t* crear_pagina(int frame, int presence_bit, int modified_bit, int use);
+/**
+ * Constructor de las paginas
+ * @param frame
+ * @param presence_bit
+ * @param modified_bit
+ * @param use_bit
+ * @return
+ */
+page_t* crear_pagina(int frame, int presence_bit, int modified_bit, int use_bit);
 
-// Devuelve un puntero a donde termina la estructura
+/**
+ * Asigno la primera metadata de uso para un segmento nuevo
+ * @param segment_t* segment, segmento al que le voy a agregar la primera metadata
+ * @param int tam, tamaño de la memoria reservada posterior a la metadata
+ */
+void asignar_primer_metadata(segment_t* segment, int tam);
+
+/**
+ * Asigno la ultima metadata a un segmento para indicar el espacio libre
+ * @param segment
+ * @param tam
+ * @param paginas_necesarias
+ */
+void asignar_ultima_metadata(segment_t* segment, int tam, int paginas_necesarias);
+
+/**
+ * Escribo la metadata correspondiente en una direccion de memoria dada
+ * @param void* espacio_libre, puntero sobre el que voy a escribir la metadata
+ * @param int tam, tamaño libre u ocupado a escribir en la metadata
+ * @param int esta_libre, booleano que me indica si el tamaño indicado es de espacio libre o de espacio reservado
+ * TODO: verificar si habria que sumarle 1 a la direccion retornada
+ * @return retorno la direccion posterior a la escritura(final de la metadata)
+ */
 void* mp_escribir_metadata(void* espacio_libre, uint32_t tam, int esta_libre);
 
-// Devuelve un puntero al primer espacio libre en MP que sea del tam suficiente
+/**
+ * Itero el bitarray buscando un frame libre
+ * @return numero de frame de mem ppal
+ */
 int mp_buscar_frame_libre();
 
+/**
+ * Busco un proceso por id(socket cliente)
+ * @param int id_proceso
+ * @return retorno el proceso correspondiente al id dado
+ */
 process_t* buscar_proceso(int id_proceso);
+
 char* mapa_memoria_to_string();
+
+/**
+ * Traduzco la direccion virtual de un segmento dado en la direccion "fisica" dentro de mi memoria
+ * @param un_segmento
+ * @param direccion_virtual
+ * @return direccion "fisica"
+ */
 void* traducir_virtual(segment_t* un_segmento, uint32_t direccion_virtual);
+
+/**
+ * Retorno la direccion "fisica" al primer metadata de libre dentro de un segmento
+ * @param un_segmento
+ * @return
+ */
 void* puntero_a_mp_del_primer_metadata_libre(segment_t* un_segmento);
+
+/**
+ * Retorno la cantidad de memoria OCUPADA de un segmento
+ * @param segment_t* un_segmento, segmento sobre el que verifico la memoria ocupada
+ * @return retorno la cantidad de memoria ocupada del segmento en bytes
+ */
 int segmento_ocupado_size(segment_t* un_segmento);
 
 
