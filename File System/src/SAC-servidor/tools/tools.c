@@ -132,10 +132,14 @@ void crearDirectorioRaiz(GFile* nodo, GBloque* disco, char* nombreParticion) {
     nodo->fecha_creacion = nodo->fecha_modificacion = atoi(fechahoy);
 
     //Busco un bloque libre para que guarde todos los puntero a los archivos
-    t_list* bloqueLibre = buscarBloquesMemoriaLibres(1, disco, nombreParticion);
-    int nro_nodoLibre = *(int*)list_get(bloqueLibre,0);
+    t_list* bloqueLibre = buscarBloquesMemoriaLibres(2, disco, nombreParticion);
+    int nro_nodoLibre = *(int*)list_get(bloqueLibre,1);
+    int puntero_indirecto = *(int*)list_get(bloqueLibre,0);
     inicializarBloqueDirectorio(disco + nro_nodoLibre);//Dir Bloque = inicio + nro_bloque
-    nodo->GBloque[0] = nro_nodoLibre;
+    inicializarBloqueDirectorio(disco + puntero_indirecto);
+    nodo->GBloque[0] = puntero_indirecto;
+    int* BloqIndirecto =(int*) (disco + puntero_indirecto);
+    BloqIndirecto[0] = nro_nodoLibre;
 
     free(list_get(bloqueLibre,0));
     free(fechahoy);
@@ -269,7 +273,7 @@ GFile* obtenerTablaNodos(GBloque* comienzoParticion){
 
     //Y saco del header el tamanio del bitmap
     //Corro entonces el puntero 1 bloque mas los bloques que ocupa el bitMap
-    return (GFile *) (header + 1 + header->bitMap_tamanio);
+    return (GFile *) (comienzoParticion + 1 + header->bitMap_tamanio);
 }
 int calcularCorreccion(int nro_bloque){
     int numero_correcto = nro_bloque;
@@ -495,22 +499,29 @@ void mostrarNodo(GFile* nodo,GBloque* disco){
     printf("Fecha creacion: %d\n", nodo->fecha_creacion);
     printf("Fecha modificacion: %d\n", nodo->fecha_modificacion);
     if(nodo->estado == 2){
-        printf("Bloque que usa: %d\n", nodo->GBloque[0]);
+        printf("Bloque directo que usa: %d\n", nodo->GBloque[0]);
+        int* puntero_indirecto = (int*) (disco + nodo->GBloque[0]);
+        int* directorio = (int*) (disco + puntero_indirecto[0]);
+        printf("Bloque indirecto que usa: %d\n", puntero_indirecto[0]);
         printf("Directorio:");
         if(nodo->GBloque[0] != -1){
-            int* array_archivos = (int*) (disco + nodo->GBloque[0]);
-            for(int i = 0; i < (BLOQUE_TAMANIO/ sizeof(int));i++){
-                if(*(array_archivos+i) != -1) {
-                    printf("\n\tArchivo %d: %d", i, *(array_archivos + i));
+           for(int i = 0; i < (BLOQUE_TAMANIO/ sizeof(int));i++){
+                if(*(directorio+i) != -1) {
+                    printf("\n\tArchivo %d: %d", i, *(directorio + i));
                 }
-            }
+           }
         }
         printf("\n");
     }else{
         printf("Bloques que usa:\n");
         for(int i = 0; i < 1000;i++){
             if(nodo->GBloque[i] !=-1){
-                printf("\tBloque %d: %d\n", i, nodo->GBloque[i]);
+                printf("\t\tBloque puntero indirecto %d: %d\n", i, nodo->GBloque[i]);
+                int* bloqueSimple = (int*) (disco + nodo->GBloque[i]);
+                for(int i = 0; i < 1024; i++){
+                    printf("\t\t\tBloque %d: %d\n", i, bloqueSimple[i]);
+                }
+
             }
         }
     }

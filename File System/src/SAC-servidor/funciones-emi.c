@@ -8,8 +8,8 @@
 int escribir_dir(GBloque* disco, GFile* nodo, int puntero){
     int resultado = -1;
     nodo->size +=sizeof(puntero);
-    int* bloque_memoria =(int*) (disco + nodo->GBloque[0]);
-
+    int* bloque_memoria_indirecto =(int*) (disco + nodo->GBloque[0]);
+    int* bloque_memoria = (int*) (disco + bloque_memoria_indirecto[0]);
     for(int i = 0; i < 1024; i++){
         if(bloque_memoria[i]==-1){
             bloque_memoria[i] = puntero;
@@ -40,7 +40,7 @@ int sac_mkdir(char* path ) {
     GFile *tablaNodos = obtenerTablaNodos(disco);
     GFile *nodoPadre = tablaNodos+ nro_nodoPadre;
 
-    if (existeNodo == -1 && nodoPadre != -1 && nodoPadre->estado == 2){
+    if (existeNodo == -1 && nro_nodoPadre != -1 && nodoPadre->estado == 2){
 
         char *fecha_actual = obtenerFechaActual();
 
@@ -55,10 +55,11 @@ int sac_mkdir(char* path ) {
 
         //Obtengo el puntero a ese nodo  y su bloque para el directorio
         GFile *nodoLibre = tablaNodos + nro_nodoLibre;
-        t_list *listaBloquesLibres = buscarBloquesMemoriaLibres(1, disco, particion);
+        t_list *listaBloquesLibres = buscarBloquesMemoriaLibres(2, disco, particion);
 
         //Inicializo ese bloque conseguido
         inicializarBloqueDirectorio(disco + *(int *) list_get(listaBloquesLibres, 0));
+        inicializarBloqueDirectorio(disco + *(int *) list_get(listaBloquesLibres, 1));
 
         //Devuelve error si no hay bloques libres
         if (list_is_empty(listaBloquesLibres)) {
@@ -66,12 +67,15 @@ int sac_mkdir(char* path ) {
             munmapParticion(disco, "../tools/disco.bin");
             return -1;
         }
+
         memcpy((nodoLibre->nombre_archivo), nombre_dir, strlen(nombre_dir) + 1);
         nodoLibre->estado = 2;
         nodoLibre->fecha_creacion = atoi(fecha_actual);
         nodoLibre->fecha_modificacion = atoi(fecha_actual);
         nodoLibre->ptr_bloque_padre = nro_nodoPadre;
         nodoLibre->GBloque[0] = *(int *) list_get(listaBloquesLibres, 0);
+        int* punteroIndirecto = (int*)(disco + *(int *) list_get(listaBloquesLibres, 0));
+        punteroIndirecto[0] = *(int *) list_get(listaBloquesLibres, 1);
         nodoLibre->size = 0;
 
 
@@ -93,12 +97,18 @@ int sac_mkdir(char* path ) {
 
 void eliminarNodo(GFile* nodoAEliminar, GBloque* disco){
 
-    int bloque;
     for(int i = 0; i < 1000; i++){
-        if((bloque = nodoAEliminar->GBloque[i]) != -1){
-            liberarBloqueMemoria( calcularCorreccion(bloque),disco,"../tools/disco.bin" );
+        int bloque_indirecto = nodoAEliminar->GBloque[i];
+        int* bloque = (int*) (disco + bloque_indirecto);
+        if(bloque_indirecto != -1){
+            for(int j = 0; j < 1024; j++){
+                if(bloque[j] != -1){
+                    liberarBloqueMemoria( calcularCorreccion(bloque[j]),disco,"../tools/disco.bin" );
+                }
+            }
             nodoAEliminar->GBloque[i] = -1;
         }
+        liberarBloqueMemoria( calcularCorreccion(bloque_indirecto),disco,"../tools/disco.bin" );
     }
     nodoAEliminar->size = 0;
     nodoAEliminar->nombre_archivo[0] = '\0';
@@ -109,12 +119,13 @@ void eliminarNodo(GFile* nodoAEliminar, GBloque* disco){
 void eliminarDir(GFile* nodo, GBloque* disco){
 
     int* directorio = (int*) (disco + nodo->GBloque[0]);
+    int* puntero_simple = (int *) (disco + directorio[0]);
 
     for (int i = 0; i < 1024; i++ ){
 
-        if(directorio[i] != -1){
+        if(puntero_simple[i] != -1){
             GFile* tablaNodos = obtenerTablaNodos(disco);
-            GFile* nodoAEliminar = tablaNodos + directorio[i];
+            GFile* nodoAEliminar = tablaNodos + puntero_simple[i];
 
             if(nodoAEliminar->estado == 2){
                 eliminarDir(nodoAEliminar,disco);
@@ -123,7 +134,6 @@ void eliminarDir(GFile* nodo, GBloque* disco){
             }
         }
 
-        directorio[i] = -1;
     }
 
     eliminarNodo(nodo, disco);
@@ -143,7 +153,8 @@ int sac_rmdir(char* path){
         if(nodoAEliminar->estado == 2){
             eliminarDir(nodoAEliminar, disco);
             GFile* nodoPadre = tablaNodos + nodoAEliminar->ptr_bloque_padre;
-            int* directorioPadre = disco + nodoPadre->GBloque[0];
+            int* punteroIndirectoPadre = disco + nodoPadre->GBloque[0];
+            int* directorioPadre = disco + punteroIndirectoPadre[0];
             eliminarNodoEnDirectorio( directorioPadre , nro_nodo);
             resultado = 0;
         }
@@ -154,7 +165,6 @@ int sac_rmdir(char* path){
     return resultado;
 
 }
-
 
 void eliminarNodoEnDirectorio(int* bloqueDirectorio, int nodoAEliminar ){
 
@@ -200,46 +210,52 @@ void main (){
     t_log* logger = log_create("formateo.log", "SAC", 0, LOG_LEVEL_TRACE);
 //
 //
-//  formatear("../tools/disco.bin",logger);
+  formatear("../tools/disco.bin",logger);
 //
 //    //t_list * lista = buscarBloquesMemoriaLibres(1,disco, "../tools/disco.bin");
-    GBloque* disco = mapParticion("../tools/disco.bin");
-    GFile* carpetaRaiz = (GFile*) (disco+2);
+
 //
     char* tuVieja = malloc(50);
     memcpy(tuVieja,"/Carpeta1",strlen("/Carpeta1")+1);
-//    sac_mkdir(tuVieja);
-//    memcpy(tuVieja,"/Carpeta2",strlen("/Carpeta2")+1);
-//    sac_mkdir(tuVieja);
-//    memcpy(tuVieja,"/Carpeta1/archivo1",strlen("/Carpeta1/archivo1")+1);
-//    sac_mkdir(tuVieja);
-//    memcpy(tuVieja,"/Carpeta1/Carpeta3",strlen("/Carpeta1/Carpeta3")+1);
-//    sac_mkdir(tuVieja);
-//    memcpy(tuVieja,"/Carpeta2/archivo1",strlen("/Carpeta2/archivo1")+1);
-//    sac_mkdir(tuVieja);
-//  sac_rmnod(tuVieja);
+    sac_mkdir(tuVieja);
+    memcpy(tuVieja,"/Carpeta2",strlen("/Carpeta2")+1);
+    sac_mkdir(tuVieja);
+    memcpy(tuVieja,"/Carpeta1/archivo1",strlen("/Carpeta1/archivo1")+1);
+    sac_mkdir(tuVieja);
+    memcpy(tuVieja,"/Carpeta1/Carpeta3",strlen("/Carpeta1/Carpeta3")+1);
+    sac_mkdir(tuVieja);
+    memcpy(tuVieja,"/Carpeta2/archivo1",strlen("/Carpeta2/archivo1")+1);
+    sac_mkdir(tuVieja);
+
+    memcpy(tuVieja,"/Carpeta1",strlen("/Carpeta1")+1);
+
+     sac_rmdir(tuVieja);
 //  free(tuVieja);
 
-    sac_rmdir(tuVieja);
+//    sac_rmdir(tuVieja);
+    GBloque* disco = mapParticion("../tools/disco.bin");
+    GFile* carpetaRaiz = (GFile*) (disco+2);
 
     mostrarParticion("../tools/disco.bin");
+
 
     mostrarNodo(carpetaRaiz, disco);
     mostrarNodo(carpetaRaiz + 1, disco);
     mostrarNodo(carpetaRaiz + 2, disco);
     mostrarNodo(carpetaRaiz + 3, disco);
     mostrarNodo(carpetaRaiz + 4, disco);
-
-
-    ;
-    munmapParticion (disco, "../tools/disco.bin");
+    mostrarNodo(carpetaRaiz + 5, disco);
 //
+//
+//    ;
+//    munmapParticion (disco, "../tools/disco.bin");
+////
 //    memcpy(tuVieja,"/",strlen("/")+1);
 //
 //    t_list* path = dividirPath(tuVieja);
 //    printf("%d", buscarPath(path));
 //    list_destroy(path);
-//    free(tuVieja);
+    free(tuVieja);
     //printf("\nestado:%d   bloque usado: %d", carpetaRaiz->estado,carpetaRaiz->GBloque[0]);
 
 //    char* archivo= malloc(50);
@@ -252,7 +268,7 @@ void main (){
 //    }
 //
     log_destroy(logger);
-    free(tuVieja);
+//    free(tuVieja);
 //    free(archivo);
 
 
