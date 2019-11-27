@@ -269,7 +269,7 @@ GFile* obtenerTablaNodos(GBloque* comienzoParticion){
 
     //Y saco del header el tamanio del bitmap
     //Corro entonces el puntero 1 bloque mas los bloques que ocupa el bitMap
-    return (GFile *) (header + 1 + header->bitMap_tamanio);
+    return (GFile *) (comienzoParticion + 1 + header->bitMap_tamanio);
 }
 int calcularCorreccion(int nro_bloque){
     int numero_correcto = nro_bloque;
