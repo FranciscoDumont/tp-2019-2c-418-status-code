@@ -58,7 +58,7 @@ GFile* obtenerTablaNodos(GBloque* comienzoParticion);
 
 void liberarBloqueMemoria(int bloque, GBloque* disco, char* nombreParticion);
 
-int calcularCorreccion(int nro_bloque)
+int calcularCorreccion(int nro_bloque);
 
 /*****************************
  **** Funciones formateo *****
