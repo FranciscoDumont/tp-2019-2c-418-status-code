@@ -4,17 +4,18 @@
 
 #include "funciones-rodri.h"
 
+
 int obtenerNodoPadre(char* path){
-    int nodoPadre;
+    int nodoPadre = 0;
     ////Divido el path y obtengo la lista menos el ultimo elemento
     t_list* pathDividido = dividirPath(path);
 
-    if(list_size(pathDividido) < 2){ ////esta en la carpeta raiz
+    if(list_size(pathDividido) < 3){ ////esta en la carpeta raiz
         list_destroy(pathDividido);
-        return 0;
+        return nodoPadre;
     }else{
 
-        t_list *pathModificado = list_take(pathDividido, list_size(pathDividido) - 2);
+        t_list *pathModificado = list_take(pathDividido, list_size(pathDividido) - 1);
         nodoPadre = buscarPath(pathModificado);
         list_destroy(pathModificado);
         list_destroy(pathDividido);
@@ -41,7 +42,7 @@ int esArchivoODirectorio(char* path){
 }
 
 
-int sac_mknod(char* path, mode_t mode, dev_t dev) { // mode y dev son los permisos del archivo
+int sac_mknod(char* path, mode_t mode, dev_t dev){ // mode y dev son los permisos del archivo
     int current_node = 0;
     char* fecha_actual = obtenerFechaActual();
     char* copiaPath = (char *)malloc( 75 * sizeof(char));
@@ -49,7 +50,7 @@ int sac_mknod(char* path, mode_t mode, dev_t dev) { // mode y dev son los permis
     int nodoPadre;
 
     //Traigo la particion a memoria
-    char* particion =  "tools/disco.bin";
+    char* particion =  "../tools/disco.bin";
     GBloque* disco = mapParticion(particion);
     GFile* tablaNodos = obtenerTablaNodos(disco);
 
@@ -74,7 +75,7 @@ int sac_mknod(char* path, mode_t mode, dev_t dev) { // mode y dev son los permis
     nodeToSet->fecha_modificacion = atoi(fecha_actual);
     nodeToSet -> estado = 1;
     nodeToSet->ptr_bloque_padre = nodoPadre;
-    nodeToSet->GBloque[0] = list_get(listaBloquesLibres,0);
+    nodeToSet->GBloque[0] = *(int*) list_get(listaBloquesLibres,0);
 
 //    int tamanio_disco = obtenerTamanioArchivo(particion);
 //
@@ -86,7 +87,7 @@ int sac_mknod(char* path, mode_t mode, dev_t dev) { // mode y dev son los permis
     return 0;
 }
 
-int sac_getattr(const char *path, struct stat *stbuf) {
+int sac_getattr(const char *path, struct stat *stbuf){
     int res = 0;
     int current_node = 0;
     GFile* nodo;
@@ -153,27 +154,31 @@ int main(){
     t_log* logger = log_create("formateo.log", "SAC", 0, LOG_LEVEL_TRACE);
 
 
-    formatear("tools/disco.bin",logger);
+    formatear("../tools/disco.bin",logger);
 
     //t_list * lista = buscarBloquesMemoriaLibres(1,disco, "../tools/disco.bin");
-    GBloque* disco = mapParticion("tools/disco.bin");
+    GBloque* disco = mapParticion("../tools/disco.bin");
     GFile* carpetaRaiz = (GFile*) (disco+2);
-    mostrarParticion("tools/disco.bin");
+    mostrarParticion("../tools/disco.bin");
 
     char* buffer = malloc(50);
 
     memcpy(buffer,"/archivo1",strlen("/archivo1")+1);
     sac_mknod(buffer, NULL, NULL);
-    memcpy(buffer,"/carpeta/archivo1/archivo2",strlen("/carpeta/archivo1/archivo2")+1);
+    memcpy(buffer,"/archivo1/archivo2",strlen("/archivo1/archivo2")+1);
     sac_mknod(buffer, NULL, NULL);
-//    memcpy(buffer,"/archivo2",strlen("/archivo2")+1);
+//    memcpy(buffer,"/archivo1/archivo2/archivo3",strlen("/archivo1/archivo2/archivo3")+1);
 //    sac_mknod(buffer, NULL, NULL);
 
-    mostrarParticion("tools/disco.bin");
+
+
+    mostrarParticion("../tools/disco.bin");
 
     mostrarNodo(carpetaRaiz, disco);
+    mostrarNodo(carpetaRaiz, disco + 2);
+    mostrarNodo(carpetaRaiz, disco + 3);
 
-    munmapParticion (disco, "tools/disco.bin");
+    munmapParticion (disco, "../tools/disco.bin");
 
 
 }

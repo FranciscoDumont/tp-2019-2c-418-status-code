@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(funciones-emi C)
+project(funciones-rodri C)
 
 include_directories("/usr/include/altaLibreria" "/usr/include/commons")
 include_directories(include)
