@@ -52,7 +52,7 @@ void munmapParticion (GBloque* disco, char* nombreParticion);
 
 int obtenerNodoLibre (GFile* comienzoTabla);
 
-char* crearBitMap(int bitmap_count_bloques);
+t_bitarray* crearBitMap(int bitmap_count_bloques);
 
 GFile* obtenerTablaNodos(GBloque* comienzoParticion);
 
