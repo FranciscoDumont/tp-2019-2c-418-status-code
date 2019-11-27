@@ -37,7 +37,6 @@ typedef struct {
 typedef struct {
     int base;
     int size;
-    bool is_shared;
     t_list* pages;
 } segment_t;
 
@@ -86,7 +85,23 @@ int muse_sync(uint32_t addr, size_t len);
 int muse_unmap(uint32_t dir);
 
 process_t* crear_proceso(int id);
-segment_t* crear_segmento(int base, int size, bool is_shared);
+
+/**
+ * Constructor de segmento, se utiliza cuando no hay espacio en otro segmento o no se pueden extender por tener a otro
+ * contiguo
+ * @param process_t* process, proceso al que le voy a agregar el segmento
+ * @param int paginas_necesarias, cant de paginas necesarias para el segmento
+ * @return
+ */
+segment_t* crear_segmento(proceso_t* process, int paginas_necesarias);
+
+/**
+ * Busco frames libres y se los asigno a las paginas que necesita el segmento
+ * @param int paginas_necesarias, cant de paginas necesarias
+ * @param segment_t* nuevo_segmento, asigno los frames a las paginas que necesita el segmento
+ */
+void asignar_paginas(int paginas_necesarias, segment_t * nuevo_segmento);
+
 page_t* crear_pagina(int frame, int presence_bit, int modified_bit, int use);
 
 // Devuelve un puntero a donde termina la estructura

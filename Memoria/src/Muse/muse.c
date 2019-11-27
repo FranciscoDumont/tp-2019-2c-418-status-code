@@ -67,6 +67,7 @@ void *server_function(void *arg) {
 
         t_list *cosas = receive_package(fd, headerStruct);
 
+        //TODO:limpiar el case
         switch (headerStruct->type) {
             case MUSE_INIT:;
                 {
@@ -213,6 +214,7 @@ uint32_t muse_alloc(uint32_t tam, int id_proceso) {
     t_list* segments = el_proceso->segments;
 
     if(list_size(segments) == 0){
+
         //TODO crear segmento nuevo
     } else {
 
@@ -255,24 +257,14 @@ uint32_t muse_alloc(uint32_t tam, int id_proceso) {
     // Por último, en caso de no poder extender un segmento, deberá crear otro nuevo.
 
     paginas_necesarias = (int) ceil((double)(tam + 2*sizeof(heap_metadata))/config.page_size);
-    int segmento_tam = paginas_necesarias * config.page_size;
-    int segmento_base = 0;
-    if (list_size(el_proceso->segments) > 0) { // Si no es el primer segmento, veo cual será la base
-        segment_t* ultimo_segmento = list_get(el_proceso->segments, cantidad_segmentos_en_proceso - 1);
-        segmento_base = ultimo_segmento->base + ultimo_segmento->size;
-    }
-    segment_t* nuevo_segmento = crear_segmento(segmento_base, segmento_tam, false);
+    //TODO: verificar si hay paginas libres suficientes
+    segment_t* nuevo_segmento = crear_segmento(el_proceso, paginas_necesarias);
+
     log_info(logger, "Paginas necesarias: %d", paginas_necesarias);
 
-    //TODO: verificar si hay paginas libres suficientes
-
     // Reservo los frames necesarios de la memoria principal
-    for(int i = 0; i<paginas_necesarias; i++){
-        int frame_libre = mp_buscar_frame_libre();
-        bitarray_set_bit(MAPA_MEMORIA, frame_libre);
-        page_t* nueva_pagina = crear_pagina(frame_libre, true, false, false);
-        list_add(nuevo_segmento->pages, nueva_pagina);
-    }
+    asignar_paginas(paginas_necesarias, nuevo_segmento);
+
     // Tengo el segmento con la lista de paginas creada,
     // ahora cargo los metadata en los lugares correspondientes de la MP
     page_t* primera_pagina = list_get(nuevo_segmento->pages, 0);
@@ -318,17 +310,28 @@ process_t* crear_proceso(int id){
     return nuevo_proceso;
 }
 
-
-segment_t* crear_segmento(int base,int size, bool is_shared){
+segment_t* crear_segmento(proceso_t* process, int paginas_necesarias){
+    int size = paginas_necesarias * config.page_size;
+    int base = 0;
+    if (list_size(el_proceso->segments) > 0) { // Si no es el primer segmento, veo cual será la base
+        segment_t* last_segment = list_get(process->segments, list_size(process->segments) - 1);
+        base = last_segment->base + last_segment->size;
+    }
     segment_t* nuevo_segmento = malloc(sizeof(segment_t));
     nuevo_segmento->base = base;
     nuevo_segmento->size = size;
-    nuevo_segmento->is_shared = is_shared;
-    t_list* nueva_lista = list_create();
-    nuevo_segmento->pages = nueva_lista;
+    nuevo_segmento->pages = list_create();
     return nuevo_segmento;
 }
 
+void asignar_paginas(int paginas_necesarias, segment_t* nuevo_segmento){
+    for(int i = 0; i<paginas_necesarias; i++){
+        int frame_libre = mp_buscar_frame_libre();
+        bitarray_set_bit(MAPA_MEMORIA, frame_libre);
+        page_t* nueva_pagina = crear_pagina(frame_libre, true, false, false);
+        list_add(nuevo_segmento->pages, nueva_pagina);
+    }
+}
 
 page_t* crear_pagina(int frame, int presence_bit, int modified_bit, int use_bit){
     page_t* nueva_pagina = malloc(sizeof(page_t));
