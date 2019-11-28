@@ -177,6 +177,14 @@ void* traducir_virtual(segment_t* un_segmento, uint32_t direccion_virtual);
 bool tiene_espacio_libre(segment_t* segmento, uint32_t * puntero, uint32_t tam, uint32_t tam);
 
 /**
+ * Hallo el espacio libre que posee un segmento, solo contando el ultimo md
+ * @param segment_t* segmento, segmento al que le averiguo el espacio libre
+ * @param uint32_t* dir_virtual_md_libre_temp, direccion virtual que apunta al ultimo md
+ * @return retorno el espacio libre al final
+ */
+uint32_t hallar_espacio_libre(segment_t* segmento, uint32_t * dir_virtual_md_libre_temp);
+
+/**
  * Retorno la direccion "fisica" al primer metadata de libre dentro de un segmento
  * @param un_segmento
  * @return

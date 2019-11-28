@@ -270,13 +270,40 @@ uint32_t muse_alloc(uint32_t tam, int id_proceso) {
 
             //Escribo la md a final del bloque reservado, el espacio nuevo sera el espacio viejo - el tamaño reservado
             // - el tamaño de un md
-            mp_escribir_metadata(dir_fisica_primer_md, (espacio_libre - tam - sizeof(heap_metadata)), true);
+            mp_escribir_metadata(dir_fisica_segundo_md, (espacio_libre - tam - sizeof(heap_metadata)), true);
 
             ret_addr = dir_virtual_md_libre + sizeof(heap_metadata);
         } else {
 
-            //TODO verificar si hay algun segmento extendible(verificando si hay pag disponibles)
-            //TODO crear nuevo segmento(verificando si hay pag disponibles)
+            //En este caso existen frames libres para extender al segmento
+            //Hallo el segmento con la mayor cantidad de espacio libre disponible sobre el final
+            uint32_t espacio_libre = 0;
+            uint32_t dir_virtual_md_libre_temp = 0;
+            void mayor_espacio(void* _segment){
+                segment_t* segmento = (segment_t*)_segment;
+                uint32_t espacio_libre_temp = hallar_espacio_libre(segmento, &dir_virtual_md_libre_temp);
+                //Si el espacio libre de este segmento es mayor al anterior, guardo la direccion a su md y la cant de
+                // espacio libre
+                if(espacio_libre_temp > espacio_libre){
+                    espacio_libre = espacio_libre_temp;
+                    dir_virtual_md_libre = dir_virtual_md_libre_temp;
+                }
+            }
+            list_iterate(el_proceso->segments, mayor_espacio);
+            //Este if deberia verificar si hay la cantidad de espacio suficiente en segmento + frames libres
+            // para allocar el nuevo cacho de memoria(por ahora no esta bien, es solo un placeholder)
+            if(cant_frames_libres() > paginas_necesarias){
+
+
+            } else {
+
+                //En este caso no existen frames libres suficientes en la MP para allocar, por lo que debo enviar los
+                // suficientes a MS, verificando que haya espacio suficiente en la misma.
+                //Este caso seria similar a la parte b del primer caso, en la que no hay ningun segmento en el programa
+                // y no hay mas frames libres para asignar.
+                //Deberia crear un nuevo segmento o expandir el ya existente?
+                //TODO crear nuevo segmento(verificando si hay pag disponibles)
+            }
         }
     }
 
@@ -493,6 +520,11 @@ bool tiene_espacio_libre(segment_t* segmento, uint32_t* puntero, uint32_t tam, u
         }
     }
     return false;
+}
+
+//TODO: Implementar
+uint32_t hallar_espacio_libre(segment_t* segmento, uint32_t * dir_virtual_md_libre_temp){
+
 }
 
 //TODO: Ver si esta funcion podria volar
