@@ -34,6 +34,7 @@ typedef struct _SUSEConfig {
 typedef struct _t_thread{
     TID tid;
     PID pid;
+    double last_estimated;
     t_list* exec_list;
     t_list* ready_list;
     struct timespec* start_time;
