@@ -216,20 +216,31 @@ uint32_t muse_alloc(uint32_t tam, int id_proceso) {
 
         paginas_necesarias = (int) ceil((double)(tam + 2*sizeof(heap_metadata))/config.page_size);
         //TODO: verificar si hay paginas libres suficientes y usar un mutex?
-        segment_t* nuevo_segmento = crear_segmento(el_proceso, paginas_necesarias);
 
-        log_info(logger, "Paginas necesarias: %d", paginas_necesarias);
+        //En este caso hay frames disponibles para asignarle al segmento, probablemente se pueda sacar parte del codigo
+        // de aca abajo porque se va a repetir, pero
+        if(cant_frames_libres() >= paginas_necesarias){
+            segment_t* nuevo_segmento = crear_segmento(el_proceso, paginas_necesarias);
 
-        // Reservo los frames necesarios de la memoria principal
-        asignar_paginas(paginas_necesarias, nuevo_segmento);
+            log_info(logger, "Paginas necesarias: %d", paginas_necesarias);
 
-        // Tengo el segmento con la lista de paginas creada, ahora cargo los metadata en los lugares correspondientes de la MP
-        asignar_primer_metadata(nuevo_segmento, tam);
-        asignar_ultima_metadata(nuevo_segmento, tam, paginas_necesarias);
+            // Reservo los frames necesarios de la memoria principal
+            asignar_paginas(paginas_necesarias, nuevo_segmento);
 
-        list_add(el_proceso->segments, nuevo_segmento);
+            // Tengo el segmento con la lista de paginas creada, ahora cargo los metadata en los lugares correspondientes de la MP
+            asignar_primer_metadata(nuevo_segmento, tam);
+            asignar_ultima_metadata(nuevo_segmento, tam, paginas_necesarias);
 
-        ret_addr = nuevo_segmento->base + sizeof(heap_metadata);
+            list_add(el_proceso->segments, nuevo_segmento);
+
+            ret_addr = nuevo_segmento->base + sizeof(heap_metadata);
+
+        //En este caso no hay frames suficientes para asignar al nuevo bloque, deberia mandar paginas a MS para liberar
+        // espacio o que?
+        } else {
+            //TODO: liberar memoria para el nuevo segmento corriendo el algoritmo de reemplazo?
+        }
+
     } else {
 
         //TODO verificar si hay algun segmento con capacidad de almacenaje
@@ -374,6 +385,17 @@ int mp_buscar_frame_libre(){
 	    }
 	}
     return nro_frame;
+}
+
+int cant_frames_libres(){
+    int i;
+    int cant_frames = 0;
+    for (i = 0; i<MAPA_MEMORIA_SIZE; ++i){
+        if (! bitarray_test_bit(MAPA_MEMORIA, i)){
+            cant_frames++;
+        }
+    }
+    return cant_frames;
 }
 
 process_t* buscar_proceso(int id_proceso){

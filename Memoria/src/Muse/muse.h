@@ -144,6 +144,12 @@ void* mp_escribir_metadata(void* espacio_libre, uint32_t tam, int esta_libre);
 int mp_buscar_frame_libre();
 
 /**
+ * Busco la cantidad de frames libres para verificar si puedo allocar en MP
+ * @return
+ */
+int cant_frames_libres();
+
+/**
  * Busco un proceso por id(socket cliente)
  * @param int id_proceso
  * @return retorno el proceso correspondiente al id dado
