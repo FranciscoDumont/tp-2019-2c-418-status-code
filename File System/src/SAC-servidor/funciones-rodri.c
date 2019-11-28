@@ -74,7 +74,10 @@ int sac_mknod(char* path, mode_t mode, dev_t dev){ // mode y dev son los permiso
 
     nodoPadre = obtenerNodoPadre(path);
 
-    t_list* listaBloquesLibres = buscarBloquesMemoriaLibres(1,disco, particion);
+    t_list* listaBloquesLibres = buscarBloquesMemoriaLibres(2,disco, particion);
+
+    inicializarBloqueDirectorio(disco + *(int *) list_get(listaBloquesLibres, 0));
+    inicializarBloqueDirectorio(disco + *(int *) list_get(listaBloquesLibres, 1));
 
     memcpy(nodeToSet -> nombre_archivo,file_name ,strlen(file_name)+1);
     nodeToSet->size = 0;
@@ -103,33 +106,37 @@ int sac_getattr(const char *path, struct stat *stbuf){
     GBloque* disco = mapParticion(particion);
     GFile* tablaNodos = obtenerTablaNodos(disco);
 
-    while(strcmp(tablaNodos[current_node].nombre_archivo, nombre_archivo) != 0){
-        current_node ++;
-    }
-
-    nodo = tablaNodos + current_node;
-
-
     memset(stbuf, 0, sizeof(struct stat));
 
-    if(nodo -> estado == 2) {
+    if(list_size(pathDividido) == 0){ //// Me pide los atributos del directorio raiz
         stbuf->st_mode = S_IFDIR | 0755;
-        stbuf->st_nlink = 1;
-        stbuf->st_mtime = nodo->fecha_modificacion;
-        stbuf -> st_ino = buscarPath(pathDividido);
-    } else if(nodo -> estado == 1){
-        stbuf -> st_mode = S_IFREG | 0444;
-        stbuf -> st_nlink = 1;
-        stbuf -> st_size = obtenerTamanioArchivo(nombre_archivo);
-        stbuf->st_mtime = nodo->fecha_modificacion;
-        stbuf -> st_ino = buscarPath(pathDividido);
+        stbuf->st_nlink = 2;
     } else {
-        res = -ENOENT;
+        while (strcmp(tablaNodos[current_node].nombre_archivo, nombre_archivo) != 0) {
+            current_node++;
+        }
+
+        nodo = tablaNodos + current_node;
+
+
+        if (nodo->estado == 2) { //// Me pide los atributos del un directorio
+            stbuf->st_mode = S_IFDIR | 0755;
+            stbuf->st_nlink = 2;
+            stbuf->st_mtime = nodo->fecha_modificacion;
+            //stbuf -> st_size = obtenerTamanioDirectorio; -> falta desarrollo de la funcion
+            stbuf->st_ino = buscarPath(pathDividido);
+        } else if (nodo->estado == 1) { ////Me pide los atributos de un archivo
+            stbuf->st_mode = S_IFREG | 0444;
+            stbuf->st_nlink = 1;
+            stbuf->st_size = nodo->size;
+            stbuf->st_mtime = nodo->fecha_modificacion;
+            stbuf->st_ino = buscarPath(pathDividido);
+        } else {
+            res = -ENOENT;
+        }
     }
     return res;
 }
-
-
 
 int sac_read(const char *path, char *buf, size_t size, off_t offset){
     size_t len;
@@ -158,7 +165,8 @@ int sac_read(const char *path, char *buf, size_t size, off_t offset){
 
 int main(){
     t_log* logger = log_create("formateo.log", "SAC", 0, LOG_LEVEL_TRACE);
-
+    struct stat* stbuf;
+    int resultado;
 
     formatear("../tools/disco.bin",logger);
 
@@ -171,14 +179,29 @@ int main(){
     memcpy(buffer,"/archivo1",strlen("/archivo1")+1);
     sac_mknod(buffer, NULL, NULL);
     mostrarNodo(carpetaRaiz + 1, disco);
+    resultado = sac_getattr(buffer,stbuf);
+    printf("\n El resultado es %d",resultado);
 
     memcpy(buffer,"/archivo1/archivo2",strlen("/archivo1/archivo2")+1);
     sac_mknod(buffer, NULL, NULL);
     mostrarNodo(carpetaRaiz + 2, disco);
+    resultado = sac_getattr(buffer,stbuf);
+    printf("\n El resultado es %d",resultado);
 
     memcpy(buffer,"/archivo1/archivo2/archivo3",strlen("/archivo1/archivo2/archivo3")+1);
     sac_mknod(buffer, NULL, NULL);
     mostrarNodo(carpetaRaiz + 3, disco);
+    resultado = sac_getattr(buffer,stbuf);
+    printf("\n El resultado es %d",resultado);
+
+    resultado = sac_getattr("/",stbuf);
+    printf("\n El resultado es %d",resultado);
+
+    memcpy(buffer,"/carpeta1",strlen("/carpeta1")+1);
+    sac_mkdir(buffer);
+    resultado = sac_getattr(buffer,stbuf);
+    printf("\n El resultado es %d",resultado);
+
 
 //    mostrarParticion("../tools/disco.bin");
 
