@@ -235,8 +235,8 @@ uint32_t muse_alloc(uint32_t tam, int id_proceso) {
 
             ret_addr = nuevo_segmento->base + sizeof(heap_metadata);
 
-        //En este caso no hay frames suficientes para asignar al nuevo bloque, deberia mandar paginas a MS para liberar
-        // espacio o que?
+        //En este caso no hay frames suficientes para asignar al nuevo segmento, deberia mandar paginas a MS para liberar
+        // espacio o retornar un error o algo mas esoterico?
         } else {
             //TODO: liberar memoria para el nuevo segmento corriendo el algoritmo de reemplazo?
         }
