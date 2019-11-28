@@ -35,8 +35,8 @@ void *server_function(void *arg) {
     int socket;
 
     if((socket = create_socket()) == -1) {
-        printf("Error al crear el socket\n");
-        //TODO:retornar algun error?
+        log_error(logger, "Error al crear el socket");
+    	//TODO:retornar algun error?
     }
     if ((bind_socket(socket, config.listen_port)) == -1) {
         log_error(logger, "Error al bindear el socket");
