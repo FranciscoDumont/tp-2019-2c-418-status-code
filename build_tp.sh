@@ -33,7 +33,6 @@ cd ~/tp-2019-2c-418-status-code/'File System'
 
 
 #Instalacion de Memoria
-
 cd ~/tp-2019-2c-418-status-code/Memoria
 
-#Insertar script de Memoria
+sudo ./build_memoria.sh
