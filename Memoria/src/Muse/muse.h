@@ -167,6 +167,16 @@ char* mapa_memoria_to_string();
 void* traducir_virtual(segment_t* un_segmento, uint32_t direccion_virtual);
 
 /**
+ * Busco si el segmento tiene algun espacio lo suficientemente grande como para almacenar el nuevo alloc
+ * @param segment_t* segmento, segmento q voy a revisar
+ * @param uint32_t* puntero, aca voy a asignar la direccion virtual que apunta al md que me indica el espacio libre
+ * @param uint32_t tam, tamaño de la memoria a allocar(en realidad es esto mas el tamaño que ocupa un md)
+ * @param uint32_t espacio_libre, me indica la cantidad de bytes que habia libres antes de reservar la nueva memoria en este espacio
+ * @return true si hay espacio, false si no lo hay
+ */
+bool tiene_espacio_libre(segment_t* segmento, uint32_t * puntero, uint32_t tam, uint32_t tam);
+
+/**
  * Retorno la direccion "fisica" al primer metadata de libre dentro de un segmento
  * @param un_segmento
  * @return
