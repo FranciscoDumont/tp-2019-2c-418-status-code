@@ -6,6 +6,7 @@ int main() {
 
     PROCESS_TABLE = list_create();
 
+    // Mapa Memoria
     CANTIDAD_PAGINAS_ACTUALES = 0;
 	LIMITE_PAGINAS = config.memory_size / config.page_size;
 	MAPA_MEMORIA_SIZE = ceil((double) LIMITE_PAGINAS / 8);
@@ -14,6 +15,20 @@ int main() {
 	for(int indice = 0; indice < MAPA_MEMORIA_SIZE*8; indice++){
 	    bitarray_clean_bit(MAPA_MEMORIA, indice);
 	}
+
+	// Mapa Swap
+    LIMITE_PAGINAS_SWAP = config.swap_size / config.page_size;
+    MAPA_SWAP_SIZE = ceil((double) LIMITE_PAGINAS_SWAP / 8);
+    char bitarray_s[MAPA_SWAP_SIZE];
+    MAPA_SWAP = bitarray_create_with_mode(bitarray, sizeof(bitarray_s), LSB_FIRST);
+    for(int indice = 0; indice < MAPA_SWAP_SIZE*8; indice++){
+        bitarray_clean_bit(MAPA_SWAP, indice);
+    }
+    SWAP = fopen("SWAP.bin", "w+b");
+    /* Ejemplos
+     * size_t fread(void *ptr, size_t size_of_elements, size_t number_of_elements, FILE *a_file);
+     * size_t fwrite(const void *ptr, size_t size_of_elements, size_t number_of_elements, FILE *a_file)
+     */
 
     MAIN_MEMORY = malloc(config.memory_size);
 

@@ -26,8 +26,12 @@ void* MAIN_MEMORY;
 t_list* PROCESS_TABLE;
 int CANTIDAD_PAGINAS_ACTUALES;
 int LIMITE_PAGINAS;
+int LIMITE_PAGINAS_SWAP;
 int MAPA_MEMORIA_SIZE;
+int MAPA_SWAP_SIZE;
 t_bitarray* MAPA_MEMORIA;
+t_bitarray* MAPA_SWAP;
+FILE* SWAP;
 
 typedef struct {
     int pid;
