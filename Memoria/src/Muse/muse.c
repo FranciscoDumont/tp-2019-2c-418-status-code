@@ -229,34 +229,9 @@ uint32_t muse_alloc(uint32_t tam, int id_proceso) {
     //En este caso el proceso no tiene ningun segmento
     if(list_size(segments) == 0){
 
-        paginas_necesarias = (int) ceil((double)(tam + 2*sizeof(heap_metadata))/config.page_size);
-        //TODO: verificar si hay paginas libres suficientes y usar un mutex?
+        ret_addr = nuevo_segmento(tam, el_proceso);
 
-        //En este caso hay frames disponibles para asignarle al segmento, probablemente se pueda sacar parte del codigo
-        // de aca abajo porque se va a repetir
-        if(cant_frames_libres() >= paginas_necesarias){
-            segment_t* nuevo_segmento = crear_segmento(el_proceso, paginas_necesarias);
-
-            log_info(logger, "Paginas necesarias: %d", paginas_necesarias);
-
-            // Reservo los frames necesarios de la memoria principal
-            asignar_paginas(paginas_necesarias, nuevo_segmento);
-
-            // Tengo el segmento con la lista de paginas creada, ahora cargo los metadata en los lugares correspondientes de la MP
-            asignar_primer_metadata(nuevo_segmento, tam);
-            asignar_ultima_metadata(nuevo_segmento, tam, paginas_necesarias);
-
-            list_add(el_proceso->segments, nuevo_segmento);
-
-            ret_addr = nuevo_segmento->base + sizeof(heap_metadata);
-
-        //TODO: Fran, averiguame esto please
-        //En este caso no hay frames suficientes para asignar al nuevo segmento, deberia mandar paginas a MS para liberar
-        // espacio o retornar un error o algo mas esoterico?
-        } else {
-            //TODO: liberar memoria para el nuevo segmento corriendo el algoritmo de reemplazo?
-        }
-
+    //El proceso ya poseia segmentos
     } else {
 
         //Verifico si hay algun segmento con capacidad de almacenaje
@@ -270,7 +245,7 @@ uint32_t muse_alloc(uint32_t tam, int id_proceso) {
         }
         segment_t* segmento_a_ocupar = (segment_t*)list_find(el_proceso->segments, tiene_espacio);
 
-        //Encontre un segmento con espacio libre suficiente
+        //Encontre un segmento con espacio libre suficiente para almacenar el nuevo cacho
         if(segmento_a_ocupar != null){
 
             //Hallo la direccion fisica del pimer md para corregirlo
@@ -288,79 +263,64 @@ uint32_t muse_alloc(uint32_t tam, int id_proceso) {
             mp_escribir_metadata(dir_fisica_segundo_md, (espacio_libre - tam - sizeof(heap_metadata)), true);
 
             ret_addr = dir_virtual_md_libre + sizeof(heap_metadata);
+
+        //No hay espacio para almacenar en un segmento directamente
         } else {
 
-            //En este caso existen frames libres para extender al segmento
-            //Hallo el segmento con la mayor cantidad de espacio libre disponible sobre el final
-            uint32_t espacio_libre = 0;
-            uint32_t dir_virtual_md_libre_temp = 0;
-            void mayor_espacio(void* _segment){
-                segment_t* segmento = (segment_t*)_segment;
-                uint32_t espacio_libre_temp = hallar_espacio_libre(segmento, &dir_virtual_md_libre_temp);
-                //Si el espacio libre de este segmento es mayor al anterior, guardo la direccion a su md y la cant de
-                // espacio libre
-                if(espacio_libre_temp > espacio_libre){
-                    espacio_libre = espacio_libre_temp;
-                    dir_virtual_md_libre = dir_virtual_md_libre_temp;
+            //Si hay un solo segmento no tengo que revisar demasiado, reduzco overhead
+            if(list_size(segments) == 1){
+
+                //Si hay un solo segmento y no es de tipo mmap, SIEMPRE va a ser extendible
+                segment_t* segmento = list_get(segments, 0);
+                if(!segmento->is_map){
+
+                    ret_addr = extender_segmento(tam, segmento);
+
+                //En este caso el segmento es mmap, tengo que crear uno nuevo
+                } else {
+
+                    ret_addr = nuevo_segmento(tam, el_proceso);
                 }
-            }
-            list_iterate(el_proceso->segments, mayor_espacio);
-            //Este if deberia verificar si hay la cantidad de espacio suficiente en segmento + frames libres
-            // para allocar el nuevo cacho de memoria(por ahora no esta bien, es solo un placeholder)
-            if(cant_frames_libres() > paginas_necesarias){
 
-
+            //En este caso, hay mas de 1 segmento en el proceso, por lo que debo buscar uno que sea extendible o crear
+            // uno nuevo en su defecto
             } else {
 
-                //En este caso no existen frames libres suficientes en la MP para allocar, por lo que debo enviar los
-                // suficientes a MS, verificando que haya espacio suficiente en la misma.
-                //Este caso seria similar a la parte b del primer caso, en la que no hay ningun segmento en el programa
-                // y no hay mas frames libres para asignar.
-                //Deberia crear un nuevo segmento o expandir el ya existente?
-                //TODO crear nuevo segmento(verificando si hay pag disponibles)
+                //En este caso existen frames libres para extender al segmento
+                //Hallo el segmento con la mayor cantidad de espacio libre disponible sobre el final
+                uint32_t espacio_libre = 0;
+                uint32_t dir_virtual_md_libre_temp = 0;
+                void mayor_espacio(void* _segment){
+                    segment_t* segmento = (segment_t*)_segment;
+                    uint32_t espacio_libre_temp = hallar_espacio_libre(segmento, &dir_virtual_md_libre_temp);
+                    //Si el espacio libre de este segmento es mayor al anterior, guardo la direccion a su md y la cant de
+                    // espacio libre
+                    if(espacio_libre_temp > espacio_libre){
+                        espacio_libre = espacio_libre_temp;
+                        dir_virtual_md_libre = dir_virtual_md_libre_temp;
+                    }
+                }
+                list_iterate(el_proceso->segments, mayor_espacio);
+
+                //Hallo las paginas disponibles que podria llegar a almacenar el segmento en su espacio libre
+                int paginas_disponibles = (int) floor((double)(espacio_libre)/config.page_size);
+                //Verifico si hay la cantidad de espacio libre suficiente en segmento + frames libres
+                // para allocar el nuevo cacho de memoria
+                if(cant_frames_libres() >= (paginas_necesarias - paginas_disponibles)){
+
+                //No hay espacio suficiente, debo liberar frames
+                } else {
+
+                    //En este caso no existen frames libres suficientes en la MP para allocar, por lo que debo enviar los
+                    // suficientes a MS, verificando que haya espacio suficiente en la misma.
+                    //Este caso seria similar a la parte b del primer caso, en la que no hay ningun segmento en el programa
+                    // y no hay mas frames libres para asignar.
+                    //Deberia crear un nuevo segmento o expandir el ya existente?
+                    //TODO crear nuevo segmento(verificando si hay pag disponibles)
+                }
             }
         }
     }
-
-    /**
-     *
-     * Hasta aca estamos bien, revisar todo_ lo demas
-     *
-    */
-    //Analizaremos segmento a segmento de Heap,
-    // verificando si alguno de los Headers de metadata se encuentra con el valor free para incorporar el malloc.
-    //TODO: volar?
-    /**
-    paginas_necesarias = (int) ceil((double)(tam + 1*sizeof(heap_metadata))/config.page_size);
-    int cantidad_segmentos_en_proceso = list_size(el_proceso->segments);
-    // Por cada segmento busco una metadata libre
-    for(int i=0; i<cantidad_segmentos_en_proceso; i++){
-        segment_t* un_segmento = list_get(el_proceso->segments, i);
-        page_t* primera_pagina = list_get(un_segmento->pages, 0);
-
-        //Puntero al heap_metadata con espacio libre
-        void* puntero = puntero_a_mp_del_primer_metadata_libre(un_segmento);
-        if(puntero == NULL){continue;} // Si no hay un metadata libre pasa al sig segmento
-
-        //Si hay espacio libre al final de un segmento
-        if(((heap_metadata*)puntero)->size >= tam + 1*sizeof(heap_metadata)){
-            int usado = segmento_ocupado_size(un_segmento);
-            uint32_t dir_virtual = usado + un_segmento->base;
-            // Si la metadata está libre y hay espacio: guardo ahí
-            mp_escribir_metadata(puntero, tam, false); //sobreescrivo el actual metadata
-            // Ahora tengogo que escribir el metadata que va a lo ultimo
-
-            void* posicion_segundo_metadata = traducir_virtual(un_segmento, dir_virtual + tam);
-
-            mp_escribir_metadata(posicion_segundo_metadata, (uint32_t)(un_segmento->size)-(usado+sizeof(heap_metadata)+tam), true);
-            ret_addr = dir_virtual;
-        }
-    }
-     */
-
-    // En caso de no encontrarlo, buscaremos si hay algún segmento de Heap que se pueda extender.
-
-    // Por último, en caso de no poder extender un segmento, deberá crear otro nuevo.
 
     return ret_addr;
 }
@@ -376,18 +336,14 @@ void* muse_get(uint32_t direccion, size_t tam, int id_proceso){
 
 }
 
-
 int muse_cpy(uint32_t dst, void *src, int n) {
 }
-
 
 uint32_t muse_map(char *path, size_t length, int flags) {
 }
 
-
 int muse_sync(uint32_t addr, size_t len) {
 }
-
 
 int muse_unmap(uint32_t dir) {
 }
@@ -409,7 +365,7 @@ process_t* crear_proceso(int id){
     return nuevo_proceso;
 }
 
-segment_t* crear_segmento(proceso_t* process, int paginas_necesarias){
+segment_t* crear_segmento(proceso_t* process, int paginas_necesarias, bool is_map){
     int size = paginas_necesarias * config.page_size;
     int base = 0;
     if (list_size(el_proceso->segments) > 0) { // Si no es el primer segmento, veo cual será la base
@@ -419,6 +375,7 @@ segment_t* crear_segmento(proceso_t* process, int paginas_necesarias){
     segment_t* nuevo_segmento = malloc(sizeof(segment_t));
     nuevo_segmento->base = base;
     nuevo_segmento->size = size;
+    nuevo_segmento->is_map = is_map;
     nuevo_segmento->pages = list_create();
     return nuevo_segmento;
 }
@@ -454,13 +411,12 @@ void asignar_ultima_metadata(segment_t* segment, int tam, int paginas_necesarias
 }
 
 void* mp_escribir_metadata(void* espacio_libre, uint32_t tam, int isFree){
-    //TODO: verificar si esta bien el copiado de memoria y liberarlo
     heap_metadata* nueva_metadata = malloc(sizeof(heap_metadata));
     nueva_metadata->size = tam;
     nueva_metadata->isFree = isFree;
     const void * metadata = nueva_metadata;
     memcpy(espacio_libre, metadata, sizeof(heap_metadata));
-    //free(nueva_metadata);
+    free(nueva_metadata);
     return espacio_libre + sizeof(heap_metadata);
 }
 
@@ -514,19 +470,170 @@ bool tiene_espacio_libre(segment_t* segmento, uint32_t* puntero, uint32_t tam, u
     void* pos_md = traducir_virtual(segmento, 0);
     int tamanio = 0;
 
-    while(tamanio < un_segmento->size){
+    while(tamanio < segmento->size){
 
         //Casteo la posicion del md a un md
         heap_metadata* md = (heap_metadata*)pos_md;
 
         //El md apunta a un espacio no vacio
-        if(!una_metadata->isFree){
+        if(!md->isFree){
 
             tamanio += sizeof(heap_metadata) + md->size;
             //Actualizo a la sgte posicion del md
             pos_md = traducir_virtual(segmento, tamanio);
 
         //Encontre un md libre
+        } else {
+
+            //Hay espacio suficiente como para almacenar el nuevo bloque mas el md del final
+            if(md->size >= (tam + sizeof(heap_metadata))){
+
+                //Hallo la direccion virtual que apunta al md que indica libre
+                *puntero = tamanio + segmento->base;
+                //Asigno la cant de espacio libre que poseia este cacho de memoria en bytes
+                *espacio_libre = md->size;
+                return true;
+
+            //No hay espacio suficiente en el bloque libre
+            } else {
+                tamanio += sizeof(heap_metadata) + md->size;
+                //Actualizo a la sgte posicion del md
+                pos_md = traducir_virtual(segmento, tamanio);
+            }
+        }
+    }
+    return false;
+}
+
+uint32_t buscar_ultimo_md(segment_t* segmento){
+
+    //Hallo la direccion inicial del segmento, la cual va a apuntar al primer md
+    void* pos_md = traducir_virtual(segmento, 0);
+    int tamanio = 0;
+
+    while(tamanio < segmento->size){
+
+        //Casteo la posicion del md a un md
+        heap_metadata* md = (heap_metadata*)pos_md;
+
+        //El md apunta a un espacio no vacio
+        if(!md->isFree){
+
+            tamanio += sizeof(heap_metadata) + md->size;
+            //Actualizo a la sgte posicion del md
+            pos_md = traducir_virtual(segmento, tamanio);
+
+        //Encontre un md libre
+        } else {
+
+            tamanio += sizeof(heap_metadata) + md->size;
+
+            //LLegue al final del segmento
+            if(tamanio == segmento->size){
+
+                //Retorno la direccion virtual del ultimo md
+                return segmento->base + tamanio - (sizeof(heap_metadata) + md->size);
+            } else {
+
+                //Actualizo a la sgte posicion del md
+                pos_md = traducir_virtual(segmento, tamanio);
+            }
+        }
+    }
+}
+
+//TODO: completar el caso en que no hay frames disponibles
+uint32_t nuevo_segmento(int tam, process_t* proceso)
+
+    int paginas_necesarias = (int) ceil((double)(tam + 2*sizeof(heap_metadata))/config.page_size);
+    uint32_t ret_addr = 0;
+
+    //En este caso hay frames disponibles para asignarle al segmento, probablemente se pueda sacar parte del codigo
+    // de aca abajo porque se va a repetir
+    if(cant_frames_libres() >= paginas_necesarias){
+
+        //Creo un segmento nuevo
+        segment_t* segmento = crear_segmento(proceso, paginas_necesarias, false);
+
+        log_info(logger, "Paginas necesarias: %d", paginas_necesarias);
+
+        // Reservo los frames necesarios de la memoria principal
+        asignar_paginas(paginas_necesarias, segmento);
+
+        // Tengo el segmento con la lista de paginas creada, ahora cargo los metadata en los lugares correspondientes de la MP
+        asignar_primer_metadata(segmento, tam);
+        asignar_ultima_metadata(segmento, tam, paginas_necesarias);
+
+        list_add(proceso->segments, segmento);
+
+        ret_addr = segmento->base + sizeof(heap_metadata);
+
+        //TODO: Fran, averiguame esto please
+        //En este caso no hay frames suficientes para asignar al nuevo segmento, deberia mandar paginas a MS para liberar
+        // espacio o retornar un error o algo mas esoterico?
+    } else {
+        //TODO: liberar memoria para el nuevo segmento corriendo el algoritmo de reemplazo?
+        ret_addr = nuevo_segmento(tam, proceso);
+    }
+
+    return ret_addr;
+}
+
+//TODO: completar el caso en que no hay frames disponibles
+uint32_t extender_segmento(int tam, segment_t* segmento){
+
+    int paginas_necesarias = (int) ceil((double)(tam + 1*sizeof(heap_metadata))/config.page_size);
+    uint32_t ret_addr = 0;
+
+    //Si hay frames libres, el segmento es extendible directamente
+    if(cant_frames_libres() >= paginas_necesarias){
+
+        //Agrego las paginas necesarias
+        asignar_paginas(paginas_necesarias, segmento);
+        //Actualizo tamaño del segmento
+        segmento->size += paginas_necesarias * config.page_size;
+        //Buscar el ultimo md
+        uint32_t dir_ultimo_md = buscar_ultimo_md(segmento);
+        //Hallo la direccion fisica del md para actualizarlo
+        void* dir_fisica_ultimo_md = traducir_virtual(segmento, dir_ultimo_md);
+        //Actualizo al md
+        mp_escribir_metadata(dir_fisica_ultimo_md, tam, false);
+        //Hallo la direccion fisica a ocupar por el nuevo ultimo md
+        void* dir_fisica_nuevo_ultimo_md = traducir_virtual(segmento, dir_ultimo_md + sizeof(heap_metadata) + tam);
+        //Escribir el nuevo ultimo md
+        mp_escribir_metadata(dir_fisica_nuevo_ultimo_md, tam, false);
+
+        ret_addr = dir_ultimo_md + sizeof(heap_metadata);
+    //El segmento no es extendible directamente
+    } else {
+        //TODO: liberar memoria para exrtender el segmento corriendo el algoritmo de reemplazo?
+        //Liberar frames
+        ret_addr = extender_segmento(tam, segmento);
+    }
+
+    return ret_addr;
+}
+
+uint32_t hallar_espacio_libre(segment_t* segmento, uint32_t * dir_virtual_md_libre){
+
+    //Hallo la direccion inicial del segmento, la cual va a apuntar al primer md
+    void* pos_md = traducir_virtual(segmento, 0);
+    int tamanio = 0;
+    int espacio_libre = 0;
+
+    while(tamanio < segmento->size){
+
+        //Casteo la posicion del md a un md
+        heap_metadata* md = (heap_metadata*)pos_md;
+
+        //El md apunta a un espacio no vacio
+        if(!md->isFree){
+
+            tamanio += sizeof(heap_metadata) + md->size;
+            //Actualizo a la sgte posicion del md
+            pos_md = traducir_virtual(segmento, tamanio);
+
+            //Encontre un md libre
         } else {
 
             //Hay espacio suficiente como para almacenar el nuevo bloque mas el md del final
@@ -538,20 +645,15 @@ bool tiene_espacio_libre(segment_t* segmento, uint32_t* puntero, uint32_t tam, u
                 *espacio_libre = md->size;
                 return true;
 
-            //No hay espacio suficiente en el bloque libre
+                //No hay espacio suficiente en el bloque libre
             } else {
-                tamanio += sizeof(heap_metadata) + una_metadata->size;
+                tamanio += sizeof(heap_metadata) + md->size;
                 //Actualizo a la sgte posicion del md
                 pos_md = traducir_virtual(segmento, tamanio);
             }
         }
     }
     return false;
-}
-
-//TODO: Implementar
-uint32_t hallar_espacio_libre(segment_t* segmento, uint32_t * dir_virtual_md_libre_temp){
-
 }
 
 //TODO: Ver si esta funcion podria volar
@@ -592,15 +694,6 @@ int segmento_ocupado_size(segment_t* un_segmento){
 }
 
 
-segment_t* buscar_segmento_por_direccion(process_t* el_proceso, uint32_t direccion){
-    bool search(void * un_segmento) {
-        segment_t* segmento = (segment_t *) un_segmento;
-        uint32_t piso = segmento->base;
-        uint32_t techo = piso + segmento->size
-        return piso <= direccion && direccion <= techo;
-    }
-    return (segment_t*) list_find(el_proceso->segments, search);
-}
 
 
 
