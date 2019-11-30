@@ -423,6 +423,18 @@ int mp_buscar_frame_libre(){
     return nro_frame;
 }
 
+int ms_buscar_frame_libre(){
+    int i;
+    int nro_frame = -1; // Si no encuentra un frame libre va a devolver -1
+    for (i = 0; i<MAPA_SWAP_SIZE; ++i){
+        if (! bitarray_test_bit(MAPA_SWAP, i)){
+            nro_frame = i;
+            break; //si el lugar está libre salgo del for
+        }
+    }
+    return nro_frame;
+}
+
 int cant_frames_libres(){
     int i;
     int cant_frames = 0;
@@ -709,7 +721,6 @@ int segmento_ocupado_size(segment_t* un_segmento){
     return tamanio;
 }
 
-
 segment_t* buscar_segmento_por_direccion(process_t* el_proceso, uint32_t direccion){
     bool search(void * un_segmento) {
         segment_t* segmento = (segment_t *) un_segmento;
@@ -720,6 +731,32 @@ segment_t* buscar_segmento_por_direccion(process_t* el_proceso, uint32_t direcci
     return (segment_t*) list_find(el_proceso->segments, search);
 }
 
+int algoritmo_de_reemplazo(){
+
+    //Busco algun frame libre en la ms
+    int frame_ms = ms_buscar_frame_libre();
+
+    //Si el frame es -1 significa que no habia ningun frame disponible en la ms
+    if(frame_ms == -1){
+
+        return frame_ms;
+
+    //Encontre algun frame disponible en la ms
+    } else {
+
+        //TODO: Hacer list/array de estructuras que relacionen el nmro de frame con la pagina que tiene asignada
+        int i;
+        int nro_frame = -1; // Si no encuentra un frame libre va a devolver -1
+        for (i = 0; i<MAPA_MEMORIA_SIZE; ++i){
+            if (! bitarray_test_bit(MAPA_MEMORIA, i)){
+                nro_frame = i;
+                break; //si el lugar está libre salgo del for
+            }
+        }
+
+        return 0;
+    }
+}
 
 /*
 ████████╗███████╗███████╗████████╗███████╗

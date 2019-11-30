@@ -150,6 +150,12 @@ void* mp_escribir_metadata(void* espacio_libre, uint32_t tam, int esta_libre);
 int mp_buscar_frame_libre();
 
 /**
+ * Busco algun frame libre en la MS
+ * @return -1 para error o nro de frame
+ */
+int ms_buscar_frame_libre();
+
+/**
  * Busco la cantidad de frames libres para verificar si puedo allocar en MP
  * @return
  */
@@ -227,5 +233,18 @@ void* puntero_a_mp_del_primer_metadata_libre(segment_t* un_segmento);
  */
 int segmento_ocupado_size(segment_t* un_segmento);
 
+/**
+ * Hallo el segmento al que pertenece una direccion virtual dado
+ * @param segment_t* el_proceso, proceso al que pertenece el cacho
+ * @param uint32_t direccion, direccion virtual/logica de un cacho de memoria
+ * @return
+ */
+segment_t* buscar_segmento_por_direccion(process_t* el_proceso, uint32_t direccion);
+
+/**
+ * Recorro la lista de paginas en MP y mando una a MS utilizando el algoritmo de reemplazo clock modificado
+ * @return retorno -1 en caso de que no haya algun frame disponible en la MS, y en que caso de que haya un 0
+ */
+int algoritmo_de_reemplazo();
 
 #endif //TP_2019_2C_418_STATUS_CODE_MUSE_H
