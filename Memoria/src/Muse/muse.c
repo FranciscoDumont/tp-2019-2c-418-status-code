@@ -697,8 +697,15 @@ int segmento_ocupado_size(segment_t* un_segmento){
 }
 
 
-
-
+segment_t* buscar_segmento_por_direccion(process_t* el_proceso, uint32_t direccion){
+    bool search(void * un_segmento) {
+        segment_t* segmento = (segment_t *) un_segmento;
+        uint32_t piso = segmento->base;
+        uint32_t techo = piso + segmento->size
+        return piso <= direccion && direccion <= techo;
+    }
+    return (segment_t*) list_find(el_proceso->segments, search);
+}
 
 
 /*
