@@ -125,33 +125,6 @@ void muse_free(uint32_t dir) {
 }
 
 /**
- *Copiando a memoria
- * @param dst Posición de memoria a la que copia
- * @param src Posición de memoria copiada
- * @param n Cantidad de bytes a copiar
- * @return Si pasa un error, retorna -1. Si la operación se realizó correctamente, retorna 0.
- */
-int copying_to_memory(uint32_t dst, uint32_t src, int n) {
-    //Creo un paquete para el Alloc
-    t_paquete *package = create_package(MUSE_CPY);
-    //Agrego dst, src y n al paquete
-    void *dst_aux = malloc(sizeof(uint32_t));
-    *((uint32_t *) dst_aux) = dst;
-    void *src_aux = malloc(sizeof(uint32_t));
-    *((uint32_t *) src_aux) = src;
-    void *n_aux = malloc(sizeof(uint32_t));
-    *((int *) n_aux) = n;
-    add_to_package(package, dst_aux, sizeof(int));
-    add_to_package(package, src_aux, sizeof(int));
-    add_to_package(package, n_aux, sizeof(int));
-    //Envio el paquete
-    if (send_package(package, server_socket) == -1) {
-        printf("Error al enviar paquete\n");
-        return -1;
-    } else return 0;
-}
-
-/**
  * Copia una cantidad `n` de bytes desde una posición de memoria de MUSE a una `dst` local.
  * @param dst Posición de memoria local con tamaño suficiente para almacenar `n` bytes.
  * @param src Posición de memoria de MUSE de donde leer los `n` bytes.
@@ -159,55 +132,45 @@ int copying_to_memory(uint32_t dst, uint32_t src, int n) {
  * @return Si pasa un error, retorna -1. Si la operación se realizó correctamente, retorna 0.
  */
 int muse_get(void *dst, uint32_t src, size_t n) {
-    //Creo un paquete para el muse_get
+
     t_paquete *package = create_package(MUSE_GET);
-    // Le cargo el src y el size
-    void *src_aux = malloc(sizeof(uint32_t));
-    *((uint32_t *) src_aux) = src;
-    void *n_aux = malloc(sizeof(uint32_t));
-    *((size_t *) n_aux) = n;
-    add_to_package(package, src_aux, sizeof(int));
-    add_to_package(package, n_aux, sizeof(int));
+    add_to_package(package, (void*)(&src), sizeof(uint32_t));
+    add_to_package(package, (void*)(&n), sizeof(size_t));
     //Envio el paquete
     if (send_package(package, server_socket) == -1) {
         printf("Error al enviar paquete\n");
         return -1;
-    } else return 0;
+    } else {
 
-    // Espero la respuesta del server
-    MessageHeader *buffer_header = malloc(sizeof(MessageHeader));
-    receive_header(server_socket, buffer_header);
-    t_list *respuesta_list = receive_package(server_socket, buffer_header);
-    void* rta = *((void *) list_get(respuesta_list, 0));
-    free(tam_aux);
-    free_package(package);
-    free(buffer_header);
-    list_destroy_and_destroy_elements(respuesta_list, element_destroyer);
+        // Espero la respuesta del server
+        MessageHeader *buffer_header = malloc(sizeof(MessageHeader));
+        receive_header(server_socket, buffer_header);
+        t_list *respuesta_list = receive_package(server_socket, buffer_header);
+        void* rta = *((void *) list_get(respuesta_list, 0));
+        free(tam_aux);
+        free_package(package);
+        free(buffer_header);
+        list_destroy_and_destroy_elements(respuesta_list, element_destroyer);
 
-    // Copio lo recibido en la direccion que me llego
-    memcpy(dst, rta, n);
-    return 1;
+        // Copio lo recibido en la direccion que me llego
+        memcpy(dst, rta, n);
+        return 1;
+    }
 }
 
 /**
-     * Copia una cantidad `n` de bytes desde una posición de memoria local a una `dst` en MUSE.
-     * @param dst Posición de memoria de MUSE con tamaño suficiente para almacenar `n` bytes.
-     * @param src Posición de memoria local de donde leer los `n` bytes.
-     * @param n Cantidad de bytes a copiar.
-     * @return Si pasa un error, retorna -1. Si la operación se realizó correctamente, retorna 0.
-     */
+ * Copia una cantidad `n` de bytes desde una posición de memoria local a una `dst` en MUSE.
+ * @param dst Posición de memoria de MUSE con tamaño suficiente para almacenar `n` bytes.
+ * @param src Posición de memoria local de donde leer los `n` bytes.
+ * @param n Cantidad de bytes a copiar.
+ * @return Si pasa un error, retorna -1. Si la operación se realizó correctamente, retorna 0.
+ */
 int muse_cpy(uint32_t dst, void *src, int n) {
-    //Creo un paquete para el Alloc
+
     t_paquete *package = create_package(MUSE_CPY);
-    //Agrego el uint32_t al paquete
-    void *dst_aux = malloc(sizeof(uint32_t));
-    *((uint32_t *) dst_aux) = dst;
-    void *src_aux = src;
-    void *n_aux = malloc(sizeof(uint32_t));
-    *((int *) n_aux) = n;
-    add_to_package(package, dst_aux, sizeof(int));
-    add_to_package(package, src_aux, sizeof(int));
-    add_to_package(package, n_aux, sizeof(int));
+    add_to_package(package, (void*)(&dst), sizeof(uint32_t));
+    add_to_package(package, src, n);
+    add_to_package(package, (void*)(&n_aux), sizeof(int));
     //Envio el paquete
     if (send_package(package, server_socket) == -1) {
         printf("Error al enviar paquete\n");

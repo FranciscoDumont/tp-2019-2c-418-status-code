@@ -232,7 +232,6 @@ int muse_init(int id, char *ip, int puerto) {
 void muse_close() {
 }
 
-
 uint32_t muse_alloc(uint32_t tam, int id_proceso) {
     // Veo cuantas paginas necesito
     int paginas_necesarias;
@@ -606,7 +605,6 @@ uint32_t extender_segmento(int tam, segment_t* segmento){
     return ret_addr;
 }
 
-//TODO: completar
 segment_t* buscar_segmento_a_extender(int tam, process_t* proceso){
 
     int iter = 0;
