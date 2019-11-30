@@ -78,7 +78,7 @@ int muse_init(int id, char *ip, int puerto);
 void muse_close();
 uint32_t muse_alloc(uint32_t tam, int id_proceso);
 void muse_free(uint32_t dir);
-int muse_get(void *dst, uint32_t src, size_t n);
+void* muse_get(uint32_t direccion, size_t tam, int id_proceso);
 int muse_cpy(uint32_t dst, void *src, int n);
 uint32_t muse_map(char *path, size_t length, int flags);
 int muse_sync(uint32_t addr, size_t len);
@@ -174,7 +174,7 @@ void* traducir_virtual(segment_t* un_segmento, uint32_t direccion_virtual);
  * @param uint32_t espacio_libre, me indica la cantidad de bytes que habia libres antes de reservar la nueva memoria en este espacio
  * @return true si hay espacio, false si no lo hay
  */
-bool tiene_espacio_libre(segment_t* segmento, uint32_t * puntero, uint32_t tam, uint32_t tam);
+bool tiene_espacio_libre(segment_t* segmento, uint32_t * puntero, uint32_t tam, uint32_t espacio_libre);
 
 /**
  * Hallo el espacio libre que posee un segmento, solo contando el ultimo md

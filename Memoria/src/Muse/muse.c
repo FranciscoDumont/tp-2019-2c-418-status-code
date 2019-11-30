@@ -112,10 +112,17 @@ void *server_function(void *arg) {
 
             case MUSE_GET:;
                 {
-                    void *dst = *((void **) list_get(cosas, 0));
-                    uint32_t src = *((uint32_t *) list_get(cosas, 1));
-                    size_t n = *((size_t *) list_get(cosas, 2));
-                    muse_get(dst, src, n);
+                    uint32_t src = *((uint32_t *) list_get(cosas, 0));
+                    size_t n = *((size_t *) list_get(cosas, 1));
+
+                    void* resultado = muse_get(src, n, fd);
+
+                    // Le respondo a libMuse
+                    t_paquete *package = create_package(MUSE_GET);
+                    void* respuesta = malloc(n);
+                    respuesta = resultado;
+                    add_to_package(package, respuesta, n);
+                    send_package(package, fd);
                     break;
                 }
 
@@ -184,6 +191,14 @@ void read_memory_config() {
         config.swap_size);
 }
 
+/*
+  ██████╗ ██████╗ ██████╗ ███████╗
+ ██╔════╝██╔═══██╗██╔══██╗██╔════╝
+ ██║     ██║   ██║██████╔╝█████╗
+ ██║     ██║   ██║██╔══██╗██╔══╝
+ ╚██████╗╚██████╔╝██║  ██║███████╗
+  ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝
+*/
 
 int muse_init(int id, char *ip, int puerto) {
     log_info(logger, "Empieza el muse_init");
@@ -354,8 +369,13 @@ void muse_free(uint32_t dir) {
 }
 
 
-int muse_get(void *dst, uint32_t src, size_t n) {
+void* muse_get(uint32_t direccion, size_t tam, int id_proceso){
+    process_t* el_proceso = buscar_proceso(id_proceso);
+    segment_t* el_segmento = buscar_segmento_por_direccion(el_proceso, direccion);
+
+
 }
+
 
 int muse_cpy(uint32_t dst, void *src, int n) {
 }
@@ -372,7 +392,14 @@ int muse_sync(uint32_t addr, size_t len) {
 int muse_unmap(uint32_t dir) {
 }
 
-// Funciones Auxiliares
+/*
+ █████╗ ██╗   ██╗██╗  ██╗
+██╔══██╗██║   ██║╚██╗██╔╝
+███████║██║   ██║ ╚███╔╝
+██╔══██║██║   ██║ ██╔██╗
+██║  ██║╚██████╔╝██╔╝ ██╗
+╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝
+*/
 
 process_t* crear_proceso(int id){
     process_t* nuevo_proceso = malloc(sizeof(process_t));
@@ -565,6 +592,15 @@ int segmento_ocupado_size(segment_t* un_segmento){
 }
 
 
+segment_t* buscar_segmento_por_direccion(process_t* el_proceso, uint32_t direccion){
+    bool search(void * un_segmento) {
+        segment_t* segmento = (segment_t *) un_segmento;
+        uint32_t piso = segmento->base;
+        uint32_t techo = piso + segmento->size
+        return piso <= direccion && direccion <= techo;
+    }
+    return (segment_t*) list_find(el_proceso->segments, search);
+}
 
 
 

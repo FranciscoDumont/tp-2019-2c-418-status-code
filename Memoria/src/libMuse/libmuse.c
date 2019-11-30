@@ -159,15 +159,13 @@ int copying_to_memory(uint32_t dst, uint32_t src, int n) {
  * @return Si pasa un error, retorna -1. Si la operación se realizó correctamente, retorna 0.
  */
 int muse_get(void *dst, uint32_t src, size_t n) {
-    //Creo un paquete para el Alloc
+    //Creo un paquete para el muse_get
     t_paquete *package = create_package(MUSE_GET);
-    //Agrego el uint32_t al paquete
-    void *dst_aux = dst;
+    // Le cargo el src y el size
     void *src_aux = malloc(sizeof(uint32_t));
     *((uint32_t *) src_aux) = src;
     void *n_aux = malloc(sizeof(uint32_t));
     *((size_t *) n_aux) = n;
-    add_to_package(package, dst_aux, sizeof(int));
     add_to_package(package, src_aux, sizeof(int));
     add_to_package(package, n_aux, sizeof(int));
     //Envio el paquete
@@ -175,6 +173,20 @@ int muse_get(void *dst, uint32_t src, size_t n) {
         printf("Error al enviar paquete\n");
         return -1;
     } else return 0;
+
+    // Espero la respuesta del server
+    MessageHeader *buffer_header = malloc(sizeof(MessageHeader));
+    receive_header(server_socket, buffer_header);
+    t_list *respuesta_list = receive_package(server_socket, buffer_header);
+    void* rta = *((void *) list_get(respuesta_list, 0));
+    free(tam_aux);
+    free_package(package);
+    free(buffer_header);
+    list_destroy_and_destroy_elements(respuesta_list, element_destroyer);
+
+    // Copio lo recibido en la direccion que me llego
+    memcpy(dst, rta, n);
+    return 1;
 }
 
 /**
