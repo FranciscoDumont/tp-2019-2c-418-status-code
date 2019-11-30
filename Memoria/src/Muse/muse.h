@@ -202,12 +202,12 @@ uint32_t nuevo_segmento(int tam, process_t* proceso);
 uint32_t extender_segmento(int tam, segment_t* segmento);
 
 /**
- * Hallo el espacio libre que posee un segmento, solo contando el ultimo md
- * @param segment_t* segmento, segmento al que le averiguo el espacio libre
- * @param uint32_t* dir_virtual_md_libre, direccion virtual que apunta al ultimo md
- * @return retorno el espacio libre al final
+ * BUsco un segmento a extender
+ * @param int tam, cant de bytes que hay que extender el segmento
+ * @param process_t* proceso, proceso al que le voy a revisar los segmentos
+ * @return segment_t*, segmento extendible
  */
-uint32_t hallar_espacio_libre(segment_t* segmento, uint32_t * dir_virtual_md_libre);
+segment_t* buscar_segmento_a_extender(int tam, process_t* proceso);
 
 /**
  * Retorno la direccion "fisica" al primer metadata de libre dentro de un segmento
