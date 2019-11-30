@@ -169,7 +169,6 @@ void *server_function(void *arg) {
     start_server(socket, &new, &lost, &incoming);
 }
 
-
 void read_memory_config() {
     config_file = config_create("config");
 
@@ -306,7 +305,6 @@ uint32_t muse_alloc(uint32_t tam, int id_proceso) {
 
 void muse_free(uint32_t dir) {
 }
-
 
 void* muse_get(uint32_t direccion, size_t tam, int id_proceso){
     process_t* el_proceso = buscar_proceso(id_proceso);
@@ -603,6 +601,7 @@ segment_t* buscar_segmento_a_extender(int tam, process_t* proceso){
         //Posibilidades:
             //-primero map y segundo null -> return null
             //-primero map y segundo map -> continue
+            //-primero map y segundo no map -> continue
             //-primero no map y segundo map -> analizar dir virtual
             //-primero no map y segundo no map -> analizar dir virtual
             //-primero no map y segundo null -> return primero
@@ -617,12 +616,41 @@ segment_t* buscar_segmento_a_extender(int tam, process_t* proceso){
         } else if(primero->is_map && segundo->is_map){
 
             continue;
+        } else if(primero->is_map && !segundo->is_map) {
+
+            continue;
         } else if(!primero->is_map && segundo->is_map){
 
-            //TODO: analizar
+            //Hallo la direccion virtual del ultimo md del primer segmento
+            uint32_t dir_md = buscar_ultimo_md(primero);
+            //Hallo la base del segundo
+            uint32_t base_segundo = (uint32_t)segundo->base;
+
+            //Si la direccion del ultimo md del primero mas el tamaño a alocar es menor a la base del segundo, retorno
+            // el primero sino continuo
+            if((dir_md + tam + sizeof(heap_metadata)) < base_segundo){
+
+                return primero;
+            } else {
+
+                continue;
+            }
         } else if(!primero->is_map && !segundo->is_map){
 
-            //TODO: analizar
+            //Hallo la direccion virtual del ultimo md del primer segmento
+            uint32_t dir_md = buscar_ultimo_md(primero);
+            //Hallo la base del segundo
+            uint32_t base_segundo = (uint32_t)segundo->base;
+
+            //Si la direccion del ultimo md del primero mas el tamaño a alocar es menor a la base del segundo, retorno
+            // el primero sino continuo
+            if((dir_md + tam + sizeof(heap_metadata)) < base_segundo){
+
+                return primero;
+            } else {
+
+                continue;
+            }
         } else {
 
             return primero;
