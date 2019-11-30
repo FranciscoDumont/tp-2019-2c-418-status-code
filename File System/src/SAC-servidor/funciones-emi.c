@@ -3,6 +3,54 @@
 //
 
 #include "funciones-emi.h"
+#include <dirent.h>
+typedef struct def{
+    int nro_nodo;
+    int nro_byts;
+    char nombre[71];
+}Dir;
+
+int* obtenerDirectorio(int nodo, GBloque* disco){
+    GFile* tablaNodos = obtenerTablaNodos(disco);
+    GFile* nodoAObtener = tablaNodos + nodo;
+
+    int* punteroIndirecto = disco + nodoAObtener->GBloque[0];
+    int* directorio = disco + punteroIndirecto[0];
+
+    return directorio;
+}
+
+t_list* sac_readdir (char* path){
+    t_list* respuesta = list_create();
+    t_list* pathDividido = dividirPath(path);
+    int nro_nodo = buscarPath (pathDividido);
+    GBloque* disco = mapParticion("../tools/disco.bin");
+    GFile* tablaNodos = obtenerTablaNodos(disco);
+    GFile* nodo = tablaNodos + nro_nodo;
+    int* directorio = obtenerDirectorio(nro_nodo, disco);
+    for ( int i = 0; i < 1024; i++){
+        if(directorio[i]!=-1){
+            Dir* dirAEnviar = malloc(sizeof(Dir));
+            int nro_nodo_hijo = directorio[i];
+            GFile* nodo_hijo = tablaNodos + nro_nodo_hijo;
+            memcpy(dirAEnviar->nombre, nodo_hijo->nombre_archivo, strlen(nodo_hijo->nombre_archivo)+1);
+            dirAEnviar->nro_nodo=nro_nodo_hijo;
+            dirAEnviar->nro_byts = strlen(nodo_hijo->nombre_archivo) + sizeof(int);
+            list_add(respuesta,dirAEnviar);
+        }
+    }
+
+    return respuesta;
+}
+void mostrarCarpeta(char* path){
+   t_list* directorio = sac_readdir (path);
+
+   for(int i = 0; i < list_size(directorio) ; i++){
+       Dir* a =  list_get(directorio,i);
+       printf("Nombre:%s\t Numero nodo:%d\t Numero Byts: %d\n",a->nombre, a->nro_nodo, a->nro_byts);
+   }
+}
+
 
 //Funcion auxilliar para sac_mkdir
 int escribir_dir(GBloque* disco, GFile* nodo, int puntero){
@@ -224,19 +272,21 @@ void main (){
     sac_mkdir(tuVieja);
     memcpy(tuVieja,"/Carpeta1/Carpeta3",strlen("/Carpeta1/Carpeta3")+1);
     sac_mkdir(tuVieja);
+    memcpy(tuVieja,"/Carpeta1/algo",strlen("/Carpeta1/algo")+1);
+    sac_mkdir(tuVieja);
     memcpy(tuVieja,"/Carpeta2/archivo1",strlen("/Carpeta2/archivo1")+1);
     sac_mkdir(tuVieja);
 
     memcpy(tuVieja,"/Carpeta1",strlen("/Carpeta1")+1);
+    mostrarCarpeta(tuVieja);
 
-     sac_rmdir(tuVieja);
-//  free(tuVieja);
+    //  free(tuVieja);
 
 //    sac_rmdir(tuVieja);
     GBloque* disco = mapParticion("../tools/disco.bin");
     GFile* carpetaRaiz = (GFile*) (disco+2);
 
-    mostrarParticion("../tools/disco.bin");
+//    mostrarParticion("../tools/disco.bin");
 
 
     mostrarNodo(carpetaRaiz, disco);
@@ -255,7 +305,7 @@ void main (){
 //    t_list* path = dividirPath(tuVieja);
 //    printf("%d", buscarPath(path));
 //    list_destroy(path);
-    free(tuVieja);
+//    free(tuVieja);
     //printf("\nestado:%d   bloque usado: %d", carpetaRaiz->estado,carpetaRaiz->GBloque[0]);
 
 //    char* archivo= malloc(50);
