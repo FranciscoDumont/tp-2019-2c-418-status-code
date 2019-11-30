@@ -37,6 +37,7 @@ typedef struct {
 typedef struct {
     int base;
     int size;
+    bool is_map;
     t_list* pages;
 } segment_t;
 
@@ -91,9 +92,10 @@ process_t* crear_proceso(int id);
  * contiguo
  * @param process_t* process, proceso al que le voy a agregar el segmento
  * @param int paginas_necesarias, cant de paginas necesarias para el segmento
+ * @param bool is_map, indica si el segmento a crear es de tipo map o no
  * @return
  */
-segment_t* crear_segmento(proceso_t* process, int paginas_necesarias);
+segment_t* crear_segmento(proceso_t* process, int paginas_necesarias, bool is_map);
 
 /**
  * Busco frames libres y se los asigno a las paginas que necesita el segmento
@@ -167,7 +169,7 @@ char* mapa_memoria_to_string();
 void* traducir_virtual(segment_t* un_segmento, uint32_t direccion_virtual);
 
 /**
- * Busco si el segmento tiene algun espacio lo suficientemente grande como para almacenar el nuevo alloc
+ * Busco si el segmento tiene algun espacio lo suficientemente grande como para almacenar el nuevo alloc, en cualquier lugar del segmento
  * @param segment_t* segmento, segmento q voy a revisar
  * @param uint32_t* puntero, aca voy a asignar la direccion virtual que apunta al md que me indica el espacio libre
  * @param uint32_t tam, tamaño de la memoria a allocar(en realidad es esto mas el tamaño que ocupa un md)
@@ -177,12 +179,35 @@ void* traducir_virtual(segment_t* un_segmento, uint32_t direccion_virtual);
 bool tiene_espacio_libre(segment_t* segmento, uint32_t * puntero, uint32_t tam, uint32_t tam);
 
 /**
+ * Retorno la direccion virtual del ultimo md libre de un segmento dado
+ * @param segmento
+ * @return uint32_t, direccion virtual del ultimo md
+ */
+uint32_t buscar_ultimo_md(segment_t* segmento);
+
+/**
+ * Creo un nuevo segmento con sus paginas, verificando si hay frames libres o no y actuando en caso de que sea necesario
+ * @param int tam, tamaño del segmento a allocar
+ * @param process_t* proceso, proceso sobre el que voy a cargar el segmento
+ * @return uint32_t, direccion del segmento allocado
+ */
+uint32_t nuevo_segmento(int tam, process_t* proceso);
+
+/**
+ * Extiendo un segmento dado, verificando si hay frames disponibles y bla bla
+ * @param int tam, tamaño a extender el segmento
+ * @param segment_t* segmento, segmento a extender
+ * @return uint32_t, direccion de la posicion a extender
+ */
+uint32_t extender_segmento(int tam, segment_t* segmento);
+
+/**
  * Hallo el espacio libre que posee un segmento, solo contando el ultimo md
  * @param segment_t* segmento, segmento al que le averiguo el espacio libre
- * @param uint32_t* dir_virtual_md_libre_temp, direccion virtual que apunta al ultimo md
+ * @param uint32_t* dir_virtual_md_libre, direccion virtual que apunta al ultimo md
  * @return retorno el espacio libre al final
  */
-uint32_t hallar_espacio_libre(segment_t* segmento, uint32_t * dir_virtual_md_libre_temp);
+uint32_t hallar_espacio_libre(segment_t* segmento, uint32_t * dir_virtual_md_libre);
 
 /**
  * Retorno la direccion "fisica" al primer metadata de libre dentro de un segmento
