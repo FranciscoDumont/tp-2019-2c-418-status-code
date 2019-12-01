@@ -325,10 +325,65 @@ void muse_free(uint32_t dir) {
 }
 
 void* muse_get(uint32_t direccion, size_t tam, int id_proceso){
+
+    //Obtengo el segmento y las paginas de la direccion pedida
     process_t* el_proceso = buscar_proceso(id_proceso);
     segment_t* el_segmento = buscar_segmento_por_direccion(el_proceso, direccion);
+    void* cacho_a_enviar = null;
 
+    //Si la direccion pasada pertenece a un segmento, este va a ser distinto de null
+    if(el_segmento != null){
 
+        t_list* pages = el_segmento->pages;
+
+        int dir_virtual_first_pagina = direccion - el_segmento->base;
+        int nro_first_pagina = dir_virtual_pagina/config.page_size;
+
+        int dir_virtual_last_pagina = direccion + tam - el_segmento->base;
+        int nro_last_pagina = dir_virtual_pagina/config.page_size;
+
+        int seg_offset = dir_virtual_first_pagina;
+        //El tam de memoria que me piden esta dentro del mismo segmento
+        if(seg_offset + tam <= el_segmento->size){
+
+            int acum = 0;
+            //Obtengo las paginas del segmento y reservo un cachito de memoria en el que voy a copiar las paginas a enviar
+            cacho_a_enviar = malloc(tam);
+            //Itero la lista de paginas del segmento
+            for(int i = 0; i < list_size(pages); i++){
+                page_t* pagina = list_get(pages, i);
+
+                //Filtro solo las paginas necesarias
+                if(i >= nro_first_pagina && i<=nro_last_pagina){
+
+                    //Si la pagina esta en ms la traigo a mp
+                    traer_pagina(pagina);
+
+                    //Hallo la direccion base del frame correspondiente a la pagina solicitada
+                    void* dir_frame = MAIN_MEMORY + (pagina->frame * config.page_size);
+
+                    //Si es la primera pagina, la direccion puede caer en la mitad de la pagina
+                    if(i == nro_first_pagina){
+
+                        int tamanio_a_copiar_del_first = ( dir_frame + config.page_size) - (traducir_virtual(el_segmento, direccion));
+                        memcpy(cacho_a_enviar, dir_frame, tamanio_a_copiar_del_first);
+                        acum += tamanio_a_copiar_del_first;
+                        //Si es la ultima pagina, el tamaño puede indicarme que tome solo hasta cierta parte de la pagina
+                    } else if(i == nro_last_pagina){
+
+                        memcpy(cacho_a_enviar + acum, dir_frame, (tam - acum));
+                        //En cualquier otro caso la pagina se copia completa
+                    } else {
+
+                        memcpy(cacho_a_enviar + acum, dir_frame, config.page_size);
+                        acum += config.page_size;
+                    }
+                }
+            }
+        }
+    }
+
+    return cacho_a_enviar;
 }
 
 int muse_cpy(uint32_t dst, void *src, int n) {

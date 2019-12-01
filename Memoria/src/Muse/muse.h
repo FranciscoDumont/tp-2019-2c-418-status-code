@@ -86,6 +86,15 @@ int muse_init(int id, char *ip, int puerto);
 void muse_close();
 uint32_t muse_alloc(uint32_t tam, int id_proceso);
 void muse_free(uint32_t dir);
+
+/**
+ * Retorno la memoria solicitada
+ * @param uint32_t direccion, en la que se encuentra la memoria solicitada
+ * @param size_t tam, tamaño de la memoria solicitada
+ * @param int id_proceso, id del proceso al que pertenece la memoria
+ * @return retorna null si la direccion no pertenecia al espacio de direcciones del proceso o el cacho de memoria
+ * solicitada
+ */
 void* muse_get(uint32_t direccion, size_t tam, int id_proceso);
 int muse_cpy(uint32_t dst, void *src, int n);
 uint32_t muse_map(char *path, size_t length, int flags);
