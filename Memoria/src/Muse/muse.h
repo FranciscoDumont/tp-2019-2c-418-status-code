@@ -32,6 +32,9 @@ int MAPA_SWAP_SIZE;
 t_bitarray* MAPA_MEMORIA;
 t_bitarray* MAPA_SWAP;
 FILE* SWAP;
+t_list* FRAMES_PAGINAS; // Array que relacionas frames con paginas
+int PUNTERO_REEMPLAZO = 0; // Entero que representa un puntero para el algoritmo de reemplazo
+
 
 typedef struct {
     int pid;

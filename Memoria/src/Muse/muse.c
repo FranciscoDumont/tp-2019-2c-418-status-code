@@ -15,8 +15,9 @@ int main() {
 	for(int indice = 0; indice < MAPA_MEMORIA_SIZE*8; indice++){
 	    bitarray_clean_bit(MAPA_MEMORIA, indice);
 	}
+    log_info(logger, "Se pueden almacenar %d páginas", LIMITE_PAGINAS);
 
-	// Mapa Swap
+    // Mapa Swap
     LIMITE_PAGINAS_SWAP = config.swap_size / config.page_size;
     MAPA_SWAP_SIZE = ceil((double) LIMITE_PAGINAS_SWAP / 8);
     char bitarray_s[MAPA_SWAP_SIZE];
@@ -30,9 +31,11 @@ int main() {
      * size_t fwrite(const void *ptr, size_t size_of_elements, size_t number_of_elements, FILE *a_file)
      */
 
-    MAIN_MEMORY = malloc(config.memory_size);
+    // Estructuras para el reemplazo de paginas
+    FRAMES_PAGINAS = list_create();
+    log_info(logger, "Se pueden almacenar %d páginas en el area de SWAP", LIMITE_PAGINAS_SWAP);
 
-	log_info(logger, "Se pueden almacenar %d páginas", LIMITE_PAGINAS);
+    MAIN_MEMORY = malloc(config.memory_size);
 
     pthread_t server_thread;
     pthread_create(&server_thread, NULL, server_function, NULL);
@@ -42,6 +45,7 @@ int main() {
 
     free(MAPA_MEMORIA);
     free(MAIN_MEMORY);
+    free(SWAP_PAGINAS);
     return 0;
 }
 
@@ -375,8 +379,9 @@ void asignar_paginas(int paginas_necesarias, segment_t* nuevo_segmento){
     for(int i = 0; i<paginas_necesarias; i++){
         int frame_libre = mp_buscar_frame_libre();
         bitarray_set_bit(MAPA_MEMORIA, frame_libre);
-        page_t* nueva_pagina = crear_pagina(frame_libre, true, false, false);
+        page_t* nueva_pagina = crear_pagina(frame_libre, true, false, true);
         list_add(nuevo_segmento->pages, nueva_pagina);
+        list_add(FRAMES_PAGINAS, nueva_pagina); // Agrego la pagina a la lista de frames
     }
 }
 
@@ -732,30 +737,62 @@ segment_t* buscar_segmento_por_direccion(process_t* el_proceso, uint32_t direcci
 }
 
 int algoritmo_de_reemplazo(){
+/*
+    Clock modificado:
+    1. Empezando desde la posición actual del puntero, recorrer la lista de marcos.
+    Durante el recorrido, dejar el bit de uso (U) intacto.
+    El primer marco que se encuentre con U = 0 y M = 0 se elige para el reemplazo.
+*/
+    page_t* pagina_a_reemplazar;
+    int frames_paginas_size = list_size(FRAMES_PAGINAS);
 
+    void paso_1(){
+        for(;PUNTERO_REEMPLAZO<frames_paginas_size;PUNTERO_REEMPLAZO++){
+            page_t* pagina_tmp = list_get(FRAMES_PAGINAS, PUNTERO_REEMPLAZO);
+            bool uso = pagina_tmp->use_bit;
+            bool modificado = pagina_tmp->modified_bit;
+            if (!uso && !modificado){
+                pagina_a_reemplazar = pagina_tmp;
+                return;
+            }
+        }
+        // Si llega aca es porque recorrio todos los frames
+        PUNTERO_REEMPLAZO = 0; // Vuelvo el puntero a 0
+        return;
+    }
+/*
+    2. Si el paso 1 falla, recorrer nuevamente, buscando un marco con U = 0 y M = 1.
+    El primer marco que cumpla la condición es seleccionado para el reemplazo.
+    Durante este recorrido, cambiar el bit de uso a 0 de todos los marcos que no se elijan.
+*/
+
+ /*
+    3. Si el paso 2 falla, volver al paso 1.
+ */
     //Busco algun frame libre en la ms
     int frame_ms = ms_buscar_frame_libre();
 
     //Si el frame es -1 significa que no habia ningun frame disponible en la ms
     if(frame_ms == -1){
-
         return frame_ms;
+    }
+
 
     //Encontre algun frame disponible en la ms
-    } else {
+    //TODO: Hacer list/array de estructuras que relacionen el nmro de frame con la pagina que tiene asignada
 
-        //TODO: Hacer list/array de estructuras que relacionen el nmro de frame con la pagina que tiene asignada
-        int i;
-        int nro_frame = -1; // Si no encuentra un frame libre va a devolver -1
-        for (i = 0; i<MAPA_MEMORIA_SIZE; ++i){
-            if (! bitarray_test_bit(MAPA_MEMORIA, i)){
-                nro_frame = i;
-                break; //si el lugar está libre salgo del for
-            }
+
+    /* TODO: Quiza borrar esto luego
+    int i;
+    int nro_frame = -1; // Si no encuentra un frame libre va a devolver -1
+    for (i = 0; i<MAPA_MEMORIA_SIZE; ++i){
+        if (! bitarray_test_bit(MAPA_MEMORIA, i)){
+            nro_frame = i;
+            break; //si el lugar está libre salgo del for
         }
-
-        return 0;
     }
+    */
+    return 0;
 }
 
 /*
