@@ -4,38 +4,66 @@
 #include "sac-server.h"
 #include "funciones-rodri.h"
 
+sac_server_config* read_config(){
+    sac_server_config* confi = malloc(sizeof(sac_server_config));
+    t_config* tConfig =config_create(CONFIGURACION);
+
+    confi.ip = config_get_string_value(tConfig, "IP");
+    confi.listen_port = config_get_string_value(tConfig, "LISTEN_PORT");
+
+    config_destroy(tConfig);
+    return sac_server_confi
+}
+
 void serverFunction(){
-
-    //sac_server_config* config;
+    sac_server_config* config;
     int socket;
+    t_log* logger = log_create("../sac_server.log", "SAC_SERVER", FALSE, LOG_LEVEL_TRACE);;
 
-    //config = read_config();
+    config = read_config();
 
     if((socket = create_socket()) == -1) {
-        printf("Error al crear el socket");
+        log_error(logger, "Error al crear el socket");
         return;
     }
+
     if((bind_socket(socket, 5005)) == -1) {
-        printf("Error al bindear el socket");
+        log_error(logger, "Error al bindear el socket");
         return;
     }
     void new(int fd, char * ip, int port){
-        printf("Cliente conectado, IP:%s, PORT:%d\n", ip, port);
+        log_info(t_log* logger, "Cliente conectado, IP:%s, PORT:%d\n", ip, port);
     }
 
-    void lost(int fd, char * ip, int port){}
+    void lost(int fd, char * ip, int port){
+        log_info(t_log* logger, "Cliente conectado, IP:%s, PORT:%d\n", ip, port);
+    }
+
     void incoming(int fd, char * ip, int port, MessageHeader * headerStruct){
         t_list *cosas = receive_package(fd, headerStruct);
 
         switch (headerStruct->type){
             case OPEN:
             {
-                ;
-                char *mensaje = (char*)list_get(cosas, 0);
-                printf("Se pidio abrir esta ruta :%s\n", mensaje);
+                char* path = list_get(cosas,0);// Toma el unico elemento que se le manda
+                int descriptor_archiv = sac_open(path);
+                t_paquete *package = create_package(OPEN);
+                add_to_package(package, (void*) &descriptor_archiv, sizeof(descriptor_archiv));
+                send_package(package, fd);
 
                 break;
             }
+            case CLOSE:
+            {
+                int fd = list_get(cosas,0);// Toma el unico elemento que se le manda
+                int resultado = sac_close(fd);
+                t_paquete *package = create_package(CLOSE);
+                add_to_package(package, (void*) &resultado, sizeof(resultado));
+                send_package(package, fd);
+
+                break;
+            }
+
             case READ:
             {
                 ;

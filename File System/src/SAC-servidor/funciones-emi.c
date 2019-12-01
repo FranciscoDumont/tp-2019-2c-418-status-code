@@ -4,6 +4,8 @@
 
 #include "funciones-emi.h"
 #include <dirent.h>
+#include <stdlib.h>
+
 typedef struct def{
     int nro_nodo;
     int nro_byts;
@@ -254,6 +256,96 @@ int sac_rmnod(char* path){
     munmapParticion(disco,"../tools/disco.bin");
 }
 
+
+typedef struct elementoOpen{
+    int nro_nodo;
+    char* path;
+    uint8_t estado;
+    int cantidad_aperturas;
+}elementoOpen;
+
+t_list* tablaArchivosAbiertos;
+
+void incializarTabla (){
+    tablaArchivosAbiertos = list_create();
+}
+
+char* intToCharPointer(int nro){
+    char* fd = malloc(5);
+    sprintf(fd, "%d", nro);;
+
+    return fd;
+}
+
+/*
+ * Busca si existe la fucion en la tabla de archivos
+ * @return el indice en la tabla de archivos, -1 si no existe
+ * @Parametros nro_nod
+ */
+
+int existeEnTablaDeArchivos(int nro_nodo){
+    int retorno = -1;
+
+    for(int i = 0; i < list_size(tablaArchivosAbiertos); i++){
+        elementoOpen* elemento = list_get(tablaArchivosAbiertos,i);
+        if(elemento->nro_nodo == nro_nodo){
+            retorno = i;
+            break;
+        }
+    }
+
+    return retorno;
+}
+
+/*
+ * Funcion para agregar a la tabla de archivos abiertos
+ * @parametros = path del archivo
+ * @return = file descriptor
+ */
+
+int sac_open (char* path) {
+    char* pathElemetno = malloc(strlen(path) + 1);
+    memcpy(pathElemetno, path, strlen(path) + 1);
+    char* pathDividido = dividirPath(path);
+    int nro_nodo = buscarPath(pathDividido);
+
+    elementoOpen *elemento = malloc(sizeof(elementoOpen));
+
+    if (existeEnTablaDeArchivos(nro_nodo) == -1) {
+        elemento->path = pathElemetno;
+        t_list *pathDividido = dividirPath(path);
+        elemento->nro_nodo = nro_nodo;
+        elemento->estado = 0;
+        elemento->cantidad_aperturas = 1;
+
+        list_add(tablaArchivosAbiertos, (void *) elemento);
+    }else{
+        int index = existeEnTablaDeArchivos(nro_nodo);
+        elemento = list_get(tablaArchivosAbiertos,index);
+        elemento->cantidad_aperturas ++;
+    }
+
+    return nro_nodo;
+}
+
+int sac_close(int fd){
+    int index = existeEnTablaDeArchivos(fd);
+
+    if(index != -1){
+        elementoOpen* elemento  = list_get(tablaArchivosAbiertos, index);
+        if(elemento->cantidad_aperturas == 1){
+            list_remove(tablaArchivosAbiertos, index);
+
+            free(elemento->path);
+            free(elemento);
+        }else{
+            elemento->cantidad_aperturas -= 1;
+        }
+    }
+
+    return index;
+
+}
 void main (){
     t_log* logger = log_create("formateo.log", "SAC", 0, LOG_LEVEL_TRACE);
 //
@@ -278,23 +370,49 @@ void main (){
     sac_mkdir(tuVieja);
 
     memcpy(tuVieja,"/Carpeta1",strlen("/Carpeta1")+1);
-    mostrarCarpeta(tuVieja);
+//    mostrarCarpeta(tuVieja);
 
     //  free(tuVieja);
 
 //    sac_rmdir(tuVieja);
     GBloque* disco = mapParticion("../tools/disco.bin");
     GFile* carpetaRaiz = (GFile*) (disco+2);
+    incializarTabla();
+    mostrarParticion("../tools/disco.bin");
+    memcpy(tuVieja,"/Carpeta2/archivo1",strlen("/Carpeta2/archivo1")+1);
+    //printf("\nDescriptor de archivo: %d\n", sac_open(tuVieja));
+    sac_open(tuVieja);
 
-//    mostrarParticion("../tools/disco.bin");
+    memcpy(tuVieja,"/Carpeta1/algo",strlen("/Carpeta1/algo")+1);
+    //printf("\nDescriptor de archivo: %d\n", sac_open(tuVieja));
+    sac_open(tuVieja);
+    memcpy(tuVieja,"/Carpeta1/algo",strlen("/Carpeta1/algo")+1);
+    sac_open(tuVieja);
+    memcpy(tuVieja,"/Carpeta1/algo",strlen("/Carpeta1/algo")+1);
+    nro_nodo = sac_open(tuVieja);
 
 
-    mostrarNodo(carpetaRaiz, disco);
-    mostrarNodo(carpetaRaiz + 1, disco);
-    mostrarNodo(carpetaRaiz + 2, disco);
-    mostrarNodo(carpetaRaiz + 3, disco);
-    mostrarNodo(carpetaRaiz + 4, disco);
-    mostrarNodo(carpetaRaiz + 5, disco);
+    for(int i = 0; i < list_size(tablaArchivosAbiertos); i++ ){
+        elementoOpen* el = list_get(tablaArchivosAbiertos, i);
+        printf("\nEstado: %d, path: %s cantidad aperturas: %d\n", el->estado, el->path, el->cantidad_aperturas);
+    }
+
+    sac_close(nro_nodo);
+
+
+    for(int j = 0; j < list_size(tablaArchivosAbiertos); j++ ){
+        elementoOpen* el = list_get(tablaArchivosAbiertos, j);
+        printf("\nEstado: %d, path: %s cantidad aperturas: %d\n", el->estado, el->path, el->cantidad_aperturas);
+    }
+
+
+    //
+//    mostrarNodo(carpetaRaiz, disco);
+//    mostrarNodo(carpetaRaiz + 1, disco);
+//    mostrarNodo(carpetaRaiz + 2, disco);
+//    mostrarNodo(carpetaRaiz + 3, disco);
+//    mostrarNodo(carpetaRaiz + 4, disco);
+//    mostrarNodo(carpetaRaiz + 5, disco);
 //
 //
 //    ;
