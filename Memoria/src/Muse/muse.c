@@ -771,26 +771,40 @@ int algoritmo_de_reemplazo(){
     page_t* pagina_a_reemplazar;
     int frames_paginas_size = list_size(FRAMES_PAGINAS);
 
-    void paso_1(){
+    bool paso_1(){
         for(;PUNTERO_REEMPLAZO<frames_paginas_size;PUNTERO_REEMPLAZO++){
             page_t* pagina_tmp = list_get(FRAMES_PAGINAS, PUNTERO_REEMPLAZO);
             bool uso = pagina_tmp->use_bit;
             bool modificado = pagina_tmp->modified_bit;
             if (!uso && !modificado){
                 pagina_a_reemplazar = pagina_tmp;
-                return;
+                return true;
             }
         }
         // Si llega aca es porque recorrio todos los frames
         PUNTERO_REEMPLAZO = 0; // Vuelvo el puntero a 0
-        return;
+        return false;
     }
 /*
     2. Si el paso 1 falla, recorrer nuevamente, buscando un marco con U = 0 y M = 1.
     El primer marco que cumpla la condición es seleccionado para el reemplazo.
     Durante este recorrido, cambiar el bit de uso a 0 de todos los marcos que no se elijan.
 */
-
+    bool paso_2(){
+        for(;PUNTERO_REEMPLAZO<frames_paginas_size;PUNTERO_REEMPLAZO++){
+            page_t* pagina_tmp = list_get(FRAMES_PAGINAS, PUNTERO_REEMPLAZO);
+            bool uso = pagina_tmp->use_bit;
+            bool modificado = pagina_tmp->modified_bit;
+            if (!uso && modificado){
+                pagina_a_reemplazar = pagina_tmp;
+                return true;
+            }
+            pagina_tmp->use_bit = 0;
+        }
+        // Si llega aca es porque recorrio todos los frames
+        PUNTERO_REEMPLAZO = 0; // Vuelvo el puntero a 0
+        return false;
+    }
  /*
     3. Si el paso 2 falla, volver al paso 1.
  */
@@ -802,6 +816,14 @@ int algoritmo_de_reemplazo(){
         return frame_ms;
     }
 
+    while(true){
+        if (paso_1()){
+            return 0;
+        }
+        if (paso_2()){
+            return 0;
+        }
+    }
 
     //Encontre algun frame disponible en la ms
     //TODO: Hacer list/array de estructuras que relacionen el nmro de frame con la pagina que tiene asignada
@@ -817,7 +839,6 @@ int algoritmo_de_reemplazo(){
         }
     }
     */
-    return 0;
 }
 
 /*
