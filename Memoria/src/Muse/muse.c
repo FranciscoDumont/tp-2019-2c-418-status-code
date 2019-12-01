@@ -555,10 +555,11 @@ uint32_t nuevo_segmento(int tam, process_t* proceso){
 
     int paginas_necesarias = (int) ceil((double)(tam + 2*sizeof(heap_metadata))/config.page_size);
     uint32_t ret_addr = 0;
+    int frames_libres = cant_frames_libres();
 
     //En este caso hay frames disponibles para asignarle al segmento, probablemente se pueda sacar parte del codigo
     // de aca abajo porque se va a repetir
-    if(cant_frames_libres() >= paginas_necesarias){
+    if(frames_libres >= paginas_necesarias){
 
         //Creo un segmento nuevo
         segment_t* segmento = crear_segmento(proceso, paginas_necesarias, false);
@@ -568,7 +569,8 @@ uint32_t nuevo_segmento(int tam, process_t* proceso){
         // Reservo los frames necesarios de la memoria principal
         asignar_paginas(paginas_necesarias, segmento);
 
-        // Tengo el segmento con la lista de paginas creada, ahora cargo los metadata en los lugares correspondientes de la MP
+        // Tengo el segmento con la lista de paginas creada, ahora cargo los metadata en los lugares correspondientes
+        // de la MP
         asignar_primer_metadata(segmento, tam);
         asignar_ultima_metadata(segmento, tam, paginas_necesarias);
 
@@ -576,12 +578,23 @@ uint32_t nuevo_segmento(int tam, process_t* proceso){
 
         ret_addr = segmento->base + sizeof(heap_metadata);
 
-        //TODO: Fran, averiguame esto please
         //En este caso no hay frames suficientes para asignar al nuevo segmento, deberia mandar paginas a MS para liberar
-        // espacio o retornar un error o algo mas esoterico?
+        // espacio
     } else {
-        //TODO: liberar memoria para el nuevo segmento corriendo el algoritmo de reemplazo?
-        ret_addr = nuevo_segmento(tam, proceso);
+
+        //Liberar frames
+        int error = 0;
+        for(int i = 0; i < (paginas_necesarias - frames_libres); i++){
+            if(algoritmo_de_reemplazo() == -1){
+                error = -1;
+                break;
+            }
+        }
+        if(error == -1){
+            ret_addr = NULL;
+        } else {
+            ret_addr = nuevo_segmento(tam, segmento);
+        }
     }
 
     return ret_addr;
@@ -592,9 +605,10 @@ uint32_t extender_segmento(int tam, segment_t* segmento){
 
     int paginas_necesarias = (int) ceil((double)(tam + 1*sizeof(heap_metadata))/config.page_size);
     uint32_t ret_addr = 0;
+    int frames_libres = cant_frames_libres();
 
     //Si hay frames libres, el segmento es extendible directamente
-    if(cant_frames_libres() >= paginas_necesarias){
+    if(frames_libres >= paginas_necesarias){
 
         //Agrego las paginas necesarias
         asignar_paginas(paginas_necesarias, segmento);
@@ -614,9 +628,20 @@ uint32_t extender_segmento(int tam, segment_t* segmento){
         ret_addr = dir_ultimo_md + sizeof(heap_metadata);
     //El segmento no es extendible directamente
     } else {
-        //TODO: liberar memoria para exrtender el segmento corriendo el algoritmo de reemplazo?
+
         //Liberar frames
-        ret_addr = extender_segmento(tam, segmento);
+        int error = 0;
+        for(int i = 0; i < (paginas_necesarias - frames_libres); i++){
+            if(algoritmo_de_reemplazo() == -1){
+                error = -1;
+                break;
+            }
+        }
+        if(error == -1){
+            ret_addr = NULL;
+        } else {
+            ret_addr = extender_segmento(tam, segmento);
+        }
     }
 
     return ret_addr;
