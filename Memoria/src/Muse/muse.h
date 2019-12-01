@@ -259,4 +259,17 @@ segment_t* buscar_segmento_por_direccion(process_t* el_proceso, uint32_t direcci
  */
 int algoritmo_de_reemplazo();
 
+/**
+ * Llevo paginas a la MP, si la pagina ya estaba no hace nada
+ * @param pagina
+ */
+void traer_pagina(page_t* pagina);
+
+/**
+ * Llevo paginas a SWAP, si la pagina ya estaba no hace nada
+ * @param pagina
+ */
+void swapear_pagina(page_t* pagina);
+
+
 #endif //TP_2019_2C_418_STATUS_CODE_MUSE_H

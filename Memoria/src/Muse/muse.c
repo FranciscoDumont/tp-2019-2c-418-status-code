@@ -879,21 +879,38 @@ int algoritmo_de_reemplazo(){
             return 0;
         }
     }
+}
 
-    //Encontre algun frame disponible en la ms
-    //TODO: Hacer list/array de estructuras que relacionen el nmro de frame con la pagina que tiene asignada
-
-
-    /* TODO: Quiza borrar esto luego
-    int i;
-    int nro_frame = -1; // Si no encuentra un frame libre va a devolver -1
-    for (i = 0; i<MAPA_MEMORIA_SIZE; ++i){
-        if (! bitarray_test_bit(MAPA_MEMORIA, i)){
-            nro_frame = i;
-            break; //si el lugar está libre salgo del for
-        }
+void traer_pagina(page_t* pagina){
+    // Si la pagina ya estaba en memoria termino
+    if (pagina->presence_bit){
+        return;
     }
-    */
+    // Si hay espacio en MP la traigo
+    if (cant_frames_libres() > 0){
+        int frame_libre = mp_buscar_frame_libre();
+        int indice_de_swap = pagina->frame;
+        bitarray_clean_bit(MAPA_SWAP, indice_de_swap); // Libero el indice en Swap
+        bitarray_set_bit(MAPA_MEMORIA, frame_libre); // Ocupo el indice en MP
+        list_replace(FRAMES_PAGINAS, frame_libre, nueva_pagina); // Agrego la pagina a la lista de frames
+
+        pagina->presence_bit = 1;
+        pagina->use_bit = 1;
+        pagina->frame = frame_libre;
+
+        // Tengo que ir a la memoria swap y copiar el tamanio de una pagina al frame que liberé
+        fseek(SWAP, indice_de_swap*config.page_size, SEEK_SET);
+        fread(MAIN_MEMORY+frame_libre*config.page_size, config.page_size, 1, SWAP);
+        return;
+    } else {
+        algoritmo_de_reemplazo();
+        traer_pagina(pagina);
+    }
+}
+
+// TODO: esto
+void swapear_pagina(page_t* pagina){
+
 }
 
 /*
