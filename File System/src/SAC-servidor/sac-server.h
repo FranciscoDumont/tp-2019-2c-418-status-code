@@ -6,11 +6,9 @@
 #define TP_2019_2C_418_STATUS_CODE_SAC_SERVER_H
 #define CONFIGURACION "../sac_server.config"
 
-#include <altaLibreria/connections.h>
-#include <altaLibreria/structures.h>
-#include <commons/collections/list.h>
-//#include <string.h>
-#include <operaciones.h>
+#include "operaciones.h"
+#include <commons/config.h>
+#include <commons/log.h>
 
 typedef struct _sac_server_config {
     char* ip;

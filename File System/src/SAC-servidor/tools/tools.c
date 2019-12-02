@@ -1,3 +1,5 @@
+
+
 #include "tools.h"
 
 
@@ -65,7 +67,7 @@ void munmapParticion (GBloque* disco, char* nombreParticion){
 
     int disco_size = obtenerTamanioArchivo(nombreParticion);
 
-    return munmap(disco,disco_size);
+    munmap(disco,disco_size);
 }
 
 char* obtenerFechaActual(){

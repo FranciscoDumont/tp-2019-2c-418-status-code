@@ -5,14 +5,14 @@
 #ifndef FUNCIONES_EMI_STRUCTS_H
 #define FUNCIONES_EMI_STRUCTS_H
 
-#include <stdint.h>
+
 #define  IDENTIFICADOR_TAMANIO 3
 #define  NOMBRE_ARCHIV_MAX 71
 #define  PUNTEROS_SIMPLES_CANTIDAD 1000
 #define  RELLENO_TAMANIO 4081
 #define BLOQUE_TAMANIO 4096
 #define CANTIDAD_ARCHIVOS_MAX 1024
-
+#include <stdint.h>
 
 typedef struct bloque_t{
     unsigned char bytes[BLOQUE_TAMANIO];

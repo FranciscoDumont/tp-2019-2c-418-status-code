@@ -5,19 +5,14 @@
 #ifndef SERVIDOR_FILESYSTEM_H
 #define SERVIDOR_FILESYSTEM_H
 
-#include <stdio.h>
 #include "../structs.h"
-#include <string.h>
-#include <sys/mman.h>
-#include <unistd.h>
-#include <stdint.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <altaLibreria/structures.h>
+#include <commons/collections/list.h>
 #include <commons/bitarray.h>
 #include <commons/log.h>
-#include <commons/collections/list.h>
-#include <memory.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <time.h>
 
 /*****************************
