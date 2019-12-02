@@ -6,7 +6,6 @@
 #define SERVIDOR_FILESYSTEM_H
 
 #include "../structs.h"
-#include <altaLibreria/structures.h>
 #include <commons/collections/list.h>
 #include <commons/bitarray.h>
 #include <commons/log.h>

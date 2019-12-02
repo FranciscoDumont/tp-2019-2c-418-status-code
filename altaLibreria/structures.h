@@ -23,6 +23,7 @@ typedef enum _MessageType {
 	LINK, // Crea un hard link a un archivo
 	TRUNCATE, // Cambia el tamanio de un archivo
 	OPEN, //Abre un archivo
+	CLOSE,//Cierra el archivo
 	READ, // Lee la informacion de un archivo abierto
 	WRITE, // Escribe informacion en un archivo abierto
 	RELEASE, //INVESTIGAR SOBRE ESTO
@@ -31,7 +32,12 @@ typedef enum _MessageType {
 	CREATE, // Crea y abre un archivo
 	UTIMENS, // Modifica el tiempo de modificacion de un archiv
 	COPY_FILE_RANGE, // Copia un rango de datos de un archivo a otro
-
+	SUSE_CREATE,
+	SUSE_SCHEDULE_NEXT,
+	SUSE_WAIT,
+	SUSE_SIGNAL,
+	SUSE_JOIN,
+	SUSE_CLOSE
 	//TODO: Agregar nuestros headers(tipos de mensajes a enviar)
 
 } MessageType;

@@ -52,16 +52,16 @@ void serverFunction(){
 
                 break;
             }
-//            case CLOSE:
-//            {
-//                int* fd = list_get(cosas,0);// Toma el unico elemento que se le manda
-//                int resultado = sac_close(*fd);
-//                t_paquete *package = create_package(CLOSE);
-//                add_to_package(package, (void*) &resultado, sizeof(resultado));
-//                send_package(package, *fd);
-//
-//                break;
-//            }
+            case CLOSE:
+            {
+                int* fd = list_get(cosas,0);// Toma el unico elemento que se le manda
+                int resultado = sac_close(*fd);
+                t_paquete *package = create_package(CLOSE);
+                add_to_package(package, (void*) &resultado, sizeof(resultado));
+                send_package(package, *fd);
+
+                break;
+            }
 
             case READ:
             {

@@ -7,6 +7,7 @@
 #define CONFIGURACION "../sac_server.config"
 
 #include "operaciones.h"
+#include <altaLibreria/connections.h>
 #include <commons/config.h>
 #include <commons/log.h>
 
