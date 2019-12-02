@@ -33,6 +33,7 @@ int main() {
 
     // Estructuras para el reemplazo de paginas
     FRAMES_PAGINAS = list_create();
+
     log_info(logger, "Se pueden almacenar %d páginas en el area de SWAP", LIMITE_PAGINAS_SWAP);
 
     MAIN_MEMORY = malloc(config.memory_size);
@@ -506,6 +507,17 @@ int cant_frames_libres(){
     return cant_frames;
 }
 
+int cant_frames_libres_swap(){
+    int i;
+    int cant_frames = 0;
+    for (i = 0; i<MAPA_MEMORIA_SIZE; ++i){
+        if (! bitarray_test_bit(MAPA_SWAP, i)){
+            cant_frames++;
+        }
+    }
+    return cant_frames;
+}
+
 process_t* buscar_proceso(int id_proceso){
     bool key_search(void * un_proceso){
         process_t * process = (process_t *) un_proceso;
@@ -892,7 +904,7 @@ void traer_pagina(page_t* pagina){
         int indice_de_swap = pagina->frame;
         bitarray_clean_bit(MAPA_SWAP, indice_de_swap); // Libero el indice en Swap
         bitarray_set_bit(MAPA_MEMORIA, frame_libre); // Ocupo el indice en MP
-        list_replace(FRAMES_PAGINAS, frame_libre, nueva_pagina); // Agrego la pagina a la lista de frames
+        list_replace(FRAMES_PAGINAS, frame_libre, pagina); // Agrego la pagina a la lista de frames
 
         pagina->presence_bit = 1;
         pagina->use_bit = 1;
@@ -908,9 +920,31 @@ void traer_pagina(page_t* pagina){
     }
 }
 
-// TODO: esto
 void swapear_pagina(page_t* pagina){
+    // Si la pagina ya estaba en swap termino
+    if (!pagina->presence_bit){
+        return;
+    }
+    // Si hay espacio en swap lo llevo
+    if (cant_frames_libres_swap() > 0){
+        int swap_libre = ms_buscar_frame_libre();
+        int indice_de_mp = pagina->frame;
+        bitarray_clean_bit(MAPA_MEMORIA, indice_de_mp); // Libero el indice en MP
+        bitarray_set_bit(MAPA_SWAP, swap_libre); // Ocupo el indice en SWAP
+        list_replace(FRAMES_PAGINAS, indice_de_mp, null); // elimino la pagina de la estructura de paginas
 
+        pagina->presence_bit = 0;
+        pagina->use_bit = 0;
+        pagina->frame = swap_libre; // Le asigno el indice en swap
+
+        // Tengo que ir a la memoria principal y copiar el tamanio de una pagina a la memoria swap
+        fseek(SWAP, swap_libre*config.page_size, SEEK_SET);
+        fwrite(MAIN_MEMORY+indice_de_mp*config.page_size, config.page_size, 1, SWAP);
+        return;
+    } else {
+        //TODO: si no hay espacio en la memoria secundaria no se que hacer
+        int error = 1/0;
+    }
 }
 
 /*

@@ -172,6 +172,7 @@ int ms_buscar_frame_libre();
  * @return
  */
 int cant_frames_libres();
+int cant_frames_libres_swap();
 
 /**
  * Busco un proceso por id(socket cliente)
