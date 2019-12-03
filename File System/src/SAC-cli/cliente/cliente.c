@@ -21,14 +21,20 @@ sac_cli_config* read_config(){
 }
 
 
-int sac_open(char* ruta ){
+int* sac_open(char* ruta ){
+    //Envia la primera peticion
     t_paquete *package = create_package(OPEN);
     add_to_package(package, (void*) ruta, strlen(ruta) + 1);
+    send_package(package, socket_conexion);
 
-    int resultado_envio =  send_package(package, socket_conexion);
+    //Recive la respuesta
+    MessageHeader* header_respuesta;
+    receive_header( socket_conexion, header_respuesta);
+    t_list* elementos_respuesta = receive_package(socket_conexion, header_respuesta);
 
-    return resultado_envio == -1? -1 : resultado_envio;
+    return (int*) list_get( elementos_respuesta, 0);
 }
+
 
 int sac_mkdir(int socket,char* ruta){
     t_paquete *package = create_package(MKDIR);
@@ -81,11 +87,10 @@ int main(){
         printf("EL connect anda bien ::E \n");
     }
 
-    if(-1 == sac_open("/nuevo.txt")){
-        printf("Error connect ::NOT FOUND\n");
-    }else {
-        printf("Envio anda bien ::E \n");
-    }
+    int* respuesta = sac_open("/Carpeta1/algo");
+
+    printf("Respuesta es:%d\n", *respuesta);
+
 
     //Libero el socket
     close_socket(socket_conexion);

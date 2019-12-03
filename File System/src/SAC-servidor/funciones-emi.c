@@ -348,13 +348,9 @@ int sac_close(int fd){
 }
 void main (){
     t_log* logger = log_create("formateo.log", "SAC", 0, LOG_LEVEL_TRACE);
-//
-//
-  formatear("../tools/disco.bin",logger);
-//
-//    //t_list * lista = buscarBloquesMemoriaLibres(1,disco, "../tools/disco.bin");
 
-//
+    formatear("../tools/disco.bin",logger);
+
     char* tuVieja = malloc(50);
     memcpy(tuVieja,"/Carpeta1",strlen("/Carpeta1")+1);
     sac_mkdir(tuVieja);

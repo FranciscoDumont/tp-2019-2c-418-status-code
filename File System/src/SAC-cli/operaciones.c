@@ -1,5 +1,10 @@
 
 #include "operaciones.h"
+t_list* tablaDeArchivosAbiertos;
+
+void inicializarTabla(){
+    tablaDeArchivosAbiertos = list_create();
+}
 
 int sac_getattr(const char *ruta, struct stat *stbuf){
 

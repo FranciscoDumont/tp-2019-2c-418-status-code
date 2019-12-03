@@ -5,7 +5,7 @@
 
 sac_server_config* read_config(){
     sac_server_config* confi = malloc(sizeof(sac_server_config));
-    t_config* tConfig =config_create(CONFIGURACION);
+    t_config* tConfig =config_create("../sac_server.config");
 
     confi->ip = config_get_string_value(tConfig, "IP");
     confi->listen_port = atoi(config_get_string_value(tConfig, "LISTEN_PORT"));
@@ -14,12 +14,32 @@ sac_server_config* read_config(){
     return confi;
 }
 
+void inicializarEjemplo(){
+    char* tuVieja = malloc(50);
+    memcpy(tuVieja,"/Carpeta1",strlen("/Carpeta1")+1);
+    sac_mkdir(tuVieja);
+    memcpy(tuVieja,"/Carpeta2",strlen("/Carpeta2")+1);
+    sac_mkdir(tuVieja);
+    memcpy(tuVieja,"/Carpeta1/archivo1",strlen("/Carpeta1/archivo1")+1);
+    sac_mkdir(tuVieja);
+    memcpy(tuVieja,"/Carpeta1/Carpeta3",strlen("/Carpeta1/Carpeta3")+1);
+    sac_mkdir(tuVieja);
+    memcpy(tuVieja,"/Carpeta1/algo",strlen("/Carpeta1/algo")+1);
+    sac_mkdir(tuVieja);
+    memcpy(tuVieja,"/Carpeta2/archivo1",strlen("/Carpeta2/archivo1")+1);
+    sac_mkdir(tuVieja);
+    free(tuVieja);
+}
+
+
 void serverFunction(){
     sac_server_config* config;
     int socket;
-    t_log* logger = log_create("../sac_server.log", "SAC_SERVER", false, LOG_LEVEL_TRACE);;
+    t_log* logger = log_create("sac_server.log", "SAC_SERVER", false, LOG_LEVEL_TRACE);;
 
     config = read_config();
+    incializarTablaArchivos();
+    inicializarEjemplo();
 
     if((socket = create_socket()) == -1) {
         log_error(logger, "Error al crear el socket");
@@ -44,12 +64,14 @@ void serverFunction(){
         switch (headerStruct->type){
             case OPEN:
             {
+                //Toma lo que se mando
                 char* path = list_get(cosas,0);// Toma el unico elemento que se le manda
-                int descriptor_archiv = sac_open(path);
-                t_paquete *package = create_package(OPEN);
-                add_to_package(package, (void*) &descriptor_archiv, sizeof(descriptor_archiv));
-                send_package(package, fd);
+                int descriptor_archivo = sac_open(path);
 
+                //Envia la respuesta
+                t_paquete *package = create_package(OPEN);
+                add_to_package(package,(void*) &descriptor_archivo, sizeof(int));
+                send_package(package, fd);
                 break;
             }
             case CLOSE:
@@ -57,7 +79,7 @@ void serverFunction(){
                 int* fd = list_get(cosas,0);// Toma el unico elemento que se le manda
                 int resultado = sac_close(*fd);
                 t_paquete *package = create_package(CLOSE);
-                add_to_package(package, (void*) &resultado, sizeof(resultado));
+                add_to_package(package, (void*) &resultado, sizeof(resultado)+1);
                 send_package(package, *fd);
 
                 break;
