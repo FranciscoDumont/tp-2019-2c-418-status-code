@@ -10,6 +10,7 @@
 #include <altaLibreria/connections.h>
 #include <commons/config.h>
 #include <commons/log.h>
+#include <sys/stat.h>
 
 typedef struct _sac_server_config {
     char* ip;

@@ -18,20 +18,12 @@ typedef enum _MessageType {
 	MKNOD, // Crea un archivo
 	MKDIR, // Crea un directorio
 	UNLINK, // Borrar un archivo
-	SYMLINK, // Crea un simbolic link
-	RENAME, // Cambia el nombre de un archivo
-	LINK, // Crea un hard link a un archivo
-	TRUNCATE, // Cambia el tamanio de un archivo
+	RMDIR,//Borra un directorio
 	OPEN, //Abre un archivo
 	CLOSE,//Cierra el archivo
 	READ, // Lee la informacion de un archivo abierto
 	WRITE, // Escribe informacion en un archivo abierto
-	RELEASE, //INVESTIGAR SOBRE ESTO
-	OPENDIR, // Abrir un directorio
 	READDIR, // Leer un directorio
-	CREATE, // Crea y abre un archivo
-	UTIMENS, // Modifica el tiempo de modificacion de un archiv
-	COPY_FILE_RANGE, // Copia un rango de datos de un archivo a otro
 	SUSE_CREATE,
 	SUSE_SCHEDULE_NEXT,
 	SUSE_WAIT,

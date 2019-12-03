@@ -7,7 +7,7 @@
 int main(){
     //Creo un socket
     int socket_servidor = create_socket();
-    int port = 5003;
+    int port = 4445;
     char* ip_server = "127.0.0.1";
     char* mensaje = malloc(20);
 

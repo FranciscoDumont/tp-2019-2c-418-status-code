@@ -28,13 +28,27 @@ int* sac_open(char* ruta ){
     send_package(package, socket_conexion);
 
     //Recive la respuesta
-    MessageHeader* header_respuesta;
+    MessageHeader* header_respuesta = malloc(sizeof(MessageHeader));
     receive_header( socket_conexion, header_respuesta);
     t_list* elementos_respuesta = receive_package(socket_conexion, header_respuesta);
 
+    free_package(package);
     return (int*) list_get( elementos_respuesta, 0);
 }
 
+int* sac_close(int descriptor_archivo){
+    t_paquete *package = create_package(CLOSE);
+    add_to_package(package, (void*) &descriptor_archivo, sizeof(int));
+    send_package(package, socket_conexion);
+
+    MessageHeader* header_respuesta = malloc(sizeof(MessageHeader));
+    receive_header( socket_conexion, header_respuesta);
+    t_list* elementos_respuesta = receive_package(socket_conexion, header_respuesta);
+
+    free_package(package);
+
+    return (int*) list_get( elementos_respuesta, 0);
+}
 
 int sac_mkdir(int socket,char* ruta){
     t_paquete *package = create_package(MKDIR);
@@ -88,8 +102,10 @@ int main(){
     }
 
     int* respuesta = sac_open("/Carpeta1/algo");
+    respuesta = sac_open("/Carpeta1/algo");
 
-    printf("Respuesta es:%d\n", *respuesta);
+    int* respuesta_close = sac_close(*respuesta);
+    printf("Respuesta close:%d\n", *respuesta_close);
 
 
     //Libero el socket

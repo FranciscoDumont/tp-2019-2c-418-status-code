@@ -71,66 +71,166 @@ void serverFunction(){
                 //Envia la respuesta
                 t_paquete *package = create_package(OPEN);
                 add_to_package(package,(void*) &descriptor_archivo, sizeof(int));
-                send_package(package, fd);
+                if(send_package(package, fd) == -1){
+                    log_debug(logger, "Se ejecuto un OPEN con el path: %s",path);
+                } else {
+                    log_error(logger, "Error al enviar la respuesta del open() al socket: %d",fd);
+                }
+                free_package(package);
+                free(path);
+
                 break;
             }
             case CLOSE:
             {
-                int* fd = list_get(cosas,0);// Toma el unico elemento que se le manda
-                int resultado = sac_close(*fd);
+                int* descriptor_archivo = list_get(cosas,0);// Toma el unico elemento que se le manda
+                int resultado = sac_close(*descriptor_archivo);
+
                 t_paquete *package = create_package(CLOSE);
-                add_to_package(package, (void*) &resultado, sizeof(resultado)+1);
-                send_package(package, *fd);
+                add_to_package(package, (void*) &resultado, sizeof(int));
+
+                if(send_package(package, fd) == -1){
+                    log_debug(logger, "Se ejecuto un CLOSE en fileDescriptor: %d",descriptor_archivo);
+                } else {
+                    log_error(logger, "Error al enviar la respuesta del close() al socket: %d",fd);
+                }
+                free_package(package);
+                free(descriptor_archivo);
 
                 break;
             }
 
-            case READ:
-            {
-                ;
-                char *mensaje = (char*)list_get(cosas, 0);
-                printf("Se quiso leer esta ruta:%s\n", mensaje);
-
-                break;
-            }
-            case WRITE:
-            {
-                ;
-                char *mensaje = (char*)list_get(cosas, 0);
-                printf("Se quiso escribir en esta ruta:%s\n", mensaje);
-
-                break;
-            }
+//            case READ:
+//            {
+//                ;
+//                char *mensaje = (char*)list_get(cosas, 0);
+//                printf("Se quiso leer esta ruta:%s\n", mensaje);
+//
+//                break;
+//            }
+//            case WRITE:
+//            {
+//                ;
+//                char *mensaje = (char*)list_get(cosas, 0);
+//                printf("Se quiso escribir en esta ruta:%s\n", mensaje);
+//
+//                break;
+//            }
             case GETATTR:
-            {
-                ;
-                char *mensaje = (char*)list_get(cosas, 0);
-                printf("Se pidio informacion sobre esta ruta:%s\n", mensaje);
+            {   struct stat stbuf;
+                sac_getattr(const char *path, &stbuf);
+
+                t_paquete *package = create_package(GETATTR);
+                add_to_package(package, (void*) &stbuf, sizeof(struct stat));
+
+                if(send_package(package, fd) == -1){
+                    log_debug(logger, "Se ejecuto el comando GETATTR con el path: %s",path);
+                } else {
+                    log_error(logger, "Error al enviar la respuesta de getattr() al socket: %d",fd);
+                }
+
                 break;
             }
             case MKNOD:
             {
-                ;
-                char *mensaje = (char*)list_get(cosas, 0);
-                printf("Se creo un nuevo archivo con direccion:%s\n", mensaje);
+                char* path = list_get(cosas,0);
+                int resultado = sac_mknod(path);
+
+                t_paquete *package = create_package(MKNOD);
+                add_to_package(package, (void*) &resultado, sizeof(int));
+
+                if(send_package(package, fd) == -1){
+                    log_debug(logger, "Se ejecuto el comando MKNOD con el path: %s",path);
+                } else {
+                    log_error(logger, "Error al enviar la respuesta de mknod() al socket: %d",fd);
+                }
+
+                free_package(package);
+                free(path);
 
                 break;
             }
             case MKDIR:
             {
-                ;
-                char *mensaje = (char*)list_get(cosas, 0);
-                printf("Se creo un nuevo directorio con direccion:%s\n", mensaje);
+                char* path = list_get(cosas,0);
+                int resultado = sac_mkdir(path);
 
+                t_paquete *package = create_package(MKDIR);
+                add_to_package(package, (void*) &resultado, sizeof(int));
+
+                if(send_package(package, fd) == -1){
+                    log_debug(logger, "Se ejecuto el comando MKDIR con el path: %s",path);
+                } else {
+                    log_error(logger, "Error al enviar la respuesta de mkdir() al socket: %d",fd);
+                }
+
+                free_package(package);
+                free(path);
                 break;
             }
 
             case READDIR:
             {
-                ;
-                char *mensaje = (char*)list_get(cosas, 0);
-                printf("Se quiere leer el directorio:%s\n", mensaje);
+                char* path = list_get(cosas,0);
+                t_list* listado_directorios = list_create();
+                int resultado = sac_mkdir(path, listado_directorios);
+                t_paquete *package = create_package(READDIR);
+                if(resultado >= 0){
+                    add_to_package(package, (void*) &resultado, sizeof(int));
+                    for(int i = 0; i >list_size(listado_directorios); i++){
+                        Dir* directorio = list_get(listado_directorios, i);
+                        add_to_package(package, directorio, sizeof(dir));
+                    }
+                }else{
+                    add_to_package(package, (void*) &resultado, sizeof(int));
+                }
+                if(send_package(package, fd) == -1){
+                    log_debug(logger, "Se ejecuto el comando READDIR con el path: %s",path);
+                } else {
+                    log_error(logger, "Error al enviar la respuesta de readdir() al socket: %d",fd);
+                }
 
+                free_package(package);
+                free(path);
+                break;
+            }
+
+            case RMDIR:
+            {
+                char* path = list_get(cosas,0);
+                int resultado = sac_rmdir(path);
+
+                t_paquete *package = create_package(RMDIR);
+                add_to_package(package, (void*) &resultado, sizeof(int));
+
+                if(send_package(package, fd) == -1){
+                    log_debug(logger, "Se ejecuto la instruccion RMDIR con el siguiente: %s",path);
+                } else {
+                    log_error(logger, "Error al enviar la respuesta de rmdir() al socket: %d",fd);
+                }
+
+                free_package(package);
+                free(path);
+
+                break;
+            }
+
+            case UNLINK:
+            {
+                char* path = list_get(cosas,0);
+                int resultado = sac_rmnod(path);
+
+                t_paquete *package = create_package(UNLINK);
+                add_to_package(package, (void*) &resultado, sizeof(int));
+
+                if(send_package(package, fd) == -1){
+                    log_debug(logger, "Se ejecuto la instruccion UNLINK(rmnode) con el siguiente: %s",path);
+                } else {
+                    log_error(logger, "Error al enviar la respuesta de unlink() al socket: %d",fd);
+                }
+
+                free_package(package);
+                free(path);
                 break;
             }
 
